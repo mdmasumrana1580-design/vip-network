@@ -222,7 +222,7 @@ function parseM3U(text) {
     if (line.startsWith("#")) continue;
 
     if (meta) {
-      if (/^(https?|rtmp|rtsp):\/\//i.test(line)) {
+      if (/^(https?|rtmp|rtsp|hls):\/\//i.test(line)) {
         out.push({
           name: meta.name,
           cat: catFor(meta.name, meta.group),
@@ -500,7 +500,7 @@ loadVipPlaylist()
   .catch(function (error) {
     console.error(error);
     empty.hidden = false;
-    empty.textContent = "Playlist load করা যায়নি। আবার Reload করুন।";
+    empty.textContent = "Playlist load করা যায়নি। M3U link check করুন।";
   });
 
 
