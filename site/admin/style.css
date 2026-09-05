@@ -190,3 +190,41 @@ td{padding:5px 4px}
 }
 @media(max-width:430px){.quick-grid .quick-icon{width:10px;height:10px;font-size:8px}}
 .modal-backdrop{position:fixed;inset:0;background:rgba(3,8,20,.82);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:9999;padding:18px}.modal-backdrop.show{display:flex}.login-card{width:min(430px,100%);background:var(--panel,#0c1730);border:1px solid rgba(0,174,255,.25);border-radius:20px;padding:24px;box-shadow:0 25px 80px rgba(0,0,0,.5)}.login-card img{width:86px;height:86px;object-fit:contain;display:block;margin:0 auto 10px}.login-card h2{text-align:center;margin:5px 0 6px}.login-card p{text-align:center;color:#91a2bd;font-size:13px;margin:0 0 18px}.login-card label{display:block;font-size:12px;font-weight:700;margin:12px 0}.login-card input{width:100%;margin-top:6px}.login-card .primary{width:100%;margin-top:8px}.login-card small{display:block;text-align:center;color:#71809a;margin-top:12px;line-height:1.45}.device-list>div{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.device-list>div .actions{margin-left:auto}
+
+/* ADMIN+TV Light Theme */
+body.light{
+  --bg:#f4f7fb;--panel:#ffffff;--panel2:#f7f9fc;--line:#d8e2ec;--text:#162333;--muted:#66788a;
+  background:#f4f7fb;color:var(--text)
+}
+body.light .sidebar{background:#ffffff;border-right-color:#d9e3ed;box-shadow:4px 0 18px rgba(25,55,85,.06)}
+body.light .brand strong,body.light .topbar,body.light .nav-item,body.light .top-actions>button{color:#162333}
+body.light .brand small,body.light .profile small,body.light .nav-item{color:#66788a}
+body.light .nav-item:hover,body.light .nav-item.active{background:#eaf4ff;color:#075da3;box-shadow:inset 3px 0 #078df0}
+body.light .backend-card{background:#f6f9fc;border-color:#d5e1ec;color:#5d7083}
+body.light .backend-card b{color:#0aa85a}
+body.light .topbar{background:rgba(255,255,255,.92);border-bottom-color:#d9e3ed}
+body.light .search{background:#f5f8fb;border-color:#d3dee8}
+body.light .search input{color:#172536}
+body.light .online{color:#33485c}
+body.light .stat,body.light .panel,body.light .form-card{background:#ffffff;border-color:#d8e2ec;box-shadow:0 5px 20px rgba(27,60,90,.05)}
+body.light .status-bar{background:#ffffff;border-color:#d8e2ec}
+body.light .quick-grid button{background:#ffffff;border-color:#d5e1ec;color:#203448}
+body.light th{background:#eef4f9;color:#53697c}
+body.light td{border-bottom-color:#e1e8ef;color:#263a4e}
+body.light tbody tr:hover{background:#f4f9fd}
+body.light .filters input,body.light .filters select,body.light .form-card input,body.light .form-card select,body.light .form-card textarea,body.light .test-box input,body.light .category-add input{background:#ffffff;border-color:#cbd9e5;color:#172536}
+body.light .preview-info{background:#f5f8fb;border-color:#d7e2ec}
+body.light .category-list span{background:#eef5fa;border-color:#d1dfe9;color:#294158}
+body.light .pagination button,body.light .actions button{background:#f4f8fb;border-color:#cbd9e5;color:#294158}
+body.light .site-preview{background:radial-gradient(circle at 50% 0,#e8f4ff,#ffffff 65%);border-color:#d5e2ec}
+body.light .site-preview p,body.light .page-head p{color:#66788a}
+body.light .modal-backdrop{background:rgba(20,35,50,.35)}
+body.light .login-card{background:#ffffff;border-color:#d5e1ec;box-shadow:0 25px 80px rgba(30,55,80,.22)}
+body.light .login-card p,body.light .login-card small{color:#66788a}
+body.light .login-card input{background:#fff;color:#172536;border-color:#cbd9e5}
+body.light .toast{background:#ffffff;border-color:#c8d8e6;color:#203448;box-shadow:0 10px 30px rgba(20,50,80,.12)}
+body.light .video-box{border-color:#cddbe7}
+body.light .drop{border-color:#8eb8d6;color:#62798c}
+body.light .side-footer{color:#8295a6}
+.backend-logo{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:0 0 34px;border:1px solid rgba(10,168,255,.35);box-shadow:0 0 12px rgba(10,168,255,.18)}
+.backend-label{font-weight:700;color:inherit}
