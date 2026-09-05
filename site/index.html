@@ -1,1 +1,68 @@
+<!doctype html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#000000"><meta name="msapplication-navbutton-color" content="#0b1512"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="color-scheme" content="dark"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="apple-touch-icon" href="vip-tv-logo-180.png"><link rel="manifest" href="./manifest.webmanifest"><title>ViP-tv</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css"></head><body>
 
+<header class="header">
+  <div class="brand-wrap"><div class="logo logo-image"><img src="vip-network-logo.png" alt="ViP-tv"></div><div class="header-stats" aria-label="সাইট পরিসংখ্যান"><div class="header-stat total-stat"><span>👥</span><small>Visit</small><strong id="headerTotalVisitors">—</strong></div><div class="header-stat online-stat"><span class="online-dot"></span><small>Online</small><strong id="headerOnlineVisitors">—</strong></div></div></div>
+  <div class="actions"><a class="messenger-btn" href="https://m.me/" target="_blank" rel="noopener" aria-label="Messenger">
+  <img src="messenger-icon.webp" alt="Messenger">
+</a>
+  </div>
+</header>
+<section id="playerSection" class="player-section">
+  <div class="player-head">
+    <b id="playerTitle">Live Player</b>
+    <button id="closePlayer" type="button">×</button>
+  </div>
+  <div class="video-box" id="vipVideoBox">
+    <video id="welcomeVideo" class="welcome-video" autoplay muted playsinline preload="auto" aria-hidden="true" controlslist="nodownload noplaybackrate" draggable="false">
+      <source src="welcome.mp4" type="video/mp4">
+    </video>
+    <video id="video" playsinline preload="metadata" controlslist="nodownload noplaybackrate" draggable="false"></video>
+    <div class="landscape-channel-controls" id="landscapeChannelControls" aria-label="চ্যানেল পরিবর্তন">
+      <button id="prevChannel" type="button" aria-label="আগের চ্যানেল">«</button>
+      <button id="nextChannel" type="button" aria-label="পরের চ্যানেল">»</button>
+    </div>
+    <div class="live-badge" id="liveBadge">● LIVE</div>
+    <div class="vip-bottom-controls" id="vipBottomControls" aria-hidden="true">
+      <div class="vip-volume-control" id="vipVolumeControl">
+        <button id="vipMute" type="button" aria-label="সাউন্ড বন্ধ/চালু">🔊</button>
+        <input id="vipVolume" type="range" min="0" max="1" step="0.01" value="1" aria-label="সাউন্ড কমবেশি">
+      </div>
+      <button id="vipFullscreen" class="vip-fullscreen-btn" type="button" aria-label="Fullscreen">⛶</button>
+    </div>
+    <div id="note" class="note"></div>
+  </div>
+</section>
+
+<div id="playerSpacer" class="player-spacer" aria-hidden="true"></div>
+<div class="headline" aria-label="VIP Network headline">
+  <div class="headline-notice">Notice</div>
+  <div class="headline-window"><div class="headline-track"><span>আসসালামু আলাইকুম, নির্ভরযোগ্য ইন্টারনেট সেবা। আপনার বাসা, অফিস ও ব্যবসা প্রতিষ্ঠানের জন্য দ্রুতগতির ViP-Nework সংযোগ নিতে। যোগাযোগ করুন: মোঃ মনজুরুল ইসলাম — 01779764599 | মোঃ ফিরোজ আহমেদ — 01716119983</span><span>আসসালামু আলাইকুম, নির্ভরযোগ্য ইন্টারনেট সেবা। আপনার বাসা, অফিস ও ব্যবসা প্রতিষ্ঠানের জন্য দ্রুতগতির ViP-Nework সংযোগ নিতে। যোগাযোগ করুন: মোঃ মনজুরুল ইসলাম — 01779764599 | মোঃ ফিরোজ আহমেদ — 01716119983</span></div></div>
+</div>
+<nav class="cats" id="cats"><button class="active" data-cat="All">All</button><button data-cat="Sports">SPORTS</button><button data-cat="BD">BD</button><button data-cat="India">INDIA</button><button data-cat="Others">OTHERS</button></nav>
+<div class="blue-line"></div>
+<div class="channel-topbar"><button id="installAppBtn" class="install-app-btn" type="button" hidden>📲 Install</button></div>
+<main id="grid" class="grid"></main><div id="empty" class="empty" hidden>No channels found</div>
+
+<footer class="site-footer">© 2026 MASUM.ALL RIGHT RESERVED.</footer>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><script src="config.js"></script><script src="device-guard.js"></script><script src="app.js"></script><script src="pwa.js"></script>
+<script>
+(function(){
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const nav = performance.getEntriesByType('navigation')[0];
+  const isRefresh = nav && nav.type === 'reload';
+  if (standalone && !isRefresh) {
+    const splash = document.createElement('div');
+    splash.id = 'appSplash';
+    splash.className = 'app-splash';
+    splash.setAttribute('aria-label','ViP-tv loading screen');
+    splash.innerHTML = '<img src="vip-tv-app-splash.png" alt="ViP-tv">';
+    document.body.appendChild(splash);
+    const hide = () => { splash.classList.add('app-splash-hide'); setTimeout(()=>splash.remove(),420); };
+    window.addEventListener('load',()=>setTimeout(hide,1400),{once:true});
+    setTimeout(hide,2800);
+  }
+})();
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
+</script>
+
+</body></html>
