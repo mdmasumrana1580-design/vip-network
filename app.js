@@ -1,4 +1,4 @@
-const PLAYLIST_URL = "./playlist.m3u";
+const PLAYLIST_URL = "https://raw.githubusercontent.com/ahan443/FAST-IPTV/refs/heads/main/z.m3u";
 const VIP_WORKER_API = "";
 
 let channels = [];
@@ -486,18 +486,6 @@ empty.hidden = false;
 empty.textContent = "Loading channels...";
 
 async function loadVipPlaylist() {
-  // Admin/KV playlist is the primary source.
-  try {
-    const r = await fetch(VIP_WORKER_API + "/api/playlist", {cache:"no-store"});
-    if (r.ok) {
-      const text = await r.text();
-      const parsed = parseM3U(text);
-      if (parsed.length) return parsed;
-    }
-  } catch (e) {
-    console.warn("Worker playlist unavailable; trying GitHub fallback.", e);
-  }
-
   const response = await fetch(PLAYLIST_URL, {cache:"no-store"});
   if (!response.ok) throw new Error("Playlist load failed");
   return parseM3U(await response.text());
