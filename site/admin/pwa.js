@@ -1,0 +1,1 @@
+(()=>{const l=document.createElement('link');l.rel='manifest';l.href='/admin/manifest.webmanifest';document.head.appendChild(l);if('serviceWorker' in navigator)navigator.serviceWorker.register('/admin/sw.js',{scope:'/admin/'}).catch(()=>{});})();

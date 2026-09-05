@@ -1,0 +1,14 @@
+{
+  "name": "ADMIN+TV",
+  "short_name": "ADMIN+TV",
+  "description": "VIP NETWORK Admin + TV Web App",
+  "start_url": "/admin/",
+  "scope": "/admin/",
+  "display": "standalone",
+  "background_color": "#020d19",
+  "theme_color": "#020d19",
+  "icons": [
+    {"src":"assets/admin-logo.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"assets/admin-logo.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
