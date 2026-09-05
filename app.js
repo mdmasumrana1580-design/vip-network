@@ -1,5 +1,5 @@
-const PLAYLIST_URL = "https://raw.githubusercontent.com/mdmasumrana1580-design/AkashGo/refs/heads/main/ViP-Network.%20m3u";
-const VIP_WORKER_API = (window.VIP_PUBLIC_API || window.VIP_ADMIN_API || "https://isp.vip-network.workers.dev").replace(/\\/$/, "");
+const PLAYLIST_URL = "./playlist.m3u";
+const VIP_WORKER_API = "";
 
 let channels = [];
 let current = "All";
