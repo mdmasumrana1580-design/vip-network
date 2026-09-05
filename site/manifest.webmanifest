@@ -1,36 +1,14 @@
 {
-  "name": "ViP-tv — ViP Network Live TV",
-  "short_name": "ViP-tv",
-  "description": "ViP Network Live TV Web App",
-  "start_url": "./index.html",
-  "scope": "./",
+  "name": "ADMIN+TV",
+  "short_name": "ADMIN+TV",
+  "description": "VIP NETWORK Admin + TV Web App",
+  "start_url": "/admin/",
+  "scope": "/admin/",
   "display": "standalone",
-  "display_override": [
-    "window-controls-overlay",
-    "standalone"
-  ],
-  "orientation": "portrait",
-  "background_color": "#03070b",
-  "theme_color": "#03070b",
-  "prefer_related_applications": false,
+  "background_color": "#020d19",
+  "theme_color": "#020d19",
   "icons": [
-    {
-      "src": "vip-tv-logo-180.png",
-      "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "vip-tv-logo-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "vip-tv-logo-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    {"src":"assets/admin-logo.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"assets/admin-logo.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
   ]
 }

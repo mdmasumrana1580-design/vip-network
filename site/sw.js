@@ -1,8 +1,4 @@
-const CACHE="vip-network-v1";
-self.addEventListener("install",e=>self.skipWaiting());
-self.addEventListener("activate",e=>e.waitUntil(self.clients.claim()));
-self.addEventListener("fetch",event=>{
-  const u=new URL(event.request.url);
-  if(u.pathname.startsWith("/api/")) return;
-  event.respondWith(fetch(event.request).catch(()=>caches.match(event.request)));
-});
+const CACHE='admin-tv-v1';
+self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['/admin/','/admin/index.html','/admin/style.css','/admin/app.js','/admin/manifest.webmanifest']))));
+self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
+self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(u.origin!==location.origin)return; e.respondWith(fetch(e.request).catch(()=>caches.match(e.request).then(r=>r||caches.match('/admin/'))));});
