@@ -1,0 +1,8 @@
+V4 layout based on the supplied reference:
+- Permanent left sidebar removed.
+- Full-width dashboard.
+- Channel List on the left and Live Preview on the right.
+- Compact 4-card statistics row.
+- Compact 6-button quick actions.
+- Mobile keeps the two main panels side-by-side and scales them down to fit the phone screen.
+- Existing channel, M3U import/export, backup, settings and preview functions are preserved.

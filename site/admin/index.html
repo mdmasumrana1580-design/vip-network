@@ -1,1 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADMIN — TV Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar" aria-hidden="true">
+      <div class="brand">
+        <div class="logo-mark">VIP<span>TV</span></div>
+        <div><strong>VIP NETWORK</strong><small>TV Admin Panel</small></div>
+      </div>
+      <button class="nav-item active" data-section="dashboard">⌂ <span>Dashboard</span></button>
+      <button class="nav-item" data-section="channels">▣ <span>Channel Manager</span></button>
+      <button class="nav-item" data-section="add">⊞ <span>Add Channel</span></button>
+      <button class="nav-item" data-section="import">☁ <span>Import M3U</span></button>
+      <button class="nav-item" data-section="categories">▦ <span>Categories</span></button>
+      <button class="nav-item" data-section="settings">⚙ <span>Website Settings</span></button>
+      <button class="nav-item" data-section="notice">⚑ <span>Notice / Banner</span></button>
+      <button class="nav-item" data-section="devices">▣ <span>Devices / Access</span></button>
+      <button class="nav-item" data-section="backup">▤ <span>Backup & Export</span></button>
+      <button class="nav-item" data-section="analytics">⌁ <span>Analytics</span></button>
+      <button class="nav-item" data-section="tools">⚒ <span>System Tools</span></button>
+      <div class="backend-card"><span class="wifi">⌁</span><div>Backend Status<br><b>● Connected</b></div></div>
+      <div class="side-footer">Version 1.0.0<br>© 2026 VIP NETWORK<br>All rights reserved.</div>
+    </aside>
 
+    <main class="main">
+      <header class="topbar">
+        <div class="admin-brand"><img src="assets/admin-logo.png" alt="ADMIN"><div><strong>ADMIN</strong><small>TV Admin Panel</small></div></div>
+        <div class="search"><span>⌕</span><input id="globalSearch" placeholder="Search anything..."></div>
+        <div class="top-actions"><span class="online"><i></i> Online</span><button id="themeBtn" title="Toggle theme">☾</button><button class="profile profile-btn" id="profileBtn" title="Administrator profile"><div class="avatar">A</div><div><b>ADMIN</b><small>Administrator</small></div></button></div>
+      </header>
+
+      <section class="content">
+        <div id="dashboard" class="section active-section">
+          <div class="page-head"><div><h1>ADMIN Dashboard</h1><p>Monitor and manage your IPTV channels.</p></div><button class="primary" onclick="showSection('add')">＋ Add Channel</button></div>
+          <div class="stats">
+            <div class="stat blue"><span>▣</span><div><small>Total Channels</small><strong id="totalStat">0</strong><em>+12 today</em></div></div>
+            <div class="stat green"><span>▥</span><div><small>Active Channels</small><strong id="activeStat">0</strong><em>Working</em></div></div>
+            <div class="stat red"><span>☒</span><div><small>Dead Channels</small><strong id="deadStat">0</strong><em>Need attention</em></div></div>
+            <div class="stat yellow"><span>?</span><div><small>Unknown / Disabled</small><strong id="unknownStat">0</strong><em>Disabled</em></div></div>
+          </div>
+          <div class="status-bar"><span>⌁</span><b>Backend connection: <i>Connected</i></b><small>Last Sync: <span id="syncTime"></span></small><button onclick="refreshData()">⟳</button></div>
+          <div class="quick-grid">
+            <button onclick="showSection('channels')"><span class="quick-icon">☷</span><b>Manage Playlist</b></button>
+            <button onclick="showSection('add')"><span class="quick-icon">＋</span><b>Add Channel</b></button>
+            <button onclick="showSection('import')"><span class="quick-icon">⇧</span><b>Import File</b></button>
+            <button onclick="showSection('notice')"><span class="quick-icon">⚑</span><b>Notice</b></button>
+            <button onclick="showSection('devices')"><span class="quick-icon">▣</span><b>Devices</b></button>
+          </div>
+          <div class="dashboard-workspace">
+            <div class="panel channel-panel"><div class="panel-title"><h2>▣ Channel List</h2><button onclick="refreshData()">⟳ Refresh</button></div><div class="filters"><input id="dashSearch" placeholder="⌕ Search channel..."><select id="dashCat"><option>All Categories</option></select><select id="dashStatus"><option>All Status</option><option>Active</option><option>Dead</option><option>Disabled</option></select></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Logo</th><th>Channel Name</th><th>Category</th><th>Status</th><th>Action</th></tr></thead><tbody id="channelRows"></tbody></table></div><div class="pagination" id="pagination"></div></div>
+            <div class="panel preview"><div class="panel-title"><h2>▶ Live Preview</h2><span class="live-dot">● NTV</span></div><div class="video-box"><video id="player" controls playsinline></video><div id="videoPlaceholder">▶<small>Select a channel to preview</small></div></div><div class="preview-info"><p>Channel Name <b id="pName">—</b></p><p>Category <b id="pCategory">—</b></p><p>Stream URL <b id="pUrl">—</b></p><p>Status <b id="pStatus">—</b></p></div><div class="preview-actions"><button class="success" id="playBtn">▶ Play</button><button id="reloadBtn">↻ Reload</button><button id="fullBtn">⛶ Fullscreen</button><button class="purple" id="openBtn">↗ Open in New Tab</button></div><div class="test-box"><label>Test Stream URL</label><div><input id="testUrl" placeholder="Enter stream URL..."><button onclick="testStream()">▶ Test</button></div></div></div>
+          </div>
+        </div>
+
+        <div id="channels" class="section"><div class="page-head"><div><h1>Channel Manager</h1><p>Edit, delete and preview your channel playlist.</p></div><button class="primary" onclick="showSection('add')">＋ Add Channel</button></div><div class="panel"><div class="filters"><input id="managerSearch" placeholder="⌕ Search channel..."><select id="managerCat"><option>All Categories</option></select><select id="managerStatus"><option>All Status</option><option>Active</option><option>Dead</option><option>Disabled</option></select></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Logo</th><th>Name</th><th>Category</th><th>Status</th><th>Stream URL</th><th>Action</th></tr></thead><tbody id="managerRows"></tbody></table></div></div></div>
+
+        <div id="add" class="section"><div class="page-head"><div><h1>Add Channel</h1><p>Add a single channel to your IPTV playlist.</p></div></div><form class="form-card" id="channelForm"><label>Channel Name<input name="name" required placeholder="e.g. NTV"></label><label>Category<select name="category" id="addCategory"></select></label><label>Logo URL<input name="logo" placeholder="https://example.com/logo.png"></label><label>Stream URL<input name="url" required placeholder="https://example.com/live.m3u8"></label><label>Status<select name="status"><option>Active</option><option>Dead</option><option>Disabled</option></select></label><button class="primary" type="submit">＋ Save Channel</button></form></div>
+
+        <div id="import" class="section">
+          <div class="page-head"><div><h1>Import Playlist</h1><p>Choose M3U URL, M3U file, or Xtream Codes.</p></div></div>
+          <div class="import-tabs">
+            <button class="import-tab active" data-import-tab="url">M3U URL</button>
+            <button class="import-tab" data-import-tab="file">M3U File</button>
+            <button class="import-tab" data-import-tab="xtream">Xtream Codes</button>
+          </div>
+          <div class="import-grid">
+            <div class="form-card import-pane active" id="import-url">
+              <label>M3U Playlist URL<input id="m3uUrl" type="url" placeholder="https://example.com/playlist.m3u"></label>
+              <button class="primary" onclick="importM3UUrl()">☁ Import from URL</button>
+              <p class="hint">The playlist server must allow browser CORS requests.</p>
+            </div>
+            <div class="form-card import-pane" id="import-file">
+              <label>M3U Playlist<textarea id="m3uText" placeholder="#EXTM3U
+#EXTINF:-1 tvg-name=&quot;NTV&quot;,NTV
+https://example.com/ntv.m3u8"></textarea></label>
+              <button class="primary" onclick="importM3U()">☁ Import Playlist</button>
+              <div class="drop" id="drop"><b>Choose M3U file</b><small>or drag & drop here</small><input type="file" id="m3uFile" accept=".m3u,.m3u8,text/plain"></div>
+            </div>
+            <div class="form-card import-pane" id="import-xtream">
+              <label>Server URL<input id="xtServer" type="url" placeholder="http://example.com:8080"></label>
+              <label>Username<input id="xtUser" placeholder="Username"></label>
+              <label>Password<input id="xtPass" type="password" placeholder="Password"></label>
+              <label>Import limit<select id="xtLimit"><option value="all">All live channels</option><option value="100">First 100</option><option value="250">First 250</option><option value="500">First 500</option></select></label>
+              <button class="primary" onclick="importXtream()">⇩ Import Xtream Channels</button>
+              <p class="hint">Uses the provider's Xtream Codes API. CORS must be allowed by the server.</p>
+            </div>
+            <div class="panel import-guide"><h2>Import Guide</h2><p><b>M3U URL:</b> paste a remote playlist URL.</p><p><b>M3U File:</b> upload a local .m3u/.m3u8 file or paste playlist text.</p><p><b>Xtream Codes:</b> enter server, username and password to load live channels.</p><p>When connected, imports are saved to the Worker/KV and immediately become available to the public TV site.</p></div>
+          </div>
+        </div>
+        <div id="categories" class="section"><div class="page-head"><div><h1>Categories</h1><p>Organize channels into groups.</p></div></div><div class="panel"><div class="category-add"><input id="newCat" placeholder="New category name"><button class="primary" onclick="addCategory()">＋ Add</button></div><div id="categoryList" class="category-list"></div></div></div>
+
+        <div id="settings" class="section"><div class="page-head"><div><h1>Website Settings</h1><p>Customize your public TV website.</p></div></div><form class="form-card" id="settingsForm"><label>Website Name<input name="siteName" value="VIP NETWORK"></label><label>Website Subtitle<input name="subtitle" value="Live TV & Entertainment"></label><label>Logo URL<input name="logo" placeholder="https://..."></label><label>Primary Theme<select name="theme"><option>Dark Blue</option><option>Midnight</option><option>Neon</option></select></label><button class="primary">💾 Save Settings</button><p class="hint">Settings are saved to the Worker when connected.</p></form></div>
+
+        <div id="notice" class="section"><div class="page-head"><div><h1>Notice / Banner</h1><p>Create an announcement shown on your TV website.</p></div></div><form class="form-card" id="noticeForm"><label>Banner Text<input name="text" placeholder="Welcome to VIP NETWORK"></label><label>Type<select name="type"><option>Information</option><option>Success</option><option>Warning</option><option>Important</option></select></label><label>Enable Banner<select name="enabled"><option>Yes</option><option>No</option></select></label><button class="primary">📢 Save Banner</button></form></div>
+
+        <div id="devices" class="section"><div class="page-head"><div><h1>Devices / Access</h1><p>Control devices registered with your VIP NETWORK Worker.</p></div><button class="primary" onclick="loadDevices()">⟳ Refresh Devices</button></div><div class="stats"><div class="stat blue"><span>◉</span><div><small>Connected Devices</small><strong id="deviceConnected">0</strong><em>Registered</em></div></div><div class="stat green"><span>✓</span><div><small>Allowed</small><strong id="deviceAllowed">0</strong><em>Device limit</em></div></div></div><div class="panel"><div class="panel-title"><h2>Recent Devices</h2><div class="actions"><button onclick="approveAllDevices()">✓ Approve All</button><button onclick="logoutAllDevices()">↪ Logout All</button></div></div><div id="deviceList" class="device-list"><div>Loading devices…</div></div></div></div>
+
+        <div id="backup" class="section"><div class="page-head"><div><h1>Backup & Export</h1><p>Download or restore your local channel data.</p></div></div><div class="quick-grid two"><button onclick="exportData()">⇩ <b>Export JSON</b></button><button onclick="exportM3U()">⇩ <b>Export M3U</b></button><button onclick="document.getElementById('restoreFile').click()">⇧ <b>Restore JSON</b></button><button onclick="clearAll()">⌫ <b>Clear All Channels</b></button></div><input hidden type="file" id="restoreFile" accept=".json"></div>
+
+        <div id="analytics" class="section"><div class="page-head"><div><h1>Analytics</h1><p>Simple playlist health overview.</p></div></div><div class="panel"><div class="bars"><div><span>Active</span><i id="barActive"></i></div><div><span>Dead</span><i id="barDead"></i></div><div><span>Disabled</span><i id="barDisabled"></i></div></div></div></div>
+
+        <div id="tools" class="section"><div class="page-head"><div><h1>System Tools</h1><p>Maintenance utilities for this frontend demo.</p></div></div><div class="quick-grid two"><button onclick="refreshData()">⟳ <b>Refresh Data</b></button><button onclick="localStorage.removeItem('vipChannels');location.reload()">⌫ <b>Reset Demo</b></button></div></div>
+        <div id="site" class="section"><div class="page-head"><div><h1>View Site</h1><p>Public TV site placeholder.</p></div></div><div class="site-preview"><div class="site-logo"><img src="assets/admin-logo.png" alt="ADMIN"> ADMIN</div><h2>Live TV</h2><p>Your public channel website can be connected here.</p><button class="primary" onclick="showSection('channels')">Manage Channels</button></div></div>
+      </section>
+    </main>
+  </div>
+  <div class="modal-backdrop" id="loginModal">
+    <div class="login-card">
+      <img src="assets/admin-logo.png" alt="ADMIN">
+      <h2>ADMIN Login</h2>
+      <p>VIP NETWORK ADMIN • Password required every time you open this panel.</p>
+      <label>Worker API URL<input id="workerUrl" readonly value="" placeholder="Current site Worker"></label>
+      <label>Admin Password<input id="workerPassword" type="password" placeholder="Worker ADMIN_PASSWORD"></label>
+      <button class="primary" id="loginBtn">Connect & Login</button>
+      <small id="loginStatus">Password is required again after reopening this ADMIN page. It is never stored in the ZIP.</small>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>

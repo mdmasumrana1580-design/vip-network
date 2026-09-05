@@ -1,0 +1,1 @@
+Updated layout based on the latest reference image: Live Preview is moved above/alongside the channel list on desktop, with the channel list on the right. On smaller screens the player appears first and the channel list follows. The existing M3U, add/edit/delete, backup/export and localStorage functionality is preserved.
