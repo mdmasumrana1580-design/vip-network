@@ -1,1 +1,10 @@
-(()=>{const l=document.createElement('link');l.rel='manifest';l.href='/admin/manifest.webmanifest';document.head.appendChild(l);if('serviceWorker' in navigator)navigator.serviceWorker.register('/admin/sw.js',{scope:'/admin/'}).catch(()=>{});})();
+(()=>{
+  const base=new URL('./',location.href);
+  const manifest=new URL('manifest.webmanifest',base);
+  const link=document.querySelector('link[rel="manifest"]')||document.createElement('link');
+  link.rel='manifest'; link.href=manifest.href;
+  if(!link.parentNode)document.head.appendChild(link);
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',()=>navigator.serviceWorker.register(new URL('sw.js',base),{scope:base.pathname}).catch(()=>{}));
+  }
+})();

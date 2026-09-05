@@ -228,3 +228,58 @@ body.light .drop{border-color:#8eb8d6;color:#62798c}
 body.light .side-footer{color:#8295a6}
 .backend-logo{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:0 0 34px;border:1px solid rgba(10,168,255,.35);box-shadow:0 0 12px rgba(10,168,255,.18)}
 .backend-label{font-weight:700;color:inherit}
+
+/* FINAL FIX — ADMIN+TV Light Theme (must stay at the end so it overrides V4/V5 dark rules) */
+body.light{--bg:#f4f7fb;--panel:#fff;--panel2:#f7f9fc;--line:#d8e2ec;--text:#162333;--muted:#66788a;background:#f4f7fb!important;color:#162333!important}
+body.light .app,body.light .main,body.light .content{background:#f4f7fb;color:#162333}
+body.light .topbar{background:rgba(255,255,255,.96)!important;border-bottom-color:#d9e3ed!important;color:#162333}
+body.light .search{background:#f7f9fc!important;border-color:#cbd9e5!important}
+body.light .search input{color:#172536!important}
+body.light .search input::placeholder{color:#8293a3}
+body.light .top-actions>button{color:#162333!important}
+body.light .admin-connect-top{background:#f6f9fc;border-color:#d5e1ec}
+body.light .admin-connect-top b{color:#203448}
+body.light .admin-connect-top small{color:#718293}
+body.light .page-head h1,body.light .panel-title h2,body.light .panel>h2,body.light .stat strong{color:#162333}
+body.light .page-head p,body.light .hint,body.light .form-card label{color:#66788a}
+body.light .stat,body.light .panel,body.light .form-card{background:#fff!important;border-color:#d8e2ec!important;box-shadow:0 5px 20px rgba(27,60,90,.06)}
+body.light .status-bar{background:#fff!important;border-color:#d8e2ec!important;color:#33485c}
+body.light .status-bar small{color:#66788a}
+body.light .quick-grid button{background:#fff!important;border-color:#d5e1ec!important;color:#203448!important}
+body.light .quick-grid button:hover{background:#f5faff!important}
+body.light .filters input,body.light .filters select,body.light .form-card input,body.light .form-card select,body.light .form-card textarea,body.light .test-box input,body.light .category-add input{background:#fff!important;border-color:#cbd9e5!important;color:#172536!important}
+body.light th{background:#eef4f9!important;color:#53697c!important}
+body.light td{border-bottom-color:#e1e8ef!important;color:#263a4e}
+body.light tbody tr:hover{background:#f4f9fd!important}
+body.light .preview-info{background:#f5f8fb!important;border-color:#d7e2ec!important}
+body.light .preview-info p{color:#66788a}
+body.light .preview-info b{color:#203448}
+body.light .actions button,body.light .pagination button{background:#f4f8fb!important;border-color:#cbd9e5!important;color:#294158!important}
+body.light .actions .del{color:#d92d4c!important;border-color:#e6aab5!important}
+body.light .category-list span{background:#eef5fa!important;border-color:#d1dfe9!important;color:#294158}
+body.light .device-list>div{border-bottom-color:#e1e8ef;color:#263a4e}
+body.light .device-list span{color:#718293}
+body.light .import-tab{background:#f4f8fb!important;border-color:#cbd9e5!important;color:#42586c!important}
+body.light .import-tab.active{background:#087fd0!important;color:#fff!important;border-color:#0aa7ff!important}
+body.light .drop{border-color:#8eb8d6;color:#62798c}
+body.light .site-preview{background:radial-gradient(circle at 50% 0,#e8f4ff,#fff 65%)!important;border-color:#d5e2ec!important;color:#162333}
+body.light .site-preview p{color:#66788a}
+body.light .toast{background:#fff!important;border-color:#c8d8e6!important;color:#203448!important;box-shadow:0 10px 30px rgba(20,50,80,.12)}
+body.light .modal-backdrop{background:rgba(20,35,50,.35)!important}
+body.light .login-card{background:#fff!important;border-color:#d5e1ec!important;color:#162333}
+body.light .login-card p,body.light .login-card small{color:#66788a}
+body.light .login-card input{background:#fff!important;color:#172536!important;border-color:#cbd9e5!important}
+body.light .video-box{border-color:#cddbe7}
+
+.admin-connect-top{display:flex;align-items:center;gap:7px;padding:4px 8px;border:1px solid rgba(16,93,140,.45);border-radius:8px;background:rgba(4,29,49,.72);white-space:nowrap}
+.admin-connect-top img{width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid rgba(10,168,255,.5);box-shadow:0 0 10px rgba(10,168,255,.16)}
+.admin-connect-top b{display:block;font-size:10px;color:#d9ecfa}
+.admin-connect-top small{display:block;font-size:8px;color:#8ea9bc;margin-top:2px}
+#themeBtn{width:34px;height:34px;border:1px solid rgba(10,168,255,.35)!important;border-radius:8px!important;background:rgba(7,30,49,.75)!important;display:grid;place-items:center}
+body.light #themeBtn{background:#f2f7fb!important;border-color:#cbd9e5!important}
+@media(max-width:760px){
+  .admin-connect-top{padding:3px;border-radius:50%;background:transparent;border:0}
+  .admin-connect-top img{width:26px;height:26px}
+  .admin-connect-top div{display:none}
+  #themeBtn{width:27px;height:27px;font-size:14px!important}
+}

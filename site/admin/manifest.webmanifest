@@ -1,13 +1,15 @@
 {
   "name": "ADMIN+TV",
   "short_name": "ADMIN+TV",
-  "description": "VIP NETWORK Admin + TV Web App",
-  "start_url": "/admin/",
-  "scope": "/admin/",
+  "description": "ADMIN+TV — VIP NETWORK IPTV Admin Panel",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#f4f7fb",
-  "theme_color": "#020d19",
+  "theme_color": "#ffffff",
   "icons": [
+    {"src":"assets/admin-logo-180.png","sizes":"180x180","type":"image/png","purpose":"any"},
     {"src":"assets/admin-icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
     {"src":"assets/admin-icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
   ]
