@@ -1,0 +1,11 @@
+name = "vip-network-tv"
+main = "worker.js"
+compatibility_date = "2026-09-05"
+
+[assets]
+directory = "./site"
+binding = "ASSETS"
+
+[[kv_namespaces]]
+binding = "VIP_PLAYLIST"
+id = "PASTE_YOUR_KV_NAMESPACE_ID_HERE"
