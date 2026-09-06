@@ -3,7 +3,7 @@
  * Updated: secure 5-minute admin session cookie + legacy Bearer compatibility.
  * Existing KV state/playlist/devices/settings are preserved.
  */
-const STATE_KEY='vip_state_v1', DEVICES_KEY='vip_devices_v1', SETTINGS_KEY='vip_settings_v1', SESSION_PREFIX='vip_admin_session:';
+const STATE_KEY='vip_state_v1', DEVICES_KEY='vip_devices_v1', SETTINGS_KEY='vip_settings_v1', SESSION_PREFIX='vip_admin_session:', ONLINE_PREFIX='vip_online:';
 const SESSION_TTL=300;
 const adminPassword=env=>env.ADMIN_PASSWORD||env.ADMIN_PASSWOED||'';
 const kv=env=>(env.VIP_PLAYLIST||env.PLAYLIST_KV);
@@ -29,6 +29,17 @@ async function handleApi(request,env){const url=new URL(request.url),path=url.pa
   if(request.method==='GET'&&path==='/api/playlist'){const s=await readState(env);return withCors(json({channels:s.channels||[]}))}
   if(path==='/api/device/register'&&request.method==='POST'){const body=await request.json().catch(()=>({})),deviceId=String(body.deviceId||request.headers.get('X-ViP-Device-ID')||'');if(!deviceId)return withCors(json({ok:false,error:'deviceId required'},400));const devices=await readDevices(env);let d=devices.find(x=>x.deviceId===deviceId);if(!d){d={deviceId,name:String(body.name||'Unknown device'),userAgent:String(body.userAgent||request.headers.get('user-agent')||'').slice(0,200),approved:false,createdAt:new Date().toISOString(),lastSeen:new Date().toISOString()};devices.push(d);await saveDevices(env,devices)}else{d.lastSeen=new Date().toISOString();await saveDevices(env,devices)}return withCors(json({ok:true,device:d,settings:await readSettings(env)}))}
   if(path==='/api/device/check'&&request.method==='GET'){const id=url.searchParams.get('deviceId')||request.headers.get('X-ViP-Device-ID')||'',devices=await readDevices(env),d=devices.find(x=>x.deviceId===id);return withCors(json({ok:true,approved:!!d?.approved,device:d||null,settings:await readSettings(env)}))}
+  if(path==='/api/online/ping'&&request.method==='POST'){
+    const b=await request.json().catch(()=>({}));
+    const id=String(b.id||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,80);
+    if(!id)return withCors(json({ok:false,error:'id required'},400));
+    await kv(env).put(ONLINE_PREFIX+id,String(Date.now()),{expirationTtl:60});
+    return withCors(json({ok:true}));
+  }
+  if(path==='/api/online'&&request.method==='GET'){
+    const listed=await kv(env).list({prefix:ONLINE_PREFIX,limit:1000});
+    return withCors(json({online:(listed.keys||[]).length}));
+  }
   const guard=await requireAdmin(request,env);if(guard)return withCors(guard);
   if(path==='/api/admin/ping'&&request.method==='GET')return withCors(json({ok:true,connected:true}));
   if(path==='/api/admin/state'&&request.method==='GET')return withCors(json({ok:true,state:await readState(env)}));
