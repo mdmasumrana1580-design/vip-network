@@ -3,7 +3,8 @@ const DEFAULT_WORKER_API = (window.VIP_ADMIN_WORKER_API || 'https://vip-network-
 let WORKER_API = DEFAULT_WORKER_API.replace(/\/$/, "");
 let connected = false;
 let channels = [];
-let categories = ['News','Entertainment','Sports','Kids','Movies','Music','Other'];
+const FIXED_CATEGORIES=['ALL','SPORTS','BD','INDIA','OTHER','MOVIE & SERIES'];
+let categories = FIXED_CATEGORIES.slice();
 let selected = null, dashPage = 1, managerPage = 1;
 const PAGE_SIZE = 10;
 
@@ -21,7 +22,16 @@ async function api(path,options={}){
   if(!r.ok) throw new Error(data?.error||data?.message||('HTTP '+r.status));
   return data;
 }
-function normalizeChannels(x){if(!Array.isArray(x))return [];return x.map(c=>({name:c.name||c.title||'Unnamed',category:c.category||c.group||c.groupTitle||'Other',logo:c.logo||c.tvgLogo||'',url:c.url||c.stream||c.streamUrl||'',status:c.status||'Unknown',...c})).filter(c=>c.url||c.name);}
+function classifyCategory(name='',group='',meta=''){
+  const t=`${name} ${group} ${meta}`.toLowerCase();
+  if(/movie|movies|film|films|cinema|vod|video\s*on\s*demand|series|serial|season|episode|episod|s\d{1,2}e\d{1,3}|web\s*(movie|series)|drama/.test(t)) return 'MOVIE & SERIES';
+  if(/sport|cricket|football|fifa|eurosport|willow|ten\s*cricket|ptv\s*sports|tsn|espn|bein|wwe|golf|nfl|nba|star\s*sports|sony\s*sports|t\s*sports/.test(t)) return 'SPORTS';
+  if(/bangla|bangladesh|\bbd\b|somoy|jamuna|ekattor|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi\s*tv|\bgtv\b|b\s*tv|bengal|duronto|deepto|nagorik|mohona|asian\s*tv|desh\s*tv|bijoy\s*tv|mytv|satv|ekushey|bishwa|bangla\s*tv|\bbtv\b|channel\s*i/.test(t)) return 'BD';
+  if(/india|indian|sony|zee|star|colors|\bset\b|\bsab\b|aaj\s*tak|ndtv|republic|news18|times\s*now|india\s*tv|dd\s*(national|sports)|sun\s*tv|asianet|vijay|jaya|starplus|star\s*gold|sony\s*max|sony\s*pix|sony\s*wah|sony\s*yay|sony\s*pal|pictures|b4u|movies\s*now|mnx|hbo\s*india/.test(t)) return 'INDIA';
+  return 'OTHER';
+}
+function normalizeChannels(x){if(!Array.isArray(x))return [];return x.map(c=>({...c,name:c.name||c.title||'Unnamed',category:classifyCategory(c.name||c.title,c.group||c.groupTitle||c.category||'',c.meta||''),logo:c.logo||c.tvgLogo||'',url:c.url||c.stream||c.streamUrl||'',status:c.status||'Unknown'})).filter(c=>c.url||c.name)}
+
 function extractState(data){const s=data?.state&&typeof data.state==='object'?data.state:data;return{channels:normalizeChannels(s?.channels||s?.playlist?.channels||data?.channels||data?.playlist||[]),notice:s?.notice||data?.notice||{},headline:s?.headline||data?.headline||''};}
 function applyTheme(theme){const light=theme==='light';document.body.classList.toggle('light',light);document.documentElement.style.colorScheme=light?'light':'dark';const b=document.getElementById('themeBtn');if(b){b.textContent=light?'☀':'☾';b.title=light?'Switch to dark theme':'Switch to light theme';}localStorage.setItem('vipAdminTheme',light?'light':'dark');}
 function toggleTheme(){const light=document.body.classList.contains('light');applyTheme(light?'dark':'light');toast(light?'Dark theme enabled':'Light theme enabled');}
@@ -90,7 +100,8 @@ function render(){
 }
 async function deleteChannel(i){if(!channels[i]||!confirm('Delete '+channels[i].name+'?'))return;const old=channels.splice(i,1);if(await saveRemoteState()){render();toast('Channel deleted');}else{channels.splice(i,0,old[0]);render();}}
 async function editChannel(i){const c=channels[i];if(!c)return;const name=prompt('Channel name:',c.name);if(name===null)return;const url=prompt('Stream URL:',c.url);if(url===null)return;const cat=prompt('Category:',c.category)||c.category;Object.assign(c,{name:name.trim()||c.name,url:url.trim(),category:cat});if(!categories.includes(cat))categories.push(cat);if(await saveRemoteState()){render();toast('Channel updated');}}
-document.getElementById('channelForm')?.addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.target),c={name:f.get('name'),category:f.get('category'),logo:f.get('logo'),url:f.get('url'),status:f.get('status')};channels.push(c);if(!categories.includes(c.category))categories.push(c.category);if(await saveRemoteState()){e.target.reset();render();showSection('channels');toast('Channel added successfully');}else{channels.pop();render();}});
+document.getElementById('channelForm')?.addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.target),c={name:f.get('name'),category:f.get('category'),logo:f.get('logo'),url:f.get('url'),status:f.get('status')};channels.push(c);c.category=FIXED_CATEGORIES.includes(c.category)?c.category:classifyCategory(c.name,c.category);
+    categories=FIXED_CATEGORIES.slice();if(await saveRemoteState()){e.target.reset();render();showSection('channels');toast('Channel added successfully');}else{channels.pop();render();}});
 function parseM3U(text){const lines=String(text||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean),out=[];for(let i=0;i<lines.length;i++){if(lines[i].startsWith('#EXTINF')){const info=lines[i],url=lines[i+1]||'';if(!url.startsWith('#')){const comma=info.indexOf(','),name=comma>=0?info.slice(comma+1).trim():'Unknown',logo=(info.match(/tvg-logo="([^"]*)"/i)||[])[1]||'',cat=(info.match(/group-title="([^"]*)"/i)||[])[1]||'Other';out.push({name,category:cat,logo,url,status:'Active'});i++;}}}return out;}
 async function addImported(list,replace=false){if(!list.length)return toast('No valid channels found');const before=channels.slice();if(replace)channels=list;else channels.push(...list);list.forEach(c=>{if(c.category&&!categories.includes(c.category))categories.push(c.category);});if(await saveRemoteState()){render();showSection('channels');toast(list.length+' channels imported');}else{channels=before;render();}}
 async function importM3U(){await addImported(parseM3U(document.getElementById('m3uText')?.value||''),true);if(document.getElementById('m3uText'))document.getElementById('m3uText').value='';}
@@ -126,7 +137,7 @@ document.getElementById('settingsForm')?.addEventListener('submit',async e=>{e.p
 (async function init(){
   setBackendState(false);applyTheme(localStorage.getItem('vipAdminTheme')||'dark');
   const local=JSON.parse(localStorage.getItem('vipChannels')||'null');if(Array.isArray(local))channels=local;
-  const cats=JSON.parse(localStorage.getItem('vipCategories')||'null');if(Array.isArray(cats)&&cats.length)categories=[...new Set(cats)];
+  const cats=JSON.parse(localStorage.getItem('vipCategories')||'null');if(Array.isArray(cats)&&cats.length)categories=FIXED_CATEGORIES.slice();
   render();
   const input=document.getElementById('workerUrl');if(input)input.value=DEFAULT_WORKER_API;
   try{await api('/api/admin/session');connected=true;showLogin(false);setBackendState(true);await loadRemoteState();await loadDevices();}
