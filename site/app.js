@@ -12,6 +12,31 @@ let currentChannelIndex = -1;
 let visibleChannels = [];
 
 const grid = document.getElementById("grid");
+
+// Cloudflare Worker visitor + real-time online counter.
+(function initVisitorPresence(){
+  const totalEl=document.getElementById("headerTotalVisitors");
+  const onlineEl=document.getElementById("headerOnlineVisitors");
+  if(!totalEl && !onlineEl)return;
+  let id=localStorage.getItem("vip_visitor_id");
+  if(!id){id=(crypto.randomUUID?crypto.randomUUID():"v-"+Date.now()+"-"+Math.random().toString(36).slice(2));try{localStorage.setItem("vip_visitor_id",id)}catch{}}
+  let first=!sessionStorage.getItem("vip_visitor_session");
+  if(first)try{sessionStorage.setItem("vip_visitor_session","1")}catch{}
+  const ping=async()=>{
+    try{
+      const r=await fetch("/api/visitor",{method:"POST",headers:{"content-type":"application/json"},cache:"no-store",body:JSON.stringify({id,newVisit:first})});
+      if(!r.ok)return;
+      const d=await r.json();
+      if(totalEl&&Number.isFinite(Number(d.total)))totalEl.textContent=Number(d.total).toLocaleString("en-US");
+      if(onlineEl&&Number.isFinite(Number(d.online)))onlineEl.textContent=Number(d.online).toLocaleString("en-US");
+      first=false;
+    }catch(e){console.warn("Visitor presence unavailable",e)}
+  };
+  ping();
+  setInterval(ping,15000);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)ping()});
+})();
+
 const empty = document.getElementById("empty");
 const video = document.getElementById("video");
 const section = document.getElementById("playerSection");
@@ -309,3 +334,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.body.style.overflowX = "hidden";
   document.body.style.overflowY = "auto";
 });
+
+// PWA install prompt.
+(function initPwaInstall(){
+  let deferred=null;
+  const btn=document.getElementById("installAppBtn");
+  window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferred=e;if(btn)btn.hidden=false});
+  if(btn)btn.addEventListener("click",async()=>{if(!deferred)return;deferred.prompt();try{await deferred.userChoice}catch{}deferred=null;btn.hidden=true});
+  window.addEventListener("appinstalled",()=>{deferred=null;if(btn)btn.hidden=true});
+})();
