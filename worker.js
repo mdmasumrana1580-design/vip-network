@@ -31,7 +31,8 @@ async function handleApi(request,env){const url=new URL(request.url),path=url.pa
     const s=await userSession(request,env);
     if(!s)return withCors(json({ok:false,loggedIn:false},401));
     const list=await readDevices(env),d=list.find(x=>x.deviceId===s.deviceId);
-    if(!d||d.approved===false)return withCors(json({ok:false,loggedIn:false,reason:'blocked'},401));
+    if(!d)return withCors(json({ok:false,loggedIn:false,reason:'removed'},401));
+    if(d.status==='Blocked')return withCors(json({ok:false,loggedIn:false,reason:'blocked'},401));
     d.lastSeen=new Date().toISOString();await saveDevices(env,list);
     return withCors(json({ok:true,loggedIn:true,user:{name:d.userName||'',deviceName:d.name||'',deviceId:d.deviceId}}));
   }
@@ -41,26 +42,48 @@ async function handleApi(request,env){const url=new URL(request.url),path=url.pa
     const password=String(b.password||'');
     const deviceId=String(b.deviceId||'').trim().slice(0,100);
     const deviceName=String(b.deviceName||'').trim().slice(0,80)||'My Device';
-    if(userName.length<2||password.length<4||!deviceId)return withCors(json({ok:false,error:'Name, password and device are required'},400));
+
+    if(userName.length<1||password.length<1||!deviceId){
+      return withCors(json({ok:false,error:'Name, password and device name are required'},400));
+    }
+
     const list=await readDevices(env);
     let d=list.find(x=>x.deviceId===deviceId);
-    const sameUser=list.find(x=>(x.userName||'').toLowerCase()===userName.toLowerCase());
-    const passHash=await hashPassword(password);
+
     if(!d){
-      if(sameUser && sameUser.passwordHash!==passHash)return withCors(json({ok:false,error:'Wrong password'},401));
-      if(sameUser && sameUser.deviceId!==deviceId)return withCors(json({ok:false,error:'This account is already linked to another device'},403));
-      d={deviceId,name:deviceName,userName,passwordHash:passHash,userAgent:String(b.userAgent||request.headers.get('user-agent')||'').slice(0,200),approved:false,status:'Pending',createdAt:new Date().toISOString(),lastSeen:new Date().toISOString()};
+      d={
+        deviceId,
+        name:deviceName,
+        userName,
+        passwordHash:await hashPassword(password),
+        userAgent:String(b.userAgent||request.headers.get('user-agent')||'').slice(0,200),
+        approved:true,
+        status:'Logged in',
+        createdAt:new Date().toISOString(),
+        lastSeen:new Date().toISOString()
+      };
       list.push(d);
     }else{
-      if(d.userName && d.userName.toLowerCase()!==userName.toLowerCase())return withCors(json({ok:false,error:'This device belongs to another account'},403));
-      if(d.passwordHash && d.passwordHash!==passHash)return withCors(json({ok:false,error:'Wrong password'},401));
-      d.userName=userName;d.passwordHash=passHash;d.name=deviceName;d.lastSeen=new Date().toISOString();
+      // Same device can log in freely. Update the visible identification details.
+      d.userName=userName;
+      d.name=deviceName;
+      d.passwordHash=await hashPassword(password);
+      d.approved=true;
+      d.status='Logged in';
+      d.lastSeen=new Date().toISOString();
+      d.userAgent=String(b.userAgent||request.headers.get('user-agent')||'').slice(0,200);
     }
+
     await saveDevices(env,list);
-    if(!d.approved)return withCors(json({ok:false,pending:true,error:'Waiting for admin approval'},403));
-    const token=crypto.randomUUID(),session={deviceId:d.deviceId,userName:d.userName};
+
+    const token=crypto.randomUUID();
+    const session={deviceId:d.deviceId,userName:d.userName};
     await kv(env).put(USER_SESSION_PREFIX+token,JSON.stringify(session),{expirationTtl:USER_SESSION_TTL});
-    return withCors(json({ok:true,user:{name:d.userName,deviceName:d.name}},200,{'Set-Cookie':userCookie(token)}));
+
+    return withCors(json({
+      ok:true,
+      user:{name:d.userName,deviceName:d.name}
+    },200,{'Set-Cookie':userCookie(token)}));
   }
   if(path==='/api/user/logout'&&request.method==='POST'){
     const t=cookies(request).VIP_USER_SESSION;if(t)await kv(env).delete(USER_SESSION_PREFIX+t);
