@@ -44,7 +44,7 @@
 <main id="grid" class="grid"></main><div id="empty" class="empty" hidden>No channels found</div>
 
 <footer class="site-footer">© 2026 MASUM.ALL RIGHT RESERVED.</footer>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><script src="config.js"></script><script src="device-guard.js"></script><script src="app.js"></script><script src="pwa.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><script src="config.js"></script><script src="device-guard.js?v=20260907-loginfix2"></script><script src="app.js"></script><script src="pwa.js"></script>
 <script>
 (function(){
   const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -62,7 +62,7 @@
     setTimeout(hide,2800);
   }
 })();
-if('serviceWorker' in navigator){ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
+
 </script>
 
 </body></html>
