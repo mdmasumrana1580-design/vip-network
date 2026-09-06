@@ -89,7 +89,27 @@ async function handleApi(request,env){const url=new URL(request.url),path=url.pa
     const t=cookies(request).VIP_USER_SESSION;if(t)await kv(env).delete(USER_SESSION_PREFIX+t);
     return withCors(json({ok:true},200,{'Set-Cookie':'VIP_USER_SESSION=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax'}));
   }
-  if(path==='/api/device/register'&&request.method==='POST'){const body=await request.json().catch(()=>({})),deviceId=String(body.deviceId||request.headers.get('X-ViP-Device-ID')||'');if(!deviceId)return withCors(json({ok:false,error:'deviceId required'},400));const devices=await readDevices(env);let d=devices.find(x=>x.deviceId===deviceId);if(!d){d={deviceId,name:String(body.name||'Unknown device'),userAgent:String(body.userAgent||request.headers.get('user-agent')||'').slice(0,200),approved:false,createdAt:new Date().toISOString(),lastSeen:new Date().toISOString()};devices.push(d);await saveDevices(env,devices)}else{d.lastSeen=new Date().toISOString();await saveDevices(env,devices)}return withCors(json({ok:true,device:d,settings:await readSettings(env)}))}
+  if(path==='/api/device/register'&&request.method==='POST'){
+    const body=await request.json().catch(()=>({}));
+    const deviceId=String(body.deviceId||request.headers.get('X-ViP-Device-ID')||'').slice(0,100);
+    const userName=String(body.userName||body.name||'Guest').trim().slice(0,60);
+    const deviceName=String(body.deviceName||body.name||'My Device').trim().slice(0,80);
+    if(!deviceId)return withCors(json({ok:false,error:'deviceId required'},400));
+    const devices=await readDevices(env);
+    let d=devices.find(x=>x.deviceId===deviceId);
+    if(!d){
+      d={deviceId,name:deviceName,userName,passwordSet:true,userAgent:String(body.userAgent||request.headers.get('user-agent')||'').slice(0,200),approved:true,status:'Logged in',createdAt:new Date().toISOString(),lastSeen:new Date().toISOString()};
+      devices.push(d);
+    }else{
+      d.userName=userName||d.userName||'Guest';
+      d.name=deviceName||d.name||'My Device';
+      d.approved=true;
+      d.status='Logged in';
+      d.lastSeen=new Date().toISOString();
+    }
+    await saveDevices(env,devices);
+    return withCors(json({ok:true,device:d}));
+  }
   if(path==='/api/device/check'&&request.method==='GET'){const id=url.searchParams.get('deviceId')||request.headers.get('X-ViP-Device-ID')||'',devices=await readDevices(env),d=devices.find(x=>x.deviceId===id);return withCors(json({ok:true,approved:!!d?.approved,device:d||null,settings:await readSettings(env)}))}
   const guard=await requireAdmin(request,env);if(guard)return withCors(guard);
   if(path==='/api/admin/ping'&&request.method==='GET')return withCors(json({ok:true,connected:true}));
