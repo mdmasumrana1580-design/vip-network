@@ -3,7 +3,7 @@
  * Movie/Series auto-category update.
  * Existing KV state/playlist/devices/settings are preserved.
  */
-const STATE_KEY='vip_state_v1', DEVICES_KEY='vip_devices_v1', SETTINGS_KEY='vip_settings_v1', SESSION_PREFIX='vip_admin_session:';
+const STATE_KEY='vip_state_v1', DEVICES_KEY='vip_devices_v1', SETTINGS_KEY='vip_settings_v1', SESSION_PREFIX='vip_admin_session:', VISITOR_KEY='vip_visitor_stats_v1', ONLINE_KEY='vip_online_visitors_v1';
 const SESSION_TTL=300;
 const adminPassword=env=>env.ADMIN_PASSWORD||env.ADMIN_PASSWOED||'';
 const kv=env=>(env.VIP_PLAYLIST||env.PLAYLIST_KV);
@@ -61,6 +61,23 @@ function cookies(request){const raw=request.headers.get('Cookie')||'',out={};raw
 async function authorized(request,env){const expected=adminPassword(env);if(!expected)return false;const c=cookies(request),token=c.VIP_ADMIN_SESSION;if(token){const ok=await kv(env).get(SESSION_PREFIX+token);if(ok)return true}const auth=request.headers.get('Authorization')||'';return auth===`Bearer ${expected}`}
 async function requireAdmin(request,env){if(!(await authorized(request,env)))return json({ok:false,error:'Unauthorized'},401)}
 function m3u(channels){return '#EXTM3U\n'+channels.map(c=>`#EXTINF:-1 tvg-logo="${String(c.logo||'').replace(/"/g,'&quot;')}" group-title="${String(c.category||c.cat||'Other').replace(/"/g,'&quot;')}",${String(c.name||'Channel').replace(/\n/g,' ')}\n${c.url}`).join('\n')}
+
+async function visitorStats(env,body={}){
+  const id=String(body.id||'').slice(0,120);
+  if(!id)return {ok:false,error:'visitor id required'};
+  const now=Date.now(), onlineTtl=45000;
+  let stats={total:0,visitors:{}};
+  try{const raw=await kv(env).get(VISITOR_KEY);if(raw)stats=JSON.parse(raw)}catch{}
+  if(!Number.isFinite(Number(stats.total)))stats.total=0;
+  if(!stats.visitors||typeof stats.visitors!=='object')stats.visitors={};
+  const wasKnown=!!stats.visitors[id];
+  if(body.newVisit && !wasKnown)stats.total+=1;
+  stats.visitors[id]=now;
+  for(const [k,t] of Object.entries(stats.visitors)){if(!Number.isFinite(Number(t))||now-Number(t)>onlineTtl)delete stats.visitors[k]}
+  await kv(env).put(VISITOR_KEY,JSON.stringify(stats));
+  return {ok:true,total:stats.total,online:Object.keys(stats.visitors).length};
+}
+
 async function handleApi(request,env){
   const url=new URL(request.url),path=url.pathname;
   if(request.method==='OPTIONS')return withCors(new Response(null,{status:204}));
@@ -69,6 +86,7 @@ async function handleApi(request,env){
   if(path==='/api/admin/logout'&&request.method==='POST'){const c=cookies(request),token=c.VIP_ADMIN_SESSION;if(token)await kv(env).delete(SESSION_PREFIX+token);return withCors(json({ok:true},200,{'Set-Cookie':'VIP_ADMIN_SESSION=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax'}))}
   if(request.method==='GET'&&path==='/api/state'){const s=await readState(env);return withCors(json({channels:s.channels||[],notice:s.notice||{},headline:s.headline||''}))}
   if(request.method==='GET'&&path==='/api/playlist'){const s=await readState(env);return withCors(json({channels:s.channels||[]}))}
+  if(path==='/api/visitor'&&request.method==='POST'){const b=await request.json().catch(()=>({}));return withCors(json(await visitorStats(env,b)))}
   if(path==='/api/device/register'&&request.method==='POST'){const body=await request.json().catch(()=>({})),deviceId=String(body.deviceId||request.headers.get('X-ViP-Device-ID')||'');if(!deviceId)return withCors(json({ok:false,error:'deviceId required'},400));const devices=await readDevices(env);let d=devices.find(x=>x.deviceId===deviceId);if(!d){d={deviceId,name:String(body.name||'Unknown device'),userAgent:String(body.userAgent||request.headers.get('user-agent')||'').slice(0,200),approved:false,createdAt:new Date().toISOString(),lastSeen:new Date().toISOString()};devices.push(d);await saveDevices(env,devices)}else{d.lastSeen=new Date().toISOString();await saveDevices(env,devices)}return withCors(json({ok:true,device:d,settings:await readSettings(env)}))}
   if(path==='/api/device/check'&&request.method==='GET'){const id=url.searchParams.get('deviceId')||request.headers.get('X-ViP-Device-ID')||'',devices=await readDevices(env),d=devices.find(x=>x.deviceId===id);return withCors(json({ok:true,approved:!!d?.approved,device:d||null,settings:await readSettings(env)}))}
   const guard=await requireAdmin(request,env);if(guard)return withCors(guard);
