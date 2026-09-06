@@ -1,14 +1,25 @@
 {
-  "name": "ADMIN+TV",
-  "short_name": "ADMIN+TV",
-  "description": "VIP NETWORK Admin + TV Web App",
-  "start_url": "/admin/",
-  "scope": "/admin/",
+  "name": "ViP-TV",
+  "short_name": "ViP-TV",
+  "description": "ViP-TV Live TV Web App",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#020d19",
-  "theme_color": "#020d19",
+  "background_color": "#03070b",
+  "theme_color": "#03070b",
+  "orientation": "any",
   "icons": [
-    {"src":"assets/admin-logo.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
-    {"src":"assets/admin-logo.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+    {
+      "src": "/vip-tv-logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/vip-tv-logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }
