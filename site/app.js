@@ -82,25 +82,35 @@ async function initVisitorCounter() {
     console.warn("Visitor counter unavailable", error);
   }
 
-  // Real shared Online Now requires a hosted realtime tracker.
-  // Set window.VIP_ONLINE_ENDPOINT in config.js after creating your tracker.
-  // The endpoint must return JSON like: {"online": 5}.
-  if (window.VIP_ONLINE_ENDPOINT) {
-    const refreshOnline = async function () {
-      try {
-        const r = await fetch(window.VIP_ONLINE_ENDPOINT, {cache:"no-store"});
-        if (!r.ok) throw new Error("online endpoint: " + r.status);
-        const d = await r.json();
-        updateOnlineVisitors(d.online);
-      } catch (e) {
-        console.warn("Online counter unavailable", e);
-      }
-    };
-    refreshOnline();
-    setInterval(refreshOnline, 15000);
-  } else {
-    updateOnlineVisitors(null);
+  // Real online visitors: every browser gets a temporary ID and sends a heartbeat.
+  // The Worker stores it in KV for 60 seconds, then /api/online returns the active count.
+  const onlineApi = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/, "");
+  let onlineId = localStorage.getItem("vipOnlineId");
+  if (!onlineId) {
+    onlineId = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now());
+    localStorage.setItem("vipOnlineId", onlineId);
   }
+
+  const refreshOnline = async function () {
+    try {
+      await fetch(onlineApi + "/api/online/ping", {
+        method: "POST",
+        headers: {"content-type":"application/json"},
+        body: JSON.stringify({id: onlineId}),
+        cache: "no-store"
+      });
+      const r = await fetch(onlineApi + "/api/online", {cache:"no-store"});
+      if (!r.ok) throw new Error("online endpoint: " + r.status);
+      const d = await r.json();
+      updateOnlineVisitors(d.online);
+    } catch (e) {
+      console.warn("Online counter unavailable", e);
+      updateOnlineVisitors(null);
+    }
+  };
+
+  refreshOnline();
+  setInterval(refreshOnline, 20000);
 }
 
 initVisitorCounter();
