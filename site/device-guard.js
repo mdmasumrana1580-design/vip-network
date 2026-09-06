@@ -32,7 +32,7 @@
     let g=document.getElementById("vipLoginGate");
     if(!g){
       g=document.createElement("div");g.id="vipLoginGate";
-      g.innerHTML=`<div class="box"><div class="brand"><div class="logo">▶</div><div class="brandText"><b>ViP-TV</b><span>PREMIUM ENTERTAINMENT</span></div></div><h2>Welcome back</h2><p>আপনার ViP-TV অ্যাকাউন্টে লগইন করুন। একবার অনুমোদিত হলে একই ডিভাইসে লগইন থাকবে।</p><label>আপনার নাম</label><input id="vipUserName" placeholder="যেমন: ViP-Nework" autocomplete="username"><label>ডিভাইসের নাম</label><input id="vipDeviceName" placeholder="যেমন: My Android Phone"><label>পাসওয়ার্ড</label><input id="vipUserPass" type="password" placeholder="আপনার পাসওয়ার্ড" autocomplete="current-password"><button id="vipUserLogin">🔐 Secure Login</button><div class="msg" id="vipLoginMsg"></div><div class="footer">প্রথমবার লগইন করলে Admin approval প্রয়োজন।<br><span class="secure">🛡 Secure device access</span></div></div>`;
+      g.innerHTML=`<div class="box"><div class="brand"><div class="logo">▶</div><div class="brandText"><b>ViP-TV</b><span>PREMIUM ENTERTAINMENT</span></div></div><h2>Welcome back</h2><p>আপনার ViP-TV অ্যাকাউন্টে লগইন করুন। একবার লগইন করলে একই ডিভাইসে Logout না করা পর্যন্ত লগইন থাকবে।</p><label>আপনার নাম</label><input id="vipUserName" placeholder="যেমন: ViP-Nework" autocomplete="username"><label>ডিভাইসের নাম</label><input id="vipDeviceName" placeholder="যেমন: My Android Phone"><label>পাসওয়ার্ড</label><input id="vipUserPass" type="password" placeholder="আপনার পাসওয়ার্ড" autocomplete="current-password"><button id="vipUserLogin">🔐 Secure Login</button><div class="msg" id="vipLoginMsg"></div><div class="footer">আপনার তথ্য শুধু Admin Panel-এ শনাক্তকরণের জন্য দেখা যাবে।<br><span class="secure">🛡 Secure device access</span></div></div>`;
       document.body.appendChild(g);
       g.querySelector("#vipUserLogin").onclick=login;
       g.addEventListener("keydown",e=>{if(e.key==="Enter")login()});
@@ -48,7 +48,7 @@
     try{
       const r=await fetch(base+"/api/user/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,password,deviceName,deviceId:id,userAgent:navigator.userAgent}),credentials:"include"});
       const d=await r.json().catch(()=>({}));
-      if(!r.ok){msg.textContent=d.pending?"Admin approval-এর অপেক্ষায় আছে।":(d.error||"Login failed");return;}
+      if(!r.ok){msg.textContent=d.error||"Login failed. আবার চেষ্টা করুন।";return;}
       hideGate();addLogout(d.user?.name||name);
     }catch(e){msg.textContent="Connection problem. আবার চেষ্টা করুন।";}
   }
