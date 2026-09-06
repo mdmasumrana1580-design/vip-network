@@ -1,4 +1,8 @@
-/* VIP-NETWORK public configuration */
-window.VIP_WORKER_API='https://vip-network-tv.vip-network.workers.dev';
-window.VIP_ONLINE_ENDPOINT=window.VIP_WORKER_API+'/api/visitor';
-(function(){const API=window.VIP_WORKER_API.replace(/\/$/,'');async function sync(){try{const r=await fetch(API+'/api/state',{cache:'no-store'});if(!r.ok)return;const s=await r.json();const nav=document.getElementById('cats');if(nav){const wanted=['ALL','SPORTS','BD','INDIA','OTHER','MOVIE & SERIES'];wanted.forEach(cat=>{if(!nav.querySelector('[data-cat="'+CSS.escape(cat)+'"]')){const b=document.createElement('button');b.type='button';b.dataset.cat=cat;b.textContent=cat;nav.appendChild(b)}})}const n=s.notice||{},track=document.querySelector('.headline-track');if(track&&(n.text||s.headline)){const x=String(n.text||s.headline).replace(/[&<>]/g,'');track.innerHTML='<span>'+x+'</span><span>'+x+'</span>}const h=document.querySelector('.headline');if(h)h.style.display=n.enabled===false?'none':''}catch{}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',sync,{once:true});else sync();setInterval(sync,30000)})();
+// Real-time Online Now configuration
+// After you have a realtime visitor service endpoint, put its URL below.
+// Expected JSON response: {"online": 5}
+// Example: window.VIP_ONLINE_ENDPOINT = "https://your-domain.example/api/online";
+window.VIP_ONLINE_ENDPOINT = "";
+
+// Unified Worker API. Leave blank for the original GitHub fallback when this site is hosted statically.
+window.VIP_WORKER_API = window.location.origin;
