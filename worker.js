@@ -26,13 +26,13 @@ const withCors=(r)=>{const h=new Headers(r.headers);Object.entries(cors).forEach
 
 function detectCategory(name='',group='',metaLine=''){
   const text=`${name} ${group} ${metaLine}`.toLowerCase();
-  if(/movie|movies|film|films|cinema|cine|vod|video\s*on\s*demand|series|serial|season|episode|episod|s\d{1,2}e\d{1,3}|web\s*(movie|series)|drama/.test(text)) return 'MOVIE & SERIES';
-  if(/sport|cricket|football|fifa|eurosport|willow|ten\s*cricket|ptv\s*sports|tsn|espn|bein|wwe|golf|nfl|nba|star\s*sports|sony\s*sports|t\s*sports/.test(text)) return 'SPORTS';
-  if(/bangla|bangladesh|\bbd\b|somoy|jamuna|ekattor|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi\s*tv|\bgtv\b|b\s*tv|bengal|duronto|deepto|nagorik|mohona|asian\s*tv|desh\s*tv|bijoy\s*tv|mytv|satv|ekushey|bishwa|bangla\s*tv|\bbtv\b|channel\s*i/.test(text)) return 'BD';
-  if(/india|indian|sony|zee|star|colors|\bset\b|\bsab\b|aaj\s*tak|ndtv|republic|news18|times\s*now|india\s*tv|dd\s*(national|sports)|sun\s*tv|asianet|vijay|jaya|starplus|star\s*gold|sony\s*max|sony\s*pix|sony\s*wah|sony\s*yay|sony\s*pal|pictures|b4u|movies\s*now|mnx|hbo\s*india/.test(text)) return 'INDIA';
-  return 'OTHER';
+  if(/\b(movie|movies|film|films|cinema|cine|web[\s._-]*movie|full[\s._-]*movie|movie[\s._-]*hd|movie[\s._-]*4k|vod)\b/.test(text) ||
+     /\b(series|serial|season|episode|episod|s\d{1,2}e\d{1,3}|tv[\s._-]*series|web[\s._-]*series)\b/.test(text)) return 'Movie & Series';
+  if(/sport|cricket|football|fifa|eurosport|willow|ten\s*cricket|ptv\s*sports|tsn|espn|bein|wwe|golf|nfl|nba/.test(text)) return 'Sports';
+  if(/bangla|bangladesh|\bbd\b|somoy|jamuna|ekattor|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi tv|\bgtv\b|b tv|bengal|duronto|deepto|nagorik|mohona|asian tv|desh tv|bijoy tv|mytv|satv|ekushey|bishwa|bangla tv|\bbtv\b/.test(text)) return 'BD';
+  if(/india|indian|sony|zee|star|colors|\bset\b|\bsab\b|aaj tak|ndtv|republic|news18|times now|india tv|dd national|dd sports|sun tv|asianet|vijay|jaya|starplus|star gold|sony max|sony pix|sony wah|sony yay|&pictures|b4u|movies now|mnx|hbo india/.test(text)) return 'India';
+  return 'Other';
 }
-
 function norm(c={}){
   const name=String(c.name||c.title||'Unnamed');
   const group=String(c.group||c.groupTitle||c.category||'');
@@ -47,8 +47,13 @@ function norm(c={}){
   };
 }
 function normalizeState(s={}){
-  const channels=Array.isArray(s.channels)?s.channels.map(c=>{const n=norm(c);const cat=detectCategory(n.name,c.group||c.groupTitle||c.category||'',c.meta||'');return {...n,category:cat,cat}}):[];
-  const categories=['ALL','SPORTS','BD','INDIA','OTHER','MOVIE & SERIES'];
+  const channels=Array.isArray(s.channels)?s.channels.map(norm):[];
+  const aliases={'MOVIE':'Movie & Series','MOVIES':'Movie & Series','MOVIE & SERIES':'Movie & Series','SPORTS':'Sports','BD':'BD','INDIA':'India','OTHER':'Other','OTHERS':'Other'};
+  channels.forEach(c=>{const k=String(c.category||'').trim().toUpperCase(); if(aliases[k]){c.category=aliases[k];c.cat=aliases[k]}});
+  const derived=[...new Set(channels.map(c=>c.category).filter(Boolean))];
+  const rawCats=(Array.isArray(s.categories)?s.categories:[]).map(String).map(c=>aliases[c.trim().toUpperCase()]||c);
+  const fixed=['New Style','Sports','BD','India','Other','Movie & Series'];
+  const categories=[...new Set([...fixed,...rawCats,...derived])];
   return {
     ...s,
     channels,
@@ -238,7 +243,7 @@ async function injectPublicSync(request,env,response){
    const cats=Array.isArray(d.categories)?d.categories:[];
    const nav=document.getElementById('cats');
    if(nav){
-    const wanted=['All','Sports','BD','India','Others'];
+    const wanted=['All','Sports','BD','India','Other','Movie & Series'];
     cats.forEach(c=>{if(!wanted.includes(c)&&!nav.querySelector('[data-cat="'+CSS.escape(c)+'"]')){const b=document.createElement('button');b.dataset.cat=c;b.textContent=String(c).toUpperCase();nav.appendChild(b);}});
    }
   }catch(e){}
