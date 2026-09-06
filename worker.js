@@ -1,6 +1,6 @@
 /**
  * VIP NETWORK unified Worker
- * Updated: secure 5-minute admin session cookie + legacy Bearer compatibility.
+ * Movie/Series auto-category update.
  * Existing KV state/playlist/devices/settings are preserved.
  */
 const STATE_KEY='vip_state_v1', DEVICES_KEY='vip_devices_v1', SETTINGS_KEY='vip_settings_v1', SESSION_PREFIX='vip_admin_session:';
@@ -10,8 +10,48 @@ const kv=env=>(env.VIP_PLAYLIST||env.PLAYLIST_KV);
 const json=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store',...extra}});
 const cors={'access-control-allow-origin':'*','access-control-allow-methods':'GET,POST,PUT,DELETE,OPTIONS','access-control-allow-headers':'Content-Type, Authorization, X-ViP-Device-ID'};
 function withCors(resp){const h=new Headers(resp.headers);Object.entries(cors).forEach(([k,v])=>h.set(k,v));return new Response(resp.body,{status:resp.status,statusText:resp.statusText,headers:h})}
-function norm(c={}){return{name:String(c.name||c.title||'Unnamed'),category:String(c.category||c.group||c.groupTitle||'Other'),logo:String(c.logo||c.tvgLogo||c['tvg-logo']||''),url:String(c.url||c.stream||c.streamUrl||''),status:String(c.status||'Unknown')}}
-function parseM3U(text){const lines=String(text||'').replace(/\r/g,'').split('\n'),out=[];let meta=null;for(const raw of lines){const line=raw.trim();if(!line)continue;if(line.startsWith('#EXTINF')){const comma=line.indexOf(','),name=comma>=0?line.slice(comma+1).trim():'Live Channel',gm=line.match(/group-title="([^"]*)"/i),lm=line.match(/tvg-logo="([^"]*)"/i);meta={name:name||'Live Channel',category:gm?gm[1]:'Other',logo:lm?lm[1]:''};continue}if(line.startsWith('#'))continue;if(meta){if(/^(https?|rtmp|rtsp|hls):\/\//i.test(line))out.push(norm({...meta,url:line,status:'Unknown'}));meta=null}}return out}
+
+/* Auto-category detection.
+   Priority: Movie/Series -> Sports -> BD -> India -> Others.
+   This prevents movie names containing words like "India", "Sony" etc.
+*/
+function detectCategory(name='',group='',metaLine=''){
+  const text=`${name} ${group} ${metaLine}`.toLowerCase();
+  const movie=/\b(movie|movies|film|films|cinema|cine|web[\s._-]*movie|full[\s._-]*movie|movie[\s._-]*hd|movie[\s._-]*4k)\b/.test(text);
+  const series=/\b(series|serial|season|episode|episod|s\d{1,2}e\d{1,3}|s\d{1,2}\s*e\d{1,3}|tv[\s._-]*series|web[\s._-]*series)\b/.test(text);
+  const movieGroup=/\b(movie|movies|film|films|cinema|series|serial|web[\s._-]*series|web[\s._-]*movie|vod|video[\s._-]*on[\s._-]*demand|tv[\s._-]*series)\b/.test(group.toLowerCase());
+  if(movie||series||movieGroup)return 'Movie';
+  if(/sport|cricket|football|fifa|eurosport|willow|ten\s*cricket|ptv\s*sports|tsn|espn|bein|wwe|golf|nfl|nba/.test(text))return 'Sports';
+  if(/bangla|bangladesh|\bbd\b|somoy|jamuna|ekattor|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi tv|\bgtv\b|b tv|bengal|duronto|deepto|nagorik|mohona|asian tv|desh tv|bijoy tv|mytv|satv|ekushey|bishwa|bangla tv|\bbtv\b/.test(text))return 'BD';
+  if(/india|indian|sony|zee|star|colors|\bset\b|\bsab\b|aaj tak|ndtv|republic|news18|times now|india tv|dd national|dd sports|sun tv|asianet|vijay|jaya|starplus|star gold|sony max|sony pix|sony wah|sony yay|sony pal|&pictures|b4u|movies now|mnx|hbo india/.test(text))return 'India';
+  return 'Others';
+}
+function norm(c={}){
+  const name=String(c.name||c.title||'Unnamed');
+  const group=String(c.group||c.groupTitle||c.category||'');
+  const category=String(c.category||c.cat||detectCategory(name,group,c.meta||''));
+  return{name,category:category==='Movie'?'Movie':category,cat:category==='Movie'?'Movie':category,logo:String(c.logo||c.tvgLogo||c['tvg-logo']||''),url:String(c.url||c.stream||c.streamUrl||''),status:String(c.status||'Unknown')};
+}
+function parseM3U(text){
+  const lines=String(text||'').replace(/\r/g,'').split('\n'),out=[];let meta=null;
+  for(const raw of lines){
+    const line=raw.trim();if(!line)continue;
+    if(line.startsWith('#EXTINF')){
+      const comma=line.indexOf(','),name=comma>=0?line.slice(comma+1).trim():'Live Channel';
+      const gm=line.match(/group-title="([^"]*)"/i),lm=line.match(/tvg-logo="([^"]*)"/i);
+      meta={name:name||'Live Channel',group:gm?gm[1]:'',logo:lm?lm[1]:'',meta:line};continue;
+    }
+    if(line.startsWith('#'))continue;
+    if(meta){
+      if(/^(https?|rtmp|rtsp|hls):\/\//i.test(line)){
+        const category=detectCategory(meta.name,meta.group,meta.meta);
+        out.push(norm({name:meta.name,category,cat:category,group:meta.group,logo:meta.logo,url:line,status:'Unknown'}));
+      }
+      meta=null;
+    }
+  }
+  return out;
+}
 async function readState(env){const raw=await kv(env).get(STATE_KEY);if(!raw)return{channels:[],notice:{text:'',type:'Information',enabled:true},headline:''};try{return JSON.parse(raw)}catch{return{channels:[],notice:{},headline:''}}}
 async function saveState(env,state){await kv(env).put(STATE_KEY,JSON.stringify(state))}
 async function readDevices(env){const raw=await kv(env).get(DEVICES_KEY);try{return raw?JSON.parse(raw):[]}catch{return[]}}
@@ -19,9 +59,11 @@ async function saveDevices(env,list){await kv(env).put(DEVICES_KEY,JSON.stringif
 async function readSettings(env){const raw=await kv(env).get(SETTINGS_KEY);try{return raw?JSON.parse(raw):{deviceLimit:1,accessMode:'approval'}}catch{return{deviceLimit:1,accessMode:'approval'}}}
 function cookies(request){const raw=request.headers.get('Cookie')||'',out={};raw.split(';').forEach(p=>{const i=p.indexOf('=');if(i>0)out[p.slice(0,i).trim()]=decodeURIComponent(p.slice(i+1).trim())});return out}
 async function authorized(request,env){const expected=adminPassword(env);if(!expected)return false;const c=cookies(request),token=c.VIP_ADMIN_SESSION;if(token){const ok=await kv(env).get(SESSION_PREFIX+token);if(ok)return true}const auth=request.headers.get('Authorization')||'';return auth===`Bearer ${expected}`}
-async function requireAdmin(request,env){if(!(await authorized(request,env)))return json({ok:false,error:'Unauthorized'},401);return null}
-function m3u(channels){return '#EXTM3U\n'+channels.map(c=>`#EXTINF:-1 tvg-logo="${String(c.logo||'').replace(/"/g,'&quot;')}" group-title="${String(c.category||'Other').replace(/"/g,'&quot;')}",${String(c.name||'Channel').replace(/\n/g,' ')}\n${c.url}`).join('\n')}
-async function handleApi(request,env){const url=new URL(request.url),path=url.pathname;if(request.method==='OPTIONS')return withCors(new Response(null,{status:204}));
+async function requireAdmin(request,env){if(!(await authorized(request,env)))return json({ok:false,error:'Unauthorized'},401)}
+function m3u(channels){return '#EXTM3U\n'+channels.map(c=>`#EXTINF:-1 tvg-logo="${String(c.logo||'').replace(/"/g,'&quot;')}" group-title="${String(c.category||c.cat||'Other').replace(/"/g,'&quot;')}",${String(c.name||'Channel').replace(/\n/g,' ')}\n${c.url}`).join('\n')}
+async function handleApi(request,env){
+  const url=new URL(request.url),path=url.pathname;
+  if(request.method==='OPTIONS')return withCors(new Response(null,{status:204}));
   if(path==='/api/admin/login'&&request.method==='POST'){const b=await request.json().catch(()=>({})),password=String(b.password||'');if(!adminPassword(env)||password!==adminPassword(env))return withCors(json({ok:false,error:'Unauthorized'},401));const token=crypto.randomUUID();await kv(env).put(SESSION_PREFIX+token,'1',{expirationTtl:SESSION_TTL});return withCors(json({ok:true,expiresIn:SESSION_TTL},200,{'Set-Cookie':`VIP_ADMIN_SESSION=${encodeURIComponent(token)}; Max-Age=${SESSION_TTL}; Path=/; HttpOnly; Secure; SameSite=Lax`}))}
   if(path==='/api/admin/session'&&request.method==='GET'){if(await authorized(request,env))return withCors(json({ok:true,expiresIn:SESSION_TTL}));return withCors(json({ok:false,error:'Unauthorized'},401))}
   if(path==='/api/admin/logout'&&request.method==='POST'){const c=cookies(request),token=c.VIP_ADMIN_SESSION;if(token)await kv(env).delete(SESSION_PREFIX+token);return withCors(json({ok:true},200,{'Set-Cookie':'VIP_ADMIN_SESSION=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax'}))}
@@ -37,7 +79,7 @@ async function handleApi(request,env){const url=new URL(request.url),path=url.pa
   if(path==='/api/admin/playlist'&&request.method==='PUT'){const b=await request.json().catch(()=>({})),channels=Array.isArray(b.channels)?b.channels.map(norm):[],s=await readState(env);s.channels=channels;await saveState(env,s);return withCors(json({ok:true,count:channels.length}))}
   if(path==='/api/admin/import-m3u'&&request.method==='POST'){const ct=request.headers.get('content-type')||'';let text='';if(ct.includes('application/json')){const b=await request.json();text=String(b.text||b.m3u||'')}else text=await request.text();const channels=parseM3U(text),s=await readState(env);s.channels=channels;await saveState(env,s);return withCors(json({ok:true,count:channels.length}))}
   if(path==='/api/admin/import-m3u-url'&&request.method==='POST'){const b=await request.json().catch(()=>({})),target=String(b.url||'');if(!/^https?:\/\//i.test(target))return withCors(json({ok:false,error:'Invalid M3U URL'},400));const r=await fetch(target,{redirect:'follow'});if(!r.ok)return withCors(json({ok:false,error:`M3U URL HTTP ${r.status}`},400));const channels=parseM3U(await r.text()),s=await readState(env);s.channels=channels;await saveState(env,s);return withCors(json({ok:true,count:channels.length}))}
-  if(path==='/api/xtream/import'&&request.method==='POST'){const b=await request.json().catch(()=>({})),server=String(b.server||'').replace(/\/$/,''),user=String(b.username||''),pass=String(b.password||'');if(!server||!user||!pass)return withCors(json({ok:false,error:'server, username and password required'},400));const apiUrl=server+'/player_api.php?username='+encodeURIComponent(user)+'&password='+encodeURIComponent(pass)+'&action=get_live_streams',r=await fetch(apiUrl);if(!r.ok)return withCors(json({ok:false,error:`Xtream HTTP ${r.status}`},400));const data=await r.json();if(!Array.isArray(data))return withCors(json({ok:false,error:'Xtream returned invalid data'},400));const lim=String(b.limit||'all'),items=lim==='all'?data:data.slice(0,Number(lim)||100),base=server+'/live/'+encodeURIComponent(user)+'/'+encodeURIComponent(pass)+'/',channels=items.map(x=>norm({name:x.name||('Channel '+x.stream_id),category:x.category_name||'Other',logo:x.stream_icon||'',url:base+encodeURIComponent(String(x.stream_id))+'.m3u8',status:'Unknown'})),s=await readState(env);s.channels=channels;await saveState(env,s);return withCors(json({ok:true,count:channels.length}))}
+  if(path==='/api/xtream/import'&&request.method==='POST'){const b=await request.json().catch(()=>({})),server=String(b.server||'').replace(/\/$/,''),user=String(b.username||''),pass=String(b.password||'');if(!server||!user||!pass)return withCors(json({ok:false,error:'server, username and password required'},400));const apiUrl=server+'/player_api.php?username='+encodeURIComponent(user)+'&password='+encodeURIComponent(pass)+'&action=get_live_streams',r=await fetch(apiUrl);if(!r.ok)return withCors(json({ok:false,error:`Xtream HTTP ${r.status}`},400));const data=await r.json();if(!Array.isArray(data))return withCors(json({ok:false,error:'Xtream returned invalid data'},400));const lim=String(b.limit||'all'),items=lim==='all'?data:data.slice(0,Number(lim)||100),base=server+'/live/'+encodeURIComponent(user)+'/'+encodeURIComponent(pass)+'/',channels=items.map(x=>{const category=detectCategory(x.name||'',x.category_name||'','');return norm({name:x.name||('Channel '+x.stream_id),category,cat:category,logo:x.stream_icon||'',url:base+encodeURIComponent(String(x.stream_id))+'.m3u8',status:'Unknown'})}),s=await readState(env);s.channels=channels;await saveState(env,s);return withCors(json({ok:true,count:channels.length}))}
   if(path==='/api/admin/check-all'&&request.method==='POST'){const s=await readState(env),channels=s.channels||[],checked=await Promise.all(channels.map(async c=>{try{const r=await fetch(c.url,{method:'GET',redirect:'follow'});return{...c,status:r.ok?'Active':'Dead'}}catch{return{...c,status:'Dead'}}}));s.channels=checked;await saveState(env,s);return withCors(json({ok:true,count:checked.length,channels:checked}))}
   if(path==='/api/admin/settings'&&request.method==='GET')return withCors(json({ok:true,settings:await readSettings(env)}));
   if(path==='/api/admin/settings'&&request.method==='PUT'){const b=await request.json().catch(()=>({})),s={...(await readSettings(env)),...b};await kv(env).put(SETTINGS_KEY,JSON.stringify(s));return withCors(json({ok:true,settings:s}))}
@@ -48,5 +90,6 @@ async function handleApi(request,env){const url=new URL(request.url),path=url.pa
   if(path==='/api/admin/devices'&&request.method==='PUT'){const b=await request.json().catch(()=>({})),list=await readDevices(env),id=String(b.deviceId||''),d=list.find(x=>x.deviceId===id);if(!d)return withCors(json({ok:false,error:'Device not found'},404));Object.assign(d,b);await saveDevices(env,list);return withCors(json({ok:true,device:d}))}
   if(path==='/api/admin/devices'&&request.method==='DELETE'){const id=url.searchParams.get('deviceId')||'',list=(await readDevices(env)).filter(x=>x.deviceId!==id);await saveDevices(env,list);return withCors(json({ok:true}))}
   if(path==='/api/admin/export-m3u'&&request.method==='GET'){const s=await readState(env);return new Response(m3u(s.channels||[]),{headers:{'content-type':'audio/x-mpegurl','cache-control':'no-store',...cors}})}
-  return withCors(json({ok:false,error:'API route not found'},404))}
+  return withCors(json({ok:false,error:'API route not found'},404))
+}
 export default{async fetch(request,env){const url=new URL(request.url);if(url.pathname.startsWith('/api/'))return handleApi(request,env);return env.ASSETS.fetch(request)}};

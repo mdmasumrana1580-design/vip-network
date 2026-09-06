@@ -1,5 +1,9 @@
-const PLAYLIST_URL = "https://raw.githubusercontent.com/ahan443/FAST-IPTV/refs/heads/main/z.m3u";
+/* ViP-TV app.js
+ * Uses the existing Worker /api/playlist as the single source of truth.
+ * One M3U import can contain TV + Movie/Series; Worker auto-categorizes it.
+ */
 const VIP_WORKER_API = "";
+const PLAYLIST_URL = "/api/playlist";
 
 let channels = [];
 let current = "All";
@@ -13,420 +17,191 @@ const video = document.getElementById("video");
 const section = document.getElementById("playerSection");
 const welcomeVideo = document.getElementById("welcomeVideo");
 const videoBox = document.querySelector(".video-box");
-if (welcomeVideo) {
-  welcomeVideo.muted = true;
-  welcomeVideo.defaultMuted = true;
-  welcomeVideo.playsInline = true;
-  if (videoBox) videoBox.classList.add("welcome-active");
-  const liveBadge = document.getElementById("liveBadge");
-  if (liveBadge) liveBadge.style.display = "none";
-  const hideWelcome = function () {
-    welcomeVideo.classList.add("welcome-hidden");
-    if (videoBox) videoBox.classList.remove("welcome-active");
-  };
-  welcomeVideo.addEventListener("ended", hideWelcome, {once:true});
-  welcomeVideo.addEventListener("error", hideWelcome, {once:true});
-  welcomeVideo.load();
-  const startWelcome = function () {
-    const p = welcomeVideo.play();
-    if (p && p.catch) p.catch(function () {
-      // Keep the intro visible; a muted MP4 is allowed to autoplay on supported browsers.
-    });
-  };
-  welcomeVideo.addEventListener("loadeddata", startWelcome, {once:true});
-  setTimeout(startWelcome, 150);
+
+function apiUrl(path) {
+  return (window.VIP_WORKER_API || VIP_WORKER_API || "").replace(/\/$/, "") + path;
 }
-
-// Compact visitor stats in the header.
-// Total visitors uses the current key-free Abacus counter service.
-// Online visitors needs a real-time tracking backend; until one is connected,
-// the UI shows a dash instead of displaying a misleading/fake number.
-const VISITOR_COUNTER_KEY = "vip-network-masum-2026-total-visitors";
-const VISITOR_COUNTER_API = "https://abacus.jasoncameron.dev";
-
-function updateHeaderVisitor(value) {
-  const el = document.getElementById("headerTotalVisitors");
-  if (!el) return;
-  const n = Number(value);
-  el.textContent = Number.isFinite(n) ? n.toLocaleString("en-US") : "—";
-}
-
-function updateOnlineVisitors(value) {
-  const el = document.getElementById("headerOnlineVisitors");
-  if (!el) return;
-  const n = Number(value);
-  el.textContent = Number.isFinite(n) ? n.toLocaleString("en-US") : "—";
-}
-
-async function initVisitorCounter() {
-  const sessionKey = "vipVisitorCounted";
-  try {
-    const counted = sessionStorage.getItem(sessionKey);
-    let data;
-    if (!counted) {
-      const hit = await fetch(VISITOR_COUNTER_API + "/hit/" + encodeURIComponent("vip-network-masum-2026") + "/" + encodeURIComponent("total"), {
-        method: "GET", cache: "no-store"
-      });
-      if (!hit.ok) throw new Error("counter hit failed: " + hit.status);
-      data = await hit.json();
-      sessionStorage.setItem(sessionKey, "1");
-    } else {
-      const current = await fetch(VISITOR_COUNTER_API + "/get/" + encodeURIComponent("vip-network-masum-2026") + "/" + encodeURIComponent("total"), {
-        method: "GET", cache: "no-store"
-      });
-      if (!current.ok) throw new Error("counter get failed: " + current.status);
-      data = await current.json();
-    }
-    updateHeaderVisitor(data.value);
-  } catch (error) {
-    console.warn("Visitor counter unavailable", error);
-  }
-
-  // Real shared Online Now requires a hosted realtime tracker.
-  // Set window.VIP_ONLINE_ENDPOINT in config.js after creating your tracker.
-  // The endpoint must return JSON like: {"online": 5}.
-  if (window.VIP_ONLINE_ENDPOINT) {
-    const refreshOnline = async function () {
-      try {
-        const r = await fetch(window.VIP_ONLINE_ENDPOINT, {cache:"no-store"});
-        if (!r.ok) throw new Error("online endpoint: " + r.status);
-        const d = await r.json();
-        updateOnlineVisitors(d.online);
-      } catch (e) {
-        console.warn("Online counter unavailable", e);
-      }
-    };
-    refreshOnline();
-    setInterval(refreshOnline, 15000);
-  } else {
-    updateOnlineVisitors(null);
-  }
-}
-
-initVisitorCounter();
-
-// Premium overlay controls: click/tap the video to show, tap again to hide.
-const vipVideoBox = document.getElementById("vipVideoBox");
-const vipBottomControls = document.getElementById("vipBottomControls");
-const vipMute = document.getElementById("vipMute");
-const vipVolume = document.getElementById("vipVolume");
-const vipFullscreen = document.getElementById("vipFullscreen");
-const vipFullscreenLauncher = document.getElementById("vipFullscreenLauncher");
-let vipControlsTimer = null;
-
-function showVipControls() {
-  if (!vipVideoBox) return;
-  vipVideoBox.classList.add("vip-controls-visible");
-  if (vipControlsTimer) clearTimeout(vipControlsTimer);
-  vipControlsTimer = setTimeout(function(){
-    vipVideoBox.classList.remove("vip-controls-visible");
-  }, 4000);
-}
-function toggleVipControls() {
-  if (!vipVideoBox) return;
-  if (vipVideoBox.classList.contains("vip-controls-visible")) {
-    vipVideoBox.classList.remove("vip-controls-visible");
-    if (vipControlsTimer) clearTimeout(vipControlsTimer);
-  } else {
-    showVipControls();
-  }
-}
-
-if (vipVideoBox) {
-  vipVideoBox.addEventListener("click", function(e) {
-    if (e.target.closest("button,input,.plyr__controls,.landscape-channel-controls,.vip-bottom-controls")) return;
-    toggleVipControls();
-  });
-}
-
-if (vipMute) vipMute.addEventListener("click", function(e){
-  e.preventDefault(); e.stopPropagation();
-  video.muted = !video.muted;
-  vipMute.textContent = video.muted || video.volume === 0 ? "🔇" : "🔊";
-  showVipControls();
-});
-if (vipVolume) vipVolume.addEventListener("input", function(e){
-  e.stopPropagation();
-  video.volume = Number(vipVolume.value);
-  video.muted = video.volume === 0;
-  vipMute.textContent = video.muted ? "🔇" : "🔊";
-  showVipControls();
-});
-if (vipFullscreenLauncher) vipFullscreenLauncher.addEventListener("click", function(e){
-  e.preventDefault(); e.stopPropagation();
-  toggleNativeFullscreen();
-  showVipControls();
-});
-if (vipFullscreen) vipFullscreen.addEventListener("click", function(e){
-  e.preventDefault(); e.stopPropagation();
-  toggleNativeFullscreen();
-  showVipControls();
-});
-
-video.addEventListener("volumechange", function(){
-  if (vipVolume) vipVolume.value = String(video.volume);
-  if (vipMute) vipMute.textContent = video.muted || video.volume === 0 ? "🔇" : "🔊";
-});
-
 
 function esc(value) {
-  return String(value || "").replace(/[&<>"']/g, function (m) {
-    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m];
-  });
+  return String(value || "").replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[m]));
 }
 
-function catFor(name, group) {
+/* Frontend fallback detector. Worker is authoritative, but this also protects
+   older KV records that do not yet have a Movie category. */
+function catFor(name, group, existing) {
+  const preset = String(existing || "").trim();
+  if (/^movie$/i.test(preset)) return "Movie";
   const text = ((name || "") + " " + (group || "")).toLowerCase();
 
-  // SPORTS comes first, so sports channels stay together even if they are BD/India.
+  if (/\b(movie|movies|film|films|cinema|web[\s._-]*movie|vod|video[\s._-]*on[\s._-]*demand)\b/.test(text) ||
+      /\b(series|serial|season|episode|episod|s\d{1,2}e\d{1,3})\b/.test(text)) {
+    return "Movie";
+  }
   if (/sport|cricket|football|fifa|eurosport|willow|ten\s*cricket|ptv\s*sports|tsn|espn|bein|wwe|golf|nfl|nba/.test(text)) {
     return "Sports";
   }
-
-  // Bangladesh channels
-  if (/bangla|bangladesh|bd\b|somoy|jamuna|ekattor|ekattor tv|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi tv|gtv|b tv|bengal|duronto|deepto|nagorik|mohona|asian tv|desh tv|bijoy tv|mytv|satv|ekushey|bishwa|bangla tv|btv/.test(text)) {
+  if (/bangla|bangladesh|\bbd\b|somoy|jamuna|ekattor|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi tv|\bgtv\b|b tv|duronto|deepto|nagorik|mohona|asian tv|desh tv|bijoy tv|mytv|satv|ekushey|bishwa|bangla tv|\bbtv\b/.test(text)) {
     return "BD";
   }
-
-  // India channels
-  if (/india|indian|sony|zee|star|colors|set\b|sab\b|aaj tak|ndtv|republic|news18|times now|india tv|dd national|dd sports|sun tv|asianet|vijay|jaya|starplus|star gold|sony max|sony pix|sony wah|sony yay|sony pal|&pictures|b4u|movies now|mnx|hbo india/.test(text)) {
+  if (/india|indian|sony|zee|star|colors|\bset\b|\bsab\b|aaj tak|ndtv|republic|news18|times now|india tv|dd national|dd sports|sun tv|asianet|vijay|jaya|starplus|star gold|sony max|sony pix|sony wah|sony yay|sony pal|&pictures|b4u|movies now|mnx|hbo india/.test(text)) {
     return "India";
   }
-
   return "Others";
 }
 
-function parseM3U(text) {
-  const lines = String(text || "").replace(/\r/g, "").split("\n");
-  const out = [];
-  let meta = null;
-
-  for (const raw of lines) {
-    const line = raw.trim();
-    if (!line) continue;
-
-    if (line.startsWith("#EXTINF")) {
-      const comma = line.indexOf(",");
-      const name = comma >= 0 ? line.slice(comma + 1).trim() : "Live Channel";
-      const groupMatch = line.match(/group-title="([^"]*)"/i);
-      const logoMatch = line.match(/tvg-logo="([^"]*)"/i);
-
-      meta = {
-        name: name || "Live Channel",
-        group: groupMatch ? groupMatch[1] : "",
-        logo: logoMatch ? logoMatch[1] : ""
-      };
-      continue;
-    }
-
-    if (line.startsWith("#")) continue;
-
-    if (meta) {
-      if (/^(https?|rtmp|rtsp|hls):\/\//i.test(line)) {
-        out.push({
-          name: meta.name,
-          cat: catFor(meta.name, meta.group),
-          url: line,
-          logo: meta.logo
-        });
-      }
-      meta = null;
-    }
-  }
-
-  return out;
+function normalizeChannel(c) {
+  const name = String(c.name || c.title || "Unnamed");
+  const group = String(c.group || c.groupTitle || c.category || "");
+  const cat = catFor(name, group, c.cat || c.category);
+  return {
+    name,
+    cat,
+    category: cat,
+    url: String(c.url || c.stream || c.streamUrl || ""),
+    logo: String(c.logo || c.tvgLogo || c["tvg-logo"] || ""),
+    status: String(c.status || "Unknown")
+  };
 }
 
-function render() {
-  const q = "";
+const RENDER_BATCH_SIZE = 120;
+let renderedCount = 0;
+let filteredChannels = [];
+let loadMoreButton = null;
 
-  grid.innerHTML = "";
-
-  const list = channels.filter(function (c) {
-    const categoryOk = current === "All" || c.cat === current;
-    const searchOk = c.name.toLowerCase().includes(q);
-    return categoryOk && searchOk;
+function ensureLoadMoreButton() {
+  if (loadMoreButton && loadMoreButton.isConnected) return loadMoreButton;
+  loadMoreButton = document.createElement("button");
+  loadMoreButton.type = "button";
+  loadMoreButton.id = "loadMoreChannels";
+  loadMoreButton.className = "load-more-btn";
+  loadMoreButton.textContent = "Load More";
+  loadMoreButton.style.cssText = "display:block;margin:16px auto 24px;padding:10px 22px;border:0;border-radius:10px;cursor:pointer;font-weight:700;";
+  loadMoreButton.addEventListener("click", () => {
+    appendNextBatch();
   });
-  visibleChannels = list;
+  if (grid && grid.parentNode) grid.parentNode.insertBefore(loadMoreButton, grid.nextSibling);
+  return loadMoreButton;
+}
 
-  empty.hidden = list.length > 0;
-  if (!list.length) {
-    empty.textContent = channels.length ? "No channels found" : "Loading channels...";
-  }
+function appendNextBatch() {
+  if (!grid) return;
+  const end = Math.min(renderedCount + RENDER_BATCH_SIZE, filteredChannels.length);
+  const frag = document.createDocumentFragment();
 
-  list.forEach(function (c) {
+  for (let i = renderedCount; i < end; i++) {
+    const c = filteredChannels[i];
     const el = document.createElement("article");
     el.className = "card";
-
     const icon = c.logo
       ? '<img src="' + esc(c.logo) + '" alt="" loading="lazy">'
-      : "<span>TV</span>";
+      : "<span>" + (c.cat === "Movie" ? "🎬" : "TV") + "</span>";
 
     el.innerHTML =
       '<div class="circle">' + icon + '</div>' +
       '<div class="label">' + esc(c.name) + '</div>';
-
-    el.addEventListener("click", function () {
-      play(c, el);
-    });
-
-    grid.appendChild(el);
-  });
-}
-
-function play(c, clickedCard) {
-  currentChannelIndex = visibleChannels.indexOf(c);
-  if (welcomeVideo) welcomeVideo.classList.add("welcome-hidden");
-  if (videoBox) videoBox.classList.remove("welcome-active");
-  const liveBadge = document.getElementById("liveBadge");
-  if (liveBadge) liveBadge.style.display = "flex";
-
-  // The player is permanently reserved on the page and visually fixed below the header.
-  // Selecting a channel therefore never inserts/removes layout and never changes scrollTop.
-  section.hidden = false;
-  document.getElementById("playerTitle").textContent = c.name;
-  document.getElementById("note").style.display = "none";
-
-  if (hls) {
-    try { hls.destroy(); } catch (e) {}
-    hls = null;
+    el.addEventListener("click", () => play(c));
+    frag.appendChild(el);
   }
 
+  grid.appendChild(frag);
+  renderedCount = end;
+  visibleChannels = filteredChannels;
+
+  const more = ensureLoadMoreButton();
+  const remaining = filteredChannels.length - renderedCount;
+  if (remaining > 0) {
+    more.hidden = false;
+    more.textContent = `Load More (${remaining} remaining)`;
+  } else {
+    more.hidden = true;
+  }
+}
+
+function render() {
+  if (!grid) return;
+  grid.innerHTML = "";
+  renderedCount = 0;
+  filteredChannels = channels.filter(c => current === "All" || c.cat === current);
+  visibleChannels = filteredChannels;
+
+  empty.hidden = filteredChannels.length > 0;
+  if (!filteredChannels.length) {
+    empty.textContent = channels.length ? "No channels found" : "Loading channels...";
+    if (loadMoreButton) loadMoreButton.hidden = true;
+    return;
+  }
+
+  appendNextBatch();
+}
+
+function stopPlayback() {
+  if (hls) {
+    try { hls.destroy(); } catch (_) {}
+    hls = null;
+  }
   video.pause();
   video.removeAttribute("src");
   video.load();
+}
+
+function play(c) {
+  currentChannelIndex = visibleChannels.indexOf(c);
+  if (welcomeVideo) welcomeVideo.classList.add("welcome-hidden");
+  if (videoBox) videoBox.classList.remove("welcome-active");
+
+  const liveBadge = document.getElementById("liveBadge");
+  if (liveBadge) liveBadge.style.display = "flex";
+
+  section.hidden = false;
+  const title = document.getElementById("playerTitle");
+  const note = document.getElementById("note");
+  if (title) title.textContent = c.name;
+  if (note) note.style.display = "none";
+
+  stopPlayback();
   video.autoplay = true;
   video.playsInline = true;
-  // Start with sound enabled. Because the channel card click is a user gesture,
-  // browsers are more likely to allow playback with audio. Some mobile browsers
-  // may still enforce their own autoplay policy.
   video.muted = false;
   video.volume = 1;
 
-  function startPlayback() {
+  const start = () => {
     const p = video.play();
     if (p && p.catch) {
-      p.catch(function () {
-        const note = document.getElementById("note");
-        note.textContent = "ভিডিও চালু করা যাচ্ছে না। অন্য চ্যানেল চেষ্টা করুন।";
-        note.style.display = "block";
+      p.catch(() => {
+        if (note) {
+          note.textContent = "ভিডিও চালু করা যাচ্ছে না। অন্যটি চেষ্টা করুন।";
+          note.style.display = "block";
+        }
       });
     }
-  }
+  };
 
   if (/\.m3u8(\?|$)/i.test(c.url) && window.Hls && Hls.isSupported()) {
     hls = new Hls({ enableWorker:true, lowLatencyMode:true, backBufferLength:30 });
     hls.attachMedia(video);
-    hls.on(Hls.Events.MEDIA_ATTACHED, function () {
-      if (hls) hls.loadSource(c.url);
-    });
-    hls.on(Hls.Events.MANIFEST_PARSED, function () {
-      video.muted = false;
-      video.volume = 1;
-      startPlayback();
-    });
-    hls.on(Hls.Events.ERROR, function (_event, data) {
+    hls.on(Hls.Events.MEDIA_ATTACHED, () => hls && hls.loadSource(c.url));
+    hls.on(Hls.Events.MANIFEST_PARSED, start);
+    hls.on(Hls.Events.ERROR, (_e, data) => {
       if (!data || !data.fatal || !hls) return;
       if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-        try { hls.recoverMediaError(); } catch (e) {}
+        try { hls.recoverMediaError(); } catch (_) {}
       } else {
-        try { hls.destroy(); } catch (e) {}
+        try { hls.destroy(); } catch (_) {}
         hls = null;
-        const note = document.getElementById("note");
-        note.textContent = "ভিডিও লোড করা যাচ্ছে না। অন্য চ্যানেল চেষ্টা করুন।";
-        note.style.display = "block";
+        if (note) {
+          note.textContent = "ভিডিও লোড করা যাচ্ছে না। অন্যটি চেষ্টা করুন।";
+          note.style.display = "block";
+        }
       }
     });
   } else {
     video.src = c.url;
-    video.addEventListener("loadedmetadata", startPlayback, {once:true});
-    video.addEventListener("canplay", startPlayback, {once:true});
-    startPlayback();
+    video.addEventListener("loadedmetadata", start, {once:true});
+    video.addEventListener("canplay", start, {once:true});
+    start();
   }
-}
-
-
-// V31: real fullscreen + landscape on supported Android browsers/PWAs.
-// The fullscreen button uses the browser Fullscreen API first, then locks
-// orientation to landscape. This is required because CSS fullscreen alone
-// cannot reliably rotate a phone in Chrome.
-async function requestNativeFullscreen() {
-  if (!vipVideoBox) return false;
-
-  try {
-    if (!document.fullscreenElement && vipVideoBox.requestFullscreen) {
-      await vipVideoBox.requestFullscreen({ navigationUI: "hide" });
-    }
-  } catch (e) {
-    // Some browsers reject navigationUI; retry without options.
-    try {
-      if (!document.fullscreenElement && vipVideoBox.requestFullscreen) {
-        await vipVideoBox.requestFullscreen();
-      }
-    } catch (e2) {}
-  }
-
-  // Orientation locking is normally permitted after entering fullscreen.
-  try {
-    if (screen.orientation && screen.orientation.lock) {
-      await screen.orientation.lock("landscape");
-    }
-  } catch (e) {
-    // Installed PWAs can still use the manifest orientation setting.
-  }
-
-  vipVideoBox.classList.add("vip-css-fullscreen");
-  document.body.classList.add("vip-player-fullscreen");
-  setFullscreenButtonState();
-  return true;
-}
-
-async function exitNativeFullscreen() {
-  try {
-    if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
-  } catch (e) {}
-
-  try {
-    if (document.fullscreenElement && document.exitFullscreen) {
-      await document.exitFullscreen();
-    }
-  } catch (e) {}
-
-  if (videoBox) videoBox.classList.remove("vip-css-fullscreen", "vip-orientation-fallback");
-  document.body.classList.remove("vip-player-fullscreen");
-  return true;
-}
-
-function isNativeFullscreen() {
-  return !!(document.fullscreenElement || (videoBox && videoBox.classList.contains("vip-css-fullscreen")));
-}
-
-async function toggleNativeFullscreen() {
-  if (isNativeFullscreen()) {
-    await exitNativeFullscreen();
-  } else {
-    await requestNativeFullscreen();
-  }
-  syncFullscreenState();
-  setTimeout(syncFullscreenState, 120);
-  setTimeout(syncFullscreenState, 500);
-}
-
-function setFullscreenButtonState() {
-  const isFs = isNativeFullscreen();
-  if (videoBox) {
-    videoBox.classList.toggle("vip-fullscreen", isFs);
-    videoBox.classList.toggle("is-fullscreen", isFs);
-    videoBox.classList.toggle("vip-css-fullscreen", isFs);
-  }
-  document.body.classList.toggle("vip-player-fullscreen", isFs);
-  const controls = document.getElementById("landscapeChannelControls");
-  if (controls) controls.setAttribute("aria-hidden", isFs ? "false" : "true");
-}
-
-function syncFullscreenState() {
-  setFullscreenButtonState();
-  requestAnimationFrame(setFullscreenButtonState);
 }
 
 function changeChannel(step) {
@@ -435,124 +210,102 @@ function changeChannel(step) {
   if (i < 0) i = 0;
   i = (i + step + visibleChannels.length) % visibleChannels.length;
   currentChannelIndex = i;
-  const wasFs = isNativeFullscreen() || (videoBox && videoBox.classList.contains("vip-css-fullscreen"));
-  play(visibleChannels[i], null);
-  if (wasFs) {
-    // Reassert the overlay after the stream source changes.
-    setTimeout(syncFullscreenState, 50);
-  }
+  play(visibleChannels[i]);
 }
-
-document.getElementById("prevChannel").addEventListener("click", function(e) {
-  e.preventDefault(); e.stopPropagation(); changeChannel(-1); showVipControls();
-});
-document.getElementById("nextChannel").addEventListener("click", function(e) {
-  e.preventDefault(); e.stopPropagation(); changeChannel(1); showVipControls();
-});
-
-window.addEventListener("orientationchange", syncFullscreenState);
-document.addEventListener("fullscreenchange", syncFullscreenState);
-document.addEventListener("webkitfullscreenchange", syncFullscreenState);
-syncFullscreenState();
-
-function closePlayer() {
-  section.hidden = false;
-
-  if (hls) {
-    hls.destroy();
-    hls = null;
-  }
-
-  video.pause();
-  video.removeAttribute("src");
-  video.load();
-}
-
-document.getElementById("closePlayer").addEventListener("click", closePlayer);
-
-document.querySelectorAll("#cats button").forEach(function (button) {
-  button.addEventListener("click", function () {
-    document.querySelectorAll("#cats button").forEach(function (b) {
-      b.classList.remove("active");
-    });
-
-    button.classList.add("active");
-    current = button.dataset.cat;
-    render();
-  });
-});
-
-empty.hidden = false;
-empty.textContent = "Loading channels...";
 
 async function loadVipPlaylist() {
-  const response = await fetch(PLAYLIST_URL, {cache:"no-store"});
-  if (!response.ok) throw new Error("Playlist load failed");
-  return parseM3U(await response.text());
+  const response = await fetch(apiUrl(PLAYLIST_URL), {cache:"no-store"});
+  if (!response.ok) throw new Error("Playlist API HTTP " + response.status);
+  const data = await response.json();
+  const raw = Array.isArray(data) ? data : (data.channels || []);
+  channels = raw.map(normalizeChannel).filter(c => c.url);
+  render();
 }
 
-loadVipPlaylist()
-  .then(function (parsed) {
-    if (!parsed.length) throw new Error("No valid channels");
-    channels = parsed;
-    render();
-  })
-  .catch(function (error) {
-    console.error(error);
-    empty.hidden = false;
-    empty.textContent = "Playlist load করা যায়নি। M3U link check করুন।";
-  });
+function initWelcome() {
+  if (!welcomeVideo) return;
+  welcomeVideo.muted = true;
+  welcomeVideo.defaultMuted = true;
+  welcomeVideo.playsInline = true;
+  if (videoBox) videoBox.classList.add("welcome-active");
+  const badge = document.getElementById("liveBadge");
+  if (badge) badge.style.display = "none";
+  const hide = () => {
+    welcomeVideo.classList.add("welcome-hidden");
+    if (videoBox) videoBox.classList.remove("welcome-active");
+  };
+  welcomeVideo.addEventListener("ended", hide, {once:true});
+  welcomeVideo.addEventListener("error", hide, {once:true});
+  welcomeVideo.play().catch(() => {});
+}
 
-
-/* V14: keep the page as a real root document scroll. Android Chrome can only
-   collapse its address/search bar from root-page scrolling, not from a nested
-   fixed #grid scroller. */
-document.addEventListener("DOMContentLoaded", function(){
-  const w=document.getElementById("welcomeVideo");
-  const vb=w && w.closest(".video-box");
-  if(w && vb && w.parentElement!==vb) vb.insertBefore(w,vb.firstChild);
-  document.documentElement.style.overflowX="hidden";
-  document.documentElement.style.overflowY="auto";
-  document.body.style.overflowX="hidden";
-  document.body.style.overflowY="auto";
-  document.body.style.position="static";
-  document.body.style.inset="auto";
-});
-
-// V12: block Android Chrome's native long-press video menu (Copy video frame / PiP)
-// without disabling our normal tap-to-toggle controls.
-(function preventNativeVideoLongPressMenu(){
-  const targets = [
-    document.getElementById("video"),
-    document.getElementById("welcomeVideo"),
-    document.getElementById("vipVideoBox")
-  ].filter(Boolean);
-
-  targets.forEach(function(el){
-    ["contextmenu", "selectstart", "dragstart"].forEach(function(type){
-      el.addEventListener(type, function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        return false;
-      }, {capture:true});
+function initCategories() {
+  document.querySelectorAll("#cats button").forEach(button => {
+    button.addEventListener("click", () => {
+      document.querySelectorAll("#cats button").forEach(b => b.classList.remove("active"));
+      button.classList.add("active");
+      current = button.dataset.cat || "All";
+      render();
     });
   });
+}
 
-  // Keep long-press from being interpreted as a text/drag gesture on touch devices.
-  let touchStartAt = 0;
-  let touchMoved = false;
-  const box = document.getElementById("vipVideoBox");
-  if (!box) return;
+function initPlayerControls() {
+  const mute = document.getElementById("vipMute");
+  const volume = document.getElementById("vipVolume");
+  const fullscreen = document.getElementById("vipFullscreen");
+  const prev = document.getElementById("prevChannel");
+  const next = document.getElementById("nextChannel");
+  const close = document.getElementById("closePlayer");
 
-  box.addEventListener("touchstart", function(){
-    touchStartAt = Date.now();
-    touchMoved = false;
-  }, {passive:true});
-  box.addEventListener("touchmove", function(){
-    touchMoved = true;
-  }, {passive:true});
-  box.addEventListener("touchend", function(){
-    touchStartAt = 0;
-    touchMoved = false;
-  }, {passive:true});
-})();
+  if (mute) mute.addEventListener("click", e => {
+    e.preventDefault();
+    video.muted = !video.muted;
+    mute.textContent = video.muted || video.volume === 0 ? "🔇" : "🔊";
+  });
+  if (volume) volume.addEventListener("input", () => {
+    video.volume = Number(volume.value);
+    video.muted = video.volume === 0;
+    if (mute) mute.textContent = video.muted ? "🔇" : "🔊";
+  });
+  video.addEventListener("volumechange", () => {
+    if (volume) volume.value = String(video.volume);
+    if (mute) mute.textContent = video.muted || video.volume === 0 ? "🔇" : "🔊";
+  });
+  if (prev) prev.addEventListener("click", e => {e.preventDefault(); e.stopPropagation(); changeChannel(-1);});
+  if (next) next.addEventListener("click", e => {e.preventDefault(); e.stopPropagation(); changeChannel(1);});
+  if (close) close.addEventListener("click", stopPlayback);
+
+  if (fullscreen) fullscreen.addEventListener("click", async e => {
+    e.preventDefault();
+    try {
+      if (!document.fullscreenElement && videoBox && videoBox.requestFullscreen) {
+        await videoBox.requestFullscreen();
+        try { await screen.orientation.lock("landscape"); } catch (_) {}
+      } else if (document.exitFullscreen) {
+        await document.exitFullscreen();
+        try { screen.orientation.unlock(); } catch (_) {}
+      }
+    } catch (_) {}
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  initWelcome();
+  initCategories();
+  initPlayerControls();
+
+  empty.hidden = false;
+  empty.textContent = "Loading channels...";
+
+  loadVipPlaylist().catch(error => {
+    console.error(error);
+    empty.hidden = false;
+    empty.textContent = "Playlist load করা যায়নি। Admin Panel থেকে M3U import করুন।";
+  });
+
+  document.documentElement.style.overflowX = "hidden";
+  document.documentElement.style.overflowY = "auto";
+  document.body.style.overflowX = "hidden";
+  document.body.style.overflowY = "auto";
+});
