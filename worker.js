@@ -3,7 +3,7 @@
  * Updated: secure 5-minute admin session cookie + legacy Bearer compatibility.
  * Existing KV state/playlist/devices/settings are preserved.
  */
-const STATE_KEY='vip_state_v1', DEVICES_KEY='vip_devices_v1', SETTINGS_KEY='vip_settings_v1', SESSION_PREFIX='vip_admin_session:', ONLINE_PREFIX='vip_online:';
+const STATE_KEY='vip_state_v1', DEVICES_KEY='vip_devices_v1', SETTINGS_KEY='vip_settings_v1', SESSION_PREFIX='vip_admin_session:', USER_SESSION_PREFIX='vip_user_session:', USER_SESSION_TTL=31536000;
 const SESSION_TTL=300;
 const adminPassword=env=>env.ADMIN_PASSWORD||env.ADMIN_PASSWOED||'';
 const kv=env=>(env.VIP_PLAYLIST||env.PLAYLIST_KV);
@@ -27,19 +27,47 @@ async function handleApi(request,env){const url=new URL(request.url),path=url.pa
   if(path==='/api/admin/logout'&&request.method==='POST'){const c=cookies(request),token=c.VIP_ADMIN_SESSION;if(token)await kv(env).delete(SESSION_PREFIX+token);return withCors(json({ok:true},200,{'Set-Cookie':'VIP_ADMIN_SESSION=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax'}))}
   if(request.method==='GET'&&path==='/api/state'){const s=await readState(env);return withCors(json({channels:s.channels||[],notice:s.notice||{},headline:s.headline||''}))}
   if(request.method==='GET'&&path==='/api/playlist'){const s=await readState(env);return withCors(json({channels:s.channels||[]}))}
+  if(path==='/api/user/session'&&request.method==='GET'){
+    const s=await userSession(request,env);
+    if(!s)return withCors(json({ok:false,loggedIn:false},401));
+    const list=await readDevices(env),d=list.find(x=>x.deviceId===s.deviceId);
+    if(!d||d.approved===false)return withCors(json({ok:false,loggedIn:false,reason:'blocked'},401));
+    d.lastSeen=new Date().toISOString();await saveDevices(env,list);
+    return withCors(json({ok:true,loggedIn:true,user:{name:d.userName||'',deviceName:d.name||'',deviceId:d.deviceId}}));
+  }
+  if(path==='/api/user/login'&&request.method==='POST'){
+    const b=await request.json().catch(()=>({}));
+    const userName=String(b.name||'').trim().slice(0,60);
+    const password=String(b.password||'');
+    const deviceId=String(b.deviceId||'').trim().slice(0,100);
+    const deviceName=String(b.deviceName||'').trim().slice(0,80)||'My Device';
+    if(userName.length<2||password.length<4||!deviceId)return withCors(json({ok:false,error:'Name, password and device are required'},400));
+    const list=await readDevices(env);
+    let d=list.find(x=>x.deviceId===deviceId);
+    const sameUser=list.find(x=>(x.userName||'').toLowerCase()===userName.toLowerCase());
+    const passHash=await hashPassword(password);
+    if(!d){
+      if(sameUser && sameUser.passwordHash!==passHash)return withCors(json({ok:false,error:'Wrong password'},401));
+      if(sameUser && sameUser.deviceId!==deviceId)return withCors(json({ok:false,error:'This account is already linked to another device'},403));
+      d={deviceId,name:deviceName,userName,passwordHash:passHash,userAgent:String(b.userAgent||request.headers.get('user-agent')||'').slice(0,200),approved:false,status:'Pending',createdAt:new Date().toISOString(),lastSeen:new Date().toISOString()};
+      list.push(d);
+    }else{
+      if(d.userName && d.userName.toLowerCase()!==userName.toLowerCase())return withCors(json({ok:false,error:'This device belongs to another account'},403));
+      if(d.passwordHash && d.passwordHash!==passHash)return withCors(json({ok:false,error:'Wrong password'},401));
+      d.userName=userName;d.passwordHash=passHash;d.name=deviceName;d.lastSeen=new Date().toISOString();
+    }
+    await saveDevices(env,list);
+    if(!d.approved)return withCors(json({ok:false,pending:true,error:'Waiting for admin approval'},403));
+    const token=crypto.randomUUID(),session={deviceId:d.deviceId,userName:d.userName};
+    await kv(env).put(USER_SESSION_PREFIX+token,JSON.stringify(session),{expirationTtl:USER_SESSION_TTL});
+    return withCors(json({ok:true,user:{name:d.userName,deviceName:d.name}},200,{'Set-Cookie':userCookie(token)}));
+  }
+  if(path==='/api/user/logout'&&request.method==='POST'){
+    const t=cookies(request).VIP_USER_SESSION;if(t)await kv(env).delete(USER_SESSION_PREFIX+t);
+    return withCors(json({ok:true},200,{'Set-Cookie':'VIP_USER_SESSION=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax'}));
+  }
   if(path==='/api/device/register'&&request.method==='POST'){const body=await request.json().catch(()=>({})),deviceId=String(body.deviceId||request.headers.get('X-ViP-Device-ID')||'');if(!deviceId)return withCors(json({ok:false,error:'deviceId required'},400));const devices=await readDevices(env);let d=devices.find(x=>x.deviceId===deviceId);if(!d){d={deviceId,name:String(body.name||'Unknown device'),userAgent:String(body.userAgent||request.headers.get('user-agent')||'').slice(0,200),approved:false,createdAt:new Date().toISOString(),lastSeen:new Date().toISOString()};devices.push(d);await saveDevices(env,devices)}else{d.lastSeen=new Date().toISOString();await saveDevices(env,devices)}return withCors(json({ok:true,device:d,settings:await readSettings(env)}))}
   if(path==='/api/device/check'&&request.method==='GET'){const id=url.searchParams.get('deviceId')||request.headers.get('X-ViP-Device-ID')||'',devices=await readDevices(env),d=devices.find(x=>x.deviceId===id);return withCors(json({ok:true,approved:!!d?.approved,device:d||null,settings:await readSettings(env)}))}
-  if(path==='/api/online/ping'&&request.method==='POST'){
-    const b=await request.json().catch(()=>({}));
-    const id=String(b.id||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,80);
-    if(!id)return withCors(json({ok:false,error:'id required'},400));
-    await kv(env).put(ONLINE_PREFIX+id,String(Date.now()),{expirationTtl:60});
-    return withCors(json({ok:true}));
-  }
-  if(path==='/api/online'&&request.method==='GET'){
-    const listed=await kv(env).list({prefix:ONLINE_PREFIX,limit:1000});
-    return withCors(json({online:(listed.keys||[]).length}));
-  }
   const guard=await requireAdmin(request,env);if(guard)return withCors(guard);
   if(path==='/api/admin/ping'&&request.method==='GET')return withCors(json({ok:true,connected:true}));
   if(path==='/api/admin/state'&&request.method==='GET')return withCors(json({ok:true,state:await readState(env)}));
