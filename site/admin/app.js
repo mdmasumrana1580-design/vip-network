@@ -3,6 +3,67 @@ const DEFAULT_WORKER_API=(window.VIP_ADMIN_WORKER_API||window.location.origin);
 const seed=[{name:'Somoy TV',category:'News',logo:'',url:'https://example.com/somoy.m3u8',status:'Active'},{name:'Jamuna TV',category:'News',logo:'',url:'https://example.com/jamuna.m3u8',status:'Active'},{name:'ATN News',category:'News',logo:'',url:'https://example.com/atn.m3u8',status:'Active'}];
 let WORKER_API=DEFAULT_WORKER_API,connected=false,channels=[],categories=['News','Entertainment','Sports','Kids','Movies','Music','Other'],selected=null,dashPage=1,managerPage=1;
 const PAGE_SIZE=10;
+
+/* VIP NETWORK LUXURY UI PATCH — layout only, preserves all existing functionality */
+function injectLuxuryAdminUI(){
+  if(document.getElementById('vipLuxuryAdminStyle')) return;
+  const css=`
+/* ===== VIP NETWORK LUXURY ADMIN LOGIN ===== */
+#loginModal{background:radial-gradient(circle at 50% 12%,rgba(0,140,255,.16),transparent 34%),linear-gradient(135deg,#010913,#03182a 52%,#010a15)!important;backdrop-filter:blur(10px);z-index:99999!important;}
+#loginModal .login-card,#loginModal .modal-card,#loginModal>div{background:linear-gradient(145deg,rgba(3,18,35,.97),rgba(1,10,22,.98))!important;border:1px solid rgba(0,174,255,.72)!important;border-radius:28px!important;box-shadow:0 0 0 1px rgba(0,110,255,.12),0 0 55px rgba(0,132,255,.20),inset 0 1px 0 rgba(255,255,255,.06)!important;}
+.vip-lux-login{width:min(560px,calc(100vw - 28px));margin:auto;padding:30px 28px 24px;position:relative;overflow:hidden;text-align:center;color:#eaf6ff;border-radius:28px;}
+.vip-lux-login:before{content:"";position:absolute;inset:-30% -20% auto;height:230px;background:radial-gradient(circle,rgba(0,153,255,.20),transparent 68%);pointer-events:none}
+.vip-login-logo{width:82px;height:82px;border-radius:50%;object-fit:cover;border:3px solid #19a9ff;box-shadow:0 0 24px rgba(0,169,255,.45);position:relative;z-index:1;background:#06111d}
+.vip-login-title{font-size:31px;font-weight:900;letter-spacing:1px;margin:12px 0 2px;background:linear-gradient(90deg,#ffd84d,#fff,#58c9ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.vip-login-sub{font-size:17px;color:#2bbcff;font-weight:700;margin-bottom:7px}.vip-login-secure{font-size:13px;color:#a9c8de;margin:0 0 22px}
+.vip-login-field{display:flex;align-items:center;gap:11px;margin:12px 0;padding:0 14px;height:56px;border:1px solid rgba(0,164,255,.75);border-radius:15px;background:rgba(4,27,48,.78);box-shadow:inset 0 0 18px rgba(0,106,255,.07)}
+.vip-login-field span{font-size:22px;opacity:.95}.vip-login-field input{width:100%;height:100%;border:0;outline:0;background:transparent;color:#eaf6ff;font-size:16px}.vip-login-field input::placeholder{color:#89a9c1}.vip-login-eye{cursor:pointer;background:none;border:0;color:#b9dcf5;font-size:20px;padding:5px}
+.vip-login-row{display:flex;align-items:center;gap:9px;text-align:left;color:#d4e9f8;font-size:14px;margin:13px 2px 18px}.vip-login-row input{accent-color:#08a8ff;width:17px;height:17px}
+#loginBtn{width:100%;height:56px;border:1px solid #31d0ff!important;border-radius:17px!important;background:linear-gradient(135deg,#0d5fe9,#117fe9 55%,#13a9ff)!important;color:#fff!important;font-size:18px!important;font-weight:900!important;letter-spacing:.6px;box-shadow:0 0 26px rgba(0,147,255,.38)!important;cursor:pointer}
+#loginBtn:active{transform:translateY(1px)}#loginStatus{min-height:20px;margin-top:12px;font-size:13px}.vip-login-footer{margin-top:20px;color:#8fb0c8;font-size:13px}.vip-login-footer b{color:#1db8ff}
+/* ===== DASHBOARD QUICK ACTIONS: equal-size 4 cards ===== */
+.quick-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important;align-items:stretch!important}
+.quick-grid>*{min-width:0!important;width:100%!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:center!important;min-height:68px!important}
+.quick-grid .vip-import-wrap,.quick-grid .vip-import-menu,.quick-grid .import-file-wrap{width:100%!important;min-width:0!important}
+/* ===== IMPORT PAGE: prevent squeezed left column ===== */
+.vip-import-wrap{display:grid!important;grid-template-columns:minmax(240px,.85fr) minmax(0,2.15fr)!important;gap:22px!important;align-items:stretch!important;width:100%!important;box-sizing:border-box!important}
+.vip-import-wrap>*{min-width:0!important;box-sizing:border-box!important}.vip-import-wrap textarea,.vip-import-wrap input,.vip-import-wrap select,.vip-import-wrap button{max-width:100%!important;box-sizing:border-box}
+.vip-import-wrap .import-side,.vip-import-wrap .import-sidebar{min-width:0!important;width:auto!important}.vip-import-wrap .import-main,.vip-import-wrap .import-content{min-width:0!important;width:auto!important}
+/* Import tabs stay compact and usable */
+.import-tabs,.vip-import-tabs{display:flex!important;flex-wrap:wrap!important;gap:8px!important;margin-bottom:16px!important}.import-tab{flex:0 0 auto!important;min-width:0!important;white-space:nowrap!important}
+/* Mobile/tablet */
+@media(max-width:900px){
+ .quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:11px!important}.quick-grid>*{min-height:62px!important}
+ .vip-import-wrap{grid-template-columns:1fr!important;gap:14px!important}.vip-import-wrap .import-side,.vip-import-wrap .import-sidebar{width:100%!important}.vip-import-wrap .import-main,.vip-import-wrap .import-content{width:100%!important}
+}
+@media(max-width:520px){
+ .quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.quick-grid>*{min-height:58px!important;font-size:13px!important}
+ .vip-lux-login{padding:25px 18px 20px}.vip-login-title{font-size:25px}.vip-login-logo{width:72px;height:72px}
+}
+body.light .vip-lux-login{color:#10253a}.vip-lux-login *{box-sizing:border-box}
+`;
+  const s=document.createElement('style');s.id='vipLuxuryAdminStyle';s.textContent=css;document.head.appendChild(s);
+
+  const modal=document.getElementById('loginModal');
+  if(modal){
+    const card=modal.querySelector('.login-card,.modal-card')||modal.firstElementChild;
+    const host=card||modal;
+    host.classList.add('vip-lux-login');
+    host.innerHTML=`
+      <img class="vip-login-logo" src="https://i.postimg.cc/fWC0JfBr/FB-IMG-1788617876279.jpg" alt="VIP NETWORK">
+      <div class="vip-login-title">VIP NETWORK</div>
+      <div class="vip-login-sub">Admin Panel</div>
+      <div class="vip-login-secure">🛡️ Secure administrator access</div>
+      <label class="vip-login-field"><span>👤</span><input id="workerUsername" autocomplete="username" placeholder="Admin Username" value="admin"></label>
+      <label class="vip-login-field"><span>🔒</span><input id="workerPassword" type="password" autocomplete="current-password" placeholder="Password"><button class="vip-login-eye" type="button" id="vipLoginEye" aria-label="Show password">◉</button></label>
+      <label class="vip-login-row"><input id="vipRemember" type="checkbox"> <span>Remember me</span></label>
+      <button id="loginBtn" type="button">⇥ &nbsp; LOGIN</button>
+      <div id="loginStatus"></div>
+      <div class="vip-login-footer">Authorized Access Only<br><br>© 2026 <b>VIP NETWORK</b></div>`;
+    document.getElementById('vipLoginEye')?.addEventListener('click',()=>{const p=document.getElementById('workerPassword');if(!p)return;p.type=p.type==='password'?'text':'password';});
+  }
+}
+
 function saveLocal(){localStorage.setItem('vipChannels',JSON.stringify(channels));localStorage.setItem('vipCategories',JSON.stringify(categories));}
 function toast(t){const x=document.getElementById('toast');if(!x)return;x.textContent=t;x.classList.add('show');setTimeout(()=>x.classList.remove('show'),2200)}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
@@ -11,8 +72,8 @@ function logoHTML(c){return c.logo?`<img class="logo-cell" src="${esc(c.logo)}" 
 async function api(path,options={}){const headers=new Headers(options.headers||{});headers.set('Accept','application/json');if(options.body&&!(options.body instanceof FormData)&&!headers.has('Content-Type'))headers.set('Content-Type','application/json');const r=await fetch(WORKER_API.replace(/\/$/,'')+path,{...options,headers,credentials:'include',cache:'no-store'});const text=await r.text();let data={};try{data=text?JSON.parse(text):{}}catch{data={raw:text}}if(!r.ok)throw new Error(data?.error||data?.message||('HTTP '+r.status));return data;}
 function showLogin(show=true){document.getElementById('loginModal')?.classList.toggle('show',show)}
 function setLoginStatus(t,bad=false){const x=document.getElementById('loginStatus');if(x){x.textContent=t;x.style.color=bad?'#ff7070':''}}
-async function loginWorker(){const url=document.getElementById('workerUrl').value.trim().replace(/\/$/,''),pw=document.getElementById('workerPassword').value;if(!url||!pw)return setLoginStatus('Enter Worker URL and Admin Password.',true);WORKER_API=url;setLoginStatus('Connecting…');try{await api('/api/admin/login',{method:'POST',body:JSON.stringify({password:pw})});connected=true;showLogin(false);setBackendState(true);setLoginStatus('');const pf=document.getElementById('workerPassword');if(pf)pf.value='';await loadRemoteState();await loadDevices();toast('Connected • session valid for 5 minutes')}catch(e){connected=false;setBackendState(false);setLoginStatus('Login failed: '+e.message,true)}}
-document.getElementById('loginBtn')?.addEventListener('click',loginWorker);document.getElementById('workerPassword')?.addEventListener('keydown',e=>{if(e.key==='Enter')loginWorker()});
+async function loginWorker(){const workerInput=document.getElementById('workerUrl'),url=(workerInput?workerInput.value.trim():DEFAULT_WORKER_API).replace(/\/$/,''),pw=document.getElementById('workerPassword')?.value||'';if(!url||!pw)return setLoginStatus('Enter Admin Password.',true);WORKER_API=url;setLoginStatus('Connecting…');try{await api('/api/admin/login',{method:'POST',body:JSON.stringify({password:pw})});connected=true;showLogin(false);setBackendState(true);setLoginStatus('');const pf=document.getElementById('workerPassword');if(pf)pf.value='';await loadRemoteState();await loadDevices();toast('Connected • session valid for 5 minutes')}catch(e){connected=false;setBackendState(false);setLoginStatus('Login failed: '+e.message,true)}}
+document.getElementById('loginBtn')?.addEventListener('click',loginWorker);document.getElementById('workerPassword')?.addEventListener('keydown',e=>{if(e.key==='Enter')loginWorker()});document.getElementById('workerUsername')?.addEventListener('keydown',e=>{if(e.key==='Enter')loginWorker()});
 async function logoutWorker(){try{await api('/api/admin/logout',{method:'POST'})}catch{}connected=false;setBackendState(false);showLogin(true);document.getElementById('workerPassword').value='';toast('Logged out')}
 function setBackendState(ok){document.querySelectorAll('.online').forEach(x=>x.innerHTML=ok?'<i></i> Online':'<i style="background:#ff5d73"></i> Offline');document.querySelectorAll('.status-bar b').forEach(x=>x.innerHTML=`Backend connection: <i style="color:${ok?'#43e59a':'#ff5d73'}">${ok?'Connected':'Offline'}</i>`)}
 function showSection(id,fromHistory=false){document.querySelectorAll('.section').forEach(x=>x.classList.remove('active-section'));const el=document.getElementById(id);if(el)el.classList.add('active-section');document.querySelectorAll('.nav-item').forEach(x=>x.classList.toggle('active',x.dataset.section===id));document.getElementById('sidebar')?.classList.remove('open');render();if(id==='devices'&&connected)loadDevices();if(!fromHistory){history.pushState({adminSection:id},'',`#${encodeURIComponent(id)}`)}}
@@ -44,5 +105,6 @@ document.getElementById('noticeForm')?.addEventListener('submit',async e=>{e.pre
 function formatLoginTime(v){if(!v)return 'Never';try{return new Date(v).toLocaleString()}catch{return String(v)}}
 async function loadDevices(){if(!connected)return;const box=document.getElementById('deviceList');if(!box)return;box.innerHTML='<div>Loading users…</div>';try{const d=await api('/api/admin/devices'),list=Array.isArray(d)?d:(d.devices||d.data||[]);const c=document.getElementById('deviceConnected');if(c)c.textContent=list.length;const limit=d?.settings?.deviceLimit??d?.settings?.maxDevices??d?.deviceLimit??'—';const a=document.getElementById('deviceAllowed');if(a)a.textContent=limit;box.innerHTML=list.length?list.map(x=>{const id=esc(x.deviceId||x.id||''),blocked=x.status==='Blocked'||x.blocked===true;const name=esc(x.userName||x.username||x.name||x.deviceName||x.deviceId||'User');const dev=esc(x.name||x.deviceName||'Device');const status=blocked?'Blocked':esc(x.status||'Logged in');return `<div><b>${name}</b> <span>${dev}</span><br><small>Last login: ${esc(formatLoginTime(x.lastLogin||x.lastSeen||x.createdAt))}</small> <b>${status}</b><div class="actions">${blocked?`<button onclick="unblockDevice('${id}')">↗</button>`:`<button onclick="blockDevice('${id}')">⛔</button>`}<button class="del" onclick="deleteDevice('${id}')">▣</button></div></div>`}).join(''):'<div>No users registered.</div>'}catch(e){box.innerHTML='<div>Could not load users: '+esc(e.message)+'</div>'}}
 async function approveDevice(id){if(!id)return;try{await api('/api/admin/devices/approve',{method:'POST',body:JSON.stringify({deviceId:id})});await loadDevices();toast('User approved')}catch(e){toast(e.message)}}async function approveAllDevices(){try{await api('/api/admin/devices/approve-all',{method:'POST',body:'{}'});await loadDevices();toast('All users approved')}catch(e){toast(e.message)}}async function blockDevice(id){if(!id||!confirm('Block this user? They will not be able to enter the TV website.'))return;try{await api('/api/admin/devices/block',{method:'POST',body:JSON.stringify({deviceId:id})});await loadDevices();toast('User blocked')}catch(e){toast(e.message)}}async function unblockDevice(id){if(!id)return;try{await api('/api/admin/devices/unblock',{method:'POST',body:JSON.stringify({deviceId:id})});await loadDevices();toast('User unblocked')}catch(e){toast(e.message)}}async function logoutAllDevices(){if(!confirm('Log out all devices?'))return;try{await api('/api/admin/devices/logout-all',{method:'POST',body:'{}'});await loadDevices();toast('All users logged out')}catch(e){toast(e.message)}}async function deleteDevice(id){if(!id||!confirm('Delete this user/device?'))return;try{await api('/api/admin/devices?deviceId='+encodeURIComponent(id),{method:'DELETE'});await loadDevices();toast('User deleted')}catch(e){toast(e.message)}}
+injectLuxuryAdminUI();
 Object.assign(window,{loginWorker,logoutWorker,showSection,refreshData,preview,editChannel,deleteChannel,setDashPage,setManagerPage,importM3U,importM3UUrl,importXtream,addCategory,removeCategory,exportData,exportM3U,clearAll,testStream,approveDevice,approveAllDevices,blockDevice,unblockDevice,logoutAllDevices,deleteDevice});
 (async function init(){setBackendState(false);render();const input=document.getElementById('workerUrl');if(input)input.value=DEFAULT_WORKER_API;const local=JSON.parse(localStorage.getItem('vipChannels')||'null');if(Array.isArray(local))channels=local;render();if(location.hash){showSection(decodeURIComponent(location.hash.slice(1)),true)}else showSection('dashboard',true);try{await api('/api/admin/session');connected=true;showLogin(false);setBackendState(true);await loadRemoteState();await loadDevices()}catch{showLogin(true)}})();
