@@ -1,32 +1,49 @@
-/* ViP NETWORK — strong device block guard */
+/* VIP NETWORK — Device Guard
+   Targeted fix: device IDs are created locally and blocked devices are checked,
+   but accounts are NOT auto-created. Account creation now happens only after
+   successful visitor login.
+*/
 (function(){
   const KEY='vip-network-device-id';
   let id=localStorage.getItem(KEY);
-  if(!id){id=(crypto.randomUUID?crypto.randomUUID():'dev-'+Date.now()+'-'+Math.random().toString(36).slice(2));localStorage.setItem(KEY,id)}
+  if(!id){
+    id=(crypto.randomUUID?crypto.randomUUID():'dev-'+Date.now()+'-'+Math.random().toString(36).slice(2));
+    localStorage.setItem(KEY,id);
+  }
   window.VIP_DEVICE_ID=id;
+
   const base=()=>((window.VIP_WORKER_API||window.location.origin).replace(/\/$/,''));
   let blocked=false;
+
   function showBlocked(){
-    if(blocked)return; blocked=true;
-    try{document.documentElement.innerHTML='<head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Device Blocked</title></head><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#050b12;color:#fff;font-family:Arial,sans-serif"><div style="width:min(92%,420px);box-sizing:border-box;text-align:center;padding:34px 22px;border-radius:18px;background:#101923;box-shadow:0 12px 40px rgba(0,0,0,.45)"><div style="font-size:58px">⛔</div><h1 style="margin:12px 0;color:#ff5b6e">Your device has been blocked</h1><p style="opacity:.8;line-height:1.6">This device cannot access ViP Network. Please contact the administrator.</p></div></body>'}catch(e){document.body.innerHTML='<h1>Your device has been blocked</h1>'}
+    if(blocked)return;
+    blocked=true;
+    try{
+      document.documentElement.innerHTML='<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Device Blocked</title><style>body{margin:0;background:#050807;color:#fff;font-family:system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;text-align:center;padding:24px;box-sizing:border-box}div{max-width:520px;padding:28px;border:1px solid #333;border-radius:18px;background:#0d1210}h1{margin:0 0 10px;color:#ff5c5c}p{opacity:.85;line-height:1.6}</style></head><body><div><h1>Device Blocked</h1><p>Your device has been blocked.<br>Please contact the administrator.</p></div></body>';
+    }catch(e){
+      document.body.innerHTML='<h1>Your device has been blocked</h1>';
+    }
   }
+
   async function check(){
+    if(blocked)return false;
     try{
-      const r=await fetch(base()+'/api/device/check?deviceId='+encodeURIComponent(id),{headers:{'X-ViP-Device-ID':id},cache:'no-store'});
+      const r=await fetch(base()+'/api/device/check?deviceId='+encodeURIComponent(id),{
+        headers:{'X-ViP-Device-ID':id},
+        cache:'no-store'
+      });
       const d=await r.json().catch(()=>({}));
-      if(d.blocked===true||d.device?.blocked===true||String(d.device?.status||'').toLowerCase()==='blocked'){showBlocked();return false}
+      if(d.blocked===true || d.device?.blocked===true || String(d.device?.status||'').toLowerCase()==='blocked'){
+        showBlocked();
+        return false;
+      }
       return true;
-    }catch(e){return true}
+    }catch(e){
+      return true;
+    }
   }
-  async function register(){
-    if(!(await check()))return;
-    try{
-      const r=await fetch(base()+'/api/device/register',{method:'POST',headers:{'Content-Type':'application/json','X-ViP-Device-ID':id},body:JSON.stringify({deviceId:id,name:navigator.userAgent.slice(0,80),userAgent:navigator.userAgent}),cache:'no-store'});
-      const d=await r.json().catch(()=>({}));
-      if(r.status===403||d.blocked===true||d.device?.blocked===true){showBlocked();return}
-    }catch(e){}
-  }
-  register();
+
+  check();
   setInterval(check,10000);
   window.addEventListener('focus',check);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)check()});
