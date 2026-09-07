@@ -32,7 +32,7 @@ async function handleApi(request,env){const url=new URL(request.url),path=url.pa
     if(!s)return withCors(json({ok:false,loggedIn:false},401));
     const list=await readDevices(env),d=list.find(x=>x.deviceId===s.deviceId);
     if(!d)return withCors(json({ok:false,loggedIn:false,reason:'removed'},401));
-    if(d.status==='Blocked')return withCors(json({ok:false,loggedIn:false,reason:'blocked'},401));
+    if(d.blocked===true||d.status==='Blocked')return withCors(json({ok:false,loggedIn:false,reason:'blocked'},401));
     d.lastSeen=new Date().toISOString();await saveDevices(env,list);
     return withCors(json({ok:true,loggedIn:true,user:{name:d.userName||'',deviceName:d.name||'',deviceId:d.deviceId}}));
   }
@@ -49,6 +49,7 @@ async function handleApi(request,env){const url=new URL(request.url),path=url.pa
 
     const list=await readDevices(env);
     let d=list.find(x=>x.deviceId===deviceId);
+    if(d && (d.blocked===true || d.status==='Blocked')) return withCors(json({ok:false,error:'This device is blocked'},403));
 
     if(!d){
       d={
@@ -124,6 +125,9 @@ async function handleApi(request,env){const url=new URL(request.url),path=url.pa
   if(path==='/api/admin/settings'&&request.method==='GET')return withCors(json({ok:true,settings:await readSettings(env)}));
   if(path==='/api/admin/settings'&&request.method==='PUT'){const b=await request.json().catch(()=>({})),s={...(await readSettings(env)),...b};await kv(env).put(SETTINGS_KEY,JSON.stringify(s));return withCors(json({ok:true,settings:s}))}
   if(path==='/api/admin/devices'&&request.method==='GET')return withCors(json({ok:true,devices:await readDevices(env),settings:await readSettings(env)}));
+  if(path==='/api/admin/devices/block'&&request.method==='POST'){const b=await request.json().catch(()=>({})),id=String(b.deviceId||''),list=await readDevices(env),d=list.find(x=>x.deviceId===id);if(!d)return withCors(json({ok:false,error:'Device not found'},404));d.blocked=true;d.status='Blocked';await saveDevices(env,list);return withCors(json({ok:true,device:d}))}
+  if(path==='/api/admin/devices/unblock'&&request.method==='POST'){const b=await request.json().catch(()=>({})),id=String(b.deviceId||''),list=await readDevices(env),d=list.find(x=>x.deviceId===id);if(!d)return withCors(json({ok:false,error:'Device not found'},404));d.blocked=false;d.status='Logged in';await saveDevices(env,list);return withCors(json({ok:true,device:d}))}
+
   if(path==='/api/admin/devices/approve'&&request.method==='POST'){const b=await request.json().catch(()=>({})),id=String(b.deviceId||''),list=await readDevices(env),d=list.find(x=>x.deviceId===id);if(!d)return withCors(json({ok:false,error:'Device not found'},404));d.approved=true;d.status='Approved';await saveDevices(env,list);return withCors(json({ok:true,device:d}))}
   if(path==='/api/admin/devices/approve-all'&&request.method==='POST'){const list=await readDevices(env);list.forEach(d=>{d.approved=true;d.status='Approved'});await saveDevices(env,list);return withCors(json({ok:true,count:list.length}))}
   if(path==='/api/admin/devices/logout-all'&&request.method==='POST'){const list=await readDevices(env);list.forEach(d=>{d.approved=false;d.status='Logged out'});await saveDevices(env,list);return withCors(json({ok:true}))}
