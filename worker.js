@@ -6,7 +6,7 @@ const STATE_KEY='vip_state_v1', DEVICES_KEY='vip_devices_v1', SETTINGS_KEY='vip_
 const SESSION_TTL=300;
 const adminPassword=env=>env.ADMIN_PASSWORD||env.ADMIN_PASSWOED||'';
 const kv=env=>(env.VIP_PLAYLIST||env.PLAYLIST_KV);
-const json=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store',...extra}});
+const json=(data,status=200,extra={})=>{const extraHeaders=extra.headers||{};const responseOptions={...extra};delete responseOptions.headers;return new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store',...extraHeaders},...responseOptions})};
 const cors={'access-control-allow-origin':'*','access-control-allow-methods':'GET,POST,PUT,DELETE,OPTIONS','access-control-allow-headers':'Content-Type, Authorization, X-ViP-Device-ID'};
 function withCors(resp){const h=new Headers(resp.headers);Object.entries(cors).forEach(([k,v])=>h.set(k,v));return new Response(resp.body,{status:resp.status,statusText:resp.statusText,headers:h})}
 function norm(c={}){return{name:String(c.name||c.title||'Unnamed'),category:String(c.category||c.group||c.groupTitle||'Other'),logo:String(c.logo||c.tvgLogo||c['tvg-logo']||''),url:String(c.url||c.stream||c.streamUrl||''),status:String(c.status||'Unknown')}}
