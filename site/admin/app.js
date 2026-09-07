@@ -15,11 +15,15 @@ function injectLuxuryAdminUI(){
 .vip-lux-login:before{content:"";position:absolute;inset:-30% -20% auto;height:230px;background:radial-gradient(circle,rgba(0,153,255,.20),transparent 68%);pointer-events:none}
 .vip-login-logo{width:82px;height:82px;border-radius:50%;object-fit:cover;border:3px solid #19a9ff;box-shadow:0 0 24px rgba(0,169,255,.45);position:relative;z-index:1;background:#06111d}
 .vip-login-title{font-size:31px;font-weight:900;letter-spacing:1px;margin:12px 0 2px;background:linear-gradient(90deg,#ffd84d,#fff,#58c9ff);-webkit-background-clip:text;background-clip:text;color:transparent}
-.vip-login-sub{font-size:17px;color:#2bbcff;font-weight:700;margin-bottom:7px}.vip-login-admin-title{font-size:36px!important;line-height:1.05!important;letter-spacing:.4px!important}.vip-login-secure{font-size:13px;color:#a9c8de;margin:0 0 22px}
-.vip-login-field{display:flex;align-items:center;gap:11px;margin:12px 0;padding:0 14px;height:56px;border:1px solid rgba(0,164,255,.75);border-radius:15px;background:rgba(4,27,48,.78);box-shadow:inset 0 0 18px rgba(0,106,255,.07)}
-.vip-login-field span{font-size:22px;opacity:.95}.vip-login-field input{width:100%;height:100%;border:0;outline:0;background:transparent;color:#eaf6ff;font-size:16px}.vip-login-field input::placeholder{color:#89a9c1}.vip-login-eye{cursor:pointer;background:none;border:0;color:#b9dcf5;font-size:20px;padding:5px}
-.vip-login-row{display:flex;align-items:center;gap:9px;text-align:left;color:#d4e9f8;font-size:14px;margin:13px 2px 18px}.vip-login-row input{accent-color:#08a8ff;width:17px;height:17px}
-#loginBtn{width:100%;height:56px;border:1px solid #31d0ff!important;border-radius:17px!important;background:linear-gradient(135deg,#0d5fe9,#117fe9 55%,#13a9ff)!important;color:#fff!important;font-size:18px!important;font-weight:900!important;letter-spacing:.6px;box-shadow:0 0 26px rgba(0,147,255,.38)!important;cursor:pointer}
+.vip-login-sub{font-size:17px;color:#2bbcff;font-weight:700;margin-bottom:7px}.vip-login-admin-title{font-size:36px!important;line-height:1.05!important;letter-spacing:.4px!important}.vip-login-secure{font-size:13px;color:#a9c8de;margin:0 0 12px}.vip-login-password-label{display:block;text-align:left;color:#d9ecfa;font-size:15px;font-weight:800;margin:0 2px 7px}
+.vip-login-field{position:relative;display:flex;align-items:center;box-sizing:border-box;width:100%;height:58px;margin:12px 0;padding:0;border:1px solid rgba(0,164,255,.75);border-radius:15px;background:rgba(4,27,48,.78);box-shadow:inset 0 0 18px rgba(0,106,255,.07);overflow:hidden}
+.vip-login-field>span{flex:0 0 52px;display:flex;align-items:center;justify-content:center;height:100%;font-size:22px;opacity:.95;pointer-events:none}
+.vip-login-field input#workerPassword{position:static!important;display:block!important;flex:1 1 auto!important;width:auto!important;min-width:0!important;height:100%!important;margin:0!important;padding:0 8px!important;border:0!important;outline:0!important;background:transparent!important;color:#eaf6ff!important;font-size:18px!important;line-height:58px!important;text-align:left!important;box-sizing:border-box!important;transform:none!important;vertical-align:middle!important}
+.vip-login-field input#workerPassword::placeholder{color:#89a9c1}
+.vip-login-eye{flex:0 0 52px;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:transparent;border:0;color:#b9dcf5;font-size:23px;padding:0;margin:0;line-height:1}
+.vip-login-row{display:flex;align-items:center;gap:9px;text-align:left;color:#d4e9f8;font-size:14px;margin:13px 2px 18px}
+.vip-login-row input{accent-color:#08a8ff;width:17px;height:17px}
+#loginBtn{display:block;width:82%;height:48px;margin:0 auto;border:1px solid #31d0ff!important;border-radius:14px!important;background:linear-gradient(135deg,#0d5fe9,#117fe9 55%,#13a9ff)!important;color:#fff!important;font-size:17px!important;font-weight:900!important;letter-spacing:.6px;box-shadow:0 0 22px rgba(0,147,255,.30)!important;cursor:pointer}
 #loginBtn:active{transform:translateY(1px)}#loginStatus{min-height:20px;margin-top:12px;font-size:13px}.vip-login-footer{margin-top:20px;color:#8fb0c8;font-size:13px}.vip-login-footer b{color:#1db8ff}
 /* ===== DASHBOARD QUICK ACTIONS: equal-size 4 cards ===== */
 .quick-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important;align-items:stretch!important}
@@ -54,12 +58,13 @@ body.light .vip-lux-login{color:#10253a}.vip-lux-login *{box-sizing:border-box}
       <div class="vip-login-title">WELCOME</div>
       <div class="vip-login-sub vip-login-admin-title">Admin Panel</div>
       <div class="vip-login-secure">🛡️ Secure administrator access</div>
-      <label class="vip-login-field"><span>🔒</span><input id="workerPassword" type="password" autocomplete="current-password" placeholder="Password" value="258085"><button class="vip-login-eye" type="button" id="vipLoginEye" aria-label="Show password">◉</button></label>
+      <div class="vip-login-password-label">Password</div>
+      <label class="vip-login-field"><span aria-hidden="true">🔒</span><input id="workerPassword" type="password" autocomplete="current-password" placeholder="Password" value="258085"><button class="vip-login-eye" type="button" id="vipLoginEye" aria-label="Show password" title="Show password">👁</button></label>
       <label class="vip-login-row"><input id="vipRemember" type="checkbox"> <span>Remember me</span></label>
       <button id="loginBtn" type="button">⇥ &nbsp; LOGIN</button>
       <div id="loginStatus"></div>
       <div class="vip-login-footer">ADMIN PANEL</div>`;
-    document.getElementById('vipLoginEye')?.addEventListener('click',()=>{const p=document.getElementById('workerPassword');if(!p)return;p.type=p.type==='password'?'text':'password';});
+    document.getElementById('vipLoginEye')?.addEventListener('click',()=>{const p=document.getElementById('workerPassword'),b=document.getElementById('vipLoginEye');if(!p||!b)return;const show=p.type==='password';p.type=show?'text':'password';b.textContent=show?'🙈':'👁';b.setAttribute('aria-label',show?'Hide password':'Show password');b.title=show?'Hide password':'Show password';});
   }
 }
 
