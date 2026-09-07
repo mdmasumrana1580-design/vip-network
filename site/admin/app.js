@@ -15,7 +15,7 @@ function injectLuxuryAdminUI(){
 .vip-lux-login:before{content:"";position:absolute;inset:-30% -20% auto;height:230px;background:radial-gradient(circle,rgba(0,153,255,.20),transparent 68%);pointer-events:none}
 .vip-login-logo{width:82px;height:82px;border-radius:50%;object-fit:cover;border:3px solid #19a9ff;box-shadow:0 0 24px rgba(0,169,255,.45);position:relative;z-index:1;background:#06111d}
 .vip-login-title{font-size:31px;font-weight:900;letter-spacing:1px;margin:12px 0 2px;background:linear-gradient(90deg,#ffd84d,#fff,#58c9ff);-webkit-background-clip:text;background-clip:text;color:transparent}
-.vip-login-sub{font-size:17px;color:#2bbcff;font-weight:700;margin-bottom:7px}.vip-login-secure{font-size:13px;color:#a9c8de;margin:0 0 22px}
+.vip-login-sub{font-size:17px;color:#2bbcff;font-weight:700;margin-bottom:7px}.vip-login-admin-title{font-size:36px!important;line-height:1.05!important;letter-spacing:.4px!important}.vip-login-secure{font-size:13px;color:#a9c8de;margin:0 0 22px}
 .vip-login-field{display:flex;align-items:center;gap:11px;margin:12px 0;padding:0 14px;height:56px;border:1px solid rgba(0,164,255,.75);border-radius:15px;background:rgba(4,27,48,.78);box-shadow:inset 0 0 18px rgba(0,106,255,.07)}
 .vip-login-field span{font-size:22px;opacity:.95}.vip-login-field input{width:100%;height:100%;border:0;outline:0;background:transparent;color:#eaf6ff;font-size:16px}.vip-login-field input::placeholder{color:#89a9c1}.vip-login-eye{cursor:pointer;background:none;border:0;color:#b9dcf5;font-size:20px;padding:5px}
 .vip-login-row{display:flex;align-items:center;gap:9px;text-align:left;color:#d4e9f8;font-size:14px;margin:13px 2px 18px}.vip-login-row input{accent-color:#08a8ff;width:17px;height:17px}
@@ -38,7 +38,7 @@ function injectLuxuryAdminUI(){
 }
 @media(max-width:520px){
  .quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.quick-grid>*{min-height:58px!important;font-size:13px!important}
- .vip-lux-login{padding:25px 18px 20px}.vip-login-title{font-size:25px}.vip-login-logo{width:72px;height:72px}
+ .vip-lux-login{padding:25px 18px 20px}.vip-login-title{font-size:25px}.vip-login-admin-title{font-size:29px!important}.vip-login-logo{width:72px;height:72px}
 }
 body.light .vip-lux-login{color:#10253a}.vip-lux-login *{box-sizing:border-box}
 `;
@@ -50,16 +50,15 @@ body.light .vip-lux-login{color:#10253a}.vip-lux-login *{box-sizing:border-box}
     const host=card||modal;
     host.classList.add('vip-lux-login');
     host.innerHTML=`
-      <img class="vip-login-logo" src="https://i.postimg.cc/fWC0JfBr/FB-IMG-1788617876279.jpg" alt="VIP NETWORK">
-      <div class="vip-login-title">VIP NETWORK</div>
-      <div class="vip-login-sub">Admin Panel</div>
+      <img class="vip-login-logo" src="https://i.postimg.cc/fWC0JfBr/FB-IMG-1788617876279.jpg" alt="Admin Panel">
+      <div class="vip-login-title">WELCOME</div>
+      <div class="vip-login-sub vip-login-admin-title">Admin Panel</div>
       <div class="vip-login-secure">🛡️ Secure administrator access</div>
-      <label class="vip-login-field"><span>👤</span><input id="workerUsername" autocomplete="username" placeholder="Admin Username" value="admin"></label>
-      <label class="vip-login-field"><span>🔒</span><input id="workerPassword" type="password" autocomplete="current-password" placeholder="Password"><button class="vip-login-eye" type="button" id="vipLoginEye" aria-label="Show password">◉</button></label>
+      <label class="vip-login-field"><span>🔒</span><input id="workerPassword" type="password" autocomplete="current-password" placeholder="Password" value="258085"><button class="vip-login-eye" type="button" id="vipLoginEye" aria-label="Show password">◉</button></label>
       <label class="vip-login-row"><input id="vipRemember" type="checkbox"> <span>Remember me</span></label>
       <button id="loginBtn" type="button">⇥ &nbsp; LOGIN</button>
       <div id="loginStatus"></div>
-      <div class="vip-login-footer">Authorized Access Only<br><br>© 2026 <b>VIP NETWORK</b></div>`;
+      <div class="vip-login-footer">ADMIN PANEL</div>`;
     document.getElementById('vipLoginEye')?.addEventListener('click',()=>{const p=document.getElementById('workerPassword');if(!p)return;p.type=p.type==='password'?'text':'password';});
   }
 }
@@ -73,8 +72,7 @@ async function api(path,options={}){const headers=new Headers(options.headers||{
 function showLogin(show=true){document.getElementById('loginModal')?.classList.toggle('show',show)}
 function setLoginStatus(t,bad=false){const x=document.getElementById('loginStatus');if(x){x.textContent=t;x.style.color=bad?'#ff7070':''}}
 async function loginWorker(){const workerInput=document.getElementById('workerUrl'),url=(workerInput?workerInput.value.trim():DEFAULT_WORKER_API).replace(/\/$/,''),pw=document.getElementById('workerPassword')?.value||'';if(!url||!pw)return setLoginStatus('Enter Admin Password.',true);WORKER_API=url;setLoginStatus('Connecting…');try{await api('/api/admin/login',{method:'POST',body:JSON.stringify({password:pw})});connected=true;showLogin(false);setBackendState(true);setLoginStatus('');const pf=document.getElementById('workerPassword');if(pf)pf.value='';await loadRemoteState();await loadDevices();toast('Connected • session valid for 5 minutes')}catch(e){connected=false;setBackendState(false);setLoginStatus('Login failed: '+e.message,true)}}
-document.getElementById('loginBtn')?.addEventListener('click',loginWorker);document.getElementById('workerPassword')?.addEventListener('keydown',e=>{if(e.key==='Enter')loginWorker()});document.getElementById('workerUsername')?.addEventListener('keydown',e=>{if(e.key==='Enter')loginWorker()});
-async function logoutWorker(){try{await api('/api/admin/logout',{method:'POST'})}catch{}connected=false;setBackendState(false);showLogin(true);document.getElementById('workerPassword').value='';toast('Logged out')}
+document.getElementById('loginBtn')?.addEventListener('click',loginWorker);document.getElementById('workerPassword')?.addEventListener('keydown',e=>{if(e.key==='Enter')loginWorker()});async function logoutWorker(){try{await api('/api/admin/logout',{method:'POST'})}catch{}connected=false;setBackendState(false);showLogin(true);document.getElementById('workerPassword').value='';toast('Logged out')}
 function setBackendState(ok){document.querySelectorAll('.online').forEach(x=>x.innerHTML=ok?'<i></i> Online':'<i style="background:#ff5d73"></i> Offline');document.querySelectorAll('.status-bar b').forEach(x=>x.innerHTML=`Backend connection: <i style="color:${ok?'#43e59a':'#ff5d73'}">${ok?'Connected':'Offline'}</i>`)}
 function showSection(id,fromHistory=false){document.querySelectorAll('.section').forEach(x=>x.classList.remove('active-section'));const el=document.getElementById(id);if(el)el.classList.add('active-section');document.querySelectorAll('.nav-item').forEach(x=>x.classList.toggle('active',x.dataset.section===id));document.getElementById('sidebar')?.classList.remove('open');render();if(id==='devices'&&connected)loadDevices();if(!fromHistory){history.pushState({adminSection:id},'',`#${encodeURIComponent(id)}`)}}
 window.addEventListener('popstate',()=>{const id=decodeURIComponent(location.hash.slice(1)||'dashboard');showSection(document.getElementById(id)?id:'dashboard',true)});
