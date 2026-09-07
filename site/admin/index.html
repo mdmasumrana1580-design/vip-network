@@ -1,228 +1,116 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="theme-color" content="#020d19" />
-<title>ADMIN+TV — TV Admin Panel</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#071423">
+<title>VIP NETWORK — Admin Panel</title>
 <link rel="stylesheet" href="style.css">
-<link rel="manifest" href="./manifest.webmanifest">
-<style>
-.vip-login-brand{width:76px;height:76px;object-fit:cover;border-radius:50%;display:block;margin:0 auto 14px;border:3px solid #18b9ff;box-shadow:0 0 24px rgba(0,174,255,.45)}
-.login-card.vip-login-card{background:linear-gradient(145deg,#03182a,#020d19);border:1px solid rgba(0,157,255,.75);box-shadow:0 0 35px rgba(0,125,255,.22);border-radius:24px;padding:28px 22px 24px;max-width:430px;width:calc(100% - 28px);text-align:center;color:#eaf6ff}
-.vip-login-welcome{margin:0;font-size:28px;font-weight:900;letter-spacing:.5px;color:#fff0bd}
-.vip-login-admin{margin:2px 0 8px;font-size:36px;line-height:1.05;font-weight:900;background:linear-gradient(90deg,#16a8ff,#6de8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
-.vip-login-secure{margin:0 0 18px;color:#b9d5e8;font-size:14px}
-.vip-login-label{display:block;text-align:left;font-size:15px;font-weight:800;color:#dcefff;margin:0 2px 7px}
-.vip-login-field{position:relative;display:flex!important;align-items:center!important;width:100%;height:56px!important;margin:0 0 16px!important;padding:0!important;box-sizing:border-box!important;border:1px solid #0b9dff!important;border-radius:15px!important;background:#041b2f!important;overflow:hidden!important}
-.vip-lock{width:52px;flex:0 0 52px;text-align:center;font-size:22px}
-.vip-login-field #workerPassword{position:static!important;display:block!important;flex:1 1 auto!important;width:auto!important;height:100%!important;margin:0!important;padding:0 8px!important;border:0!important;outline:0!important;background:transparent!important;color:#fff!important;font-size:18px!important;line-height:56px!important;box-sizing:border-box!important}
-.vip-login-field #workerPassword::placeholder{color:#8da8bb}
-.vip-login-eye{width:52px;flex:0 0 52px;height:100%;border:0!important;background:transparent!important;color:#c9eaff!important;font-size:22px;cursor:pointer}
-.vip-login-row{display:flex;align-items:center;gap:8px;margin:0 2px 18px;color:#cfe5f5;font-size:14px;text-align:left}
-.vip-login-row input{width:17px;height:17px;accent-color:#129cff}
-.vip-login-button{display:block!important;width:78%!important;height:46px!important;margin:0 auto!important;border-radius:13px!important;font-size:17px!important;font-weight:900!important;border:1px solid #2acbff!important;background:linear-gradient(135deg,#0d5fe9,#13a9ff)!important;color:#fff!important;box-shadow:0 0 24px rgba(0,151,255,.28)!important}
-.vip-login-footer{margin-top:22px;color:#7fa7c1;font-size:13px;letter-spacing:1px}
-</style>
-
-/* VIP NETWORK — Mobile layout fix v2
-   Only affects responsive layout; existing dashboard functionality is preserved. */
-<style id="vip-mobile-fix">
-*{box-sizing:border-box}
-html,body{max-width:100%;overflow-x:hidden}
-img,video{max-width:100%}
-.table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.table-wrap table{width:100%}
-.device-list{width:100%;overflow:hidden}
-.import-grid,.dashboard-workspace{min-width:0}
-.form-card,.panel,.section{min-width:0}
-
-@media (max-width:760px){
-  body{font-size:14px}
-  .app{width:100%;min-width:0}
-  .content{width:100%;padding:10px 8px 28px!important;min-width:0}
-  .topbar,.header,.admin-header{width:100%;min-width:0}
-  .search{min-width:0!important;flex:1 1 auto!important}
-  .search input{min-width:0!important;width:100%!important}
-  .top-actions{gap:5px!important;flex-wrap:nowrap!important}
-  .top-actions .online{font-size:11px}
-  .admin-connect-top>div,.profile-btn>div:not(.avatar){display:none!important}
-  .admin-connect-top img{width:34px!important;height:34px!important}
-  .theme-btn,#themeBtn{width:40px!important;height:40px!important}
-  .profile-btn{width:40px!important;min-width:40px!important;padding:0!important}
-  .avatar{margin:auto}
-
-  .page-head{display:flex!important;align-items:flex-start!important;gap:8px!important;flex-wrap:wrap!important}
-  .page-head>div{min-width:0;flex:1 1 180px}
-  .page-head h1{font-size:21px!important;line-height:1.2!important}
-  .page-head p{font-size:12px!important}
-  .page-head>.primary{width:auto!important;max-width:100%;font-size:12px!important;padding:9px 12px!important}
-
-  .stats{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
-  .stat{min-width:0!important;padding:11px!important}
-  .stat strong{font-size:20px!important}
-  .stat small{font-size:10px!important}
-  .stat em{font-size:9px!important}
-
-  .status-bar{display:flex!important;flex-wrap:wrap!important;gap:5px!important;padding:9px!important;font-size:11px!important}
-  .status-bar small{width:100%;order:5;font-size:9px!important}
-  .status-bar button{margin-left:auto}
-
-  .quick-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
-  .quick-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  .quick-grid button{min-width:0!important;padding:11px 7px!important;font-size:11px!important}
-
-  .dashboard-workspace{display:flex!important;flex-direction:column!important;gap:10px!important}
-  .dashboard-workspace .channel-panel,
-  .dashboard-workspace .preview{width:100%!important;min-width:0!important;max-width:none!important}
-  .panel{width:100%!important;min-width:0!important}
-  .panel-title{gap:7px!important}
-  .panel-title h2{font-size:16px!important}
-  .panel-title>button{font-size:10px!important;padding:7px 9px!important}
-
-  .filters{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important}
-  .filters input{grid-column:1/-1;width:100%!important;min-width:0!important}
-  .filters select{width:100%!important;min-width:0!important}
-
-  .channel-panel .table-wrap{overflow-x:hidden!important}
-  .channel-panel table{table-layout:fixed!important;width:100%!important}
-  .channel-panel th:nth-child(1),.channel-panel td:nth-child(1){width:25px!important}
-  .channel-panel th:nth-child(2),.channel-panel td:nth-child(2){width:43px!important}
-  .channel-panel th:nth-child(3),.channel-panel td:nth-child(3){width:auto!important}
-  .channel-panel th:nth-child(4),.channel-panel td:nth-child(4){display:none!important}
-  .channel-panel th:nth-child(5),.channel-panel td:nth-child(5){width:58px!important}
-  .channel-panel th:nth-child(6),.channel-panel td:nth-child(6){width:45px!important}
-  .channel-panel td,.channel-panel th{padding:7px 3px!important;font-size:9px!important}
-  .channel-panel td:nth-child(3){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .channel-panel .logo-cell{width:34px!important;height:34px!important}
-  .channel-panel .actions{display:flex!important;gap:3px!important}
-  .channel-panel .actions button{width:28px!important;height:28px!important;padding:0!important;font-size:11px!important}
-
-  .preview .video-box{width:100%!important;height:auto!important;aspect-ratio:16/9!important}
-  .preview-info p{display:grid!important;grid-template-columns:1fr auto!important;gap:8px!important}
-  .preview-info b{max-width:62vw!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .preview-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
-  .preview-actions button{min-width:0!important;font-size:10px!important;padding:9px 5px!important}
-  .test-box>div{display:flex!important;gap:6px!important}
-  .test-box input{min-width:0!important;flex:1 1 auto!important}
-  .test-box button{flex:0 0 auto!important}
-
-  /* Channel Manager: keep all columns accessible without breaking the page width. */
-  #channels .table-wrap{overflow-x:auto!important}
-  #channels table{min-width:720px!important}
-  #channels .filters{grid-template-columns:1fr 1fr!important}
-
-  /* Import: one clean vertical card on phones. */
-  .import-tabs{display:flex!important;width:100%!important;gap:6px!important;overflow-x:auto!important}
-  .import-tab{flex:0 0 auto!important}
-  .import-grid{display:flex!important;flex-direction:column!important;gap:10px!important}
-  .import-grid .form-card,.import-grid .import-guide{width:100%!important;min-width:0!important}
-  #import-url label,#import-file label,#import-xtream label{width:100%!important}
-  #m3uUrl,#m3uText,#xtServer,#xtUser,#xtPass,#xtLimit{width:100%!important;max-width:100%!important}
-  #import-url .primary,#import-file .primary,#import-xtream .primary{width:100%!important;margin-top:5px!important}
-  .import-guide{min-height:140px!important}
-  .import-guide h2{font-size:22px!important}
-  .import-guide p{font-size:13px!important;line-height:1.45!important}
-
-  /* Devices: name, status and actions stay aligned on every phone width. */
-  #devices .stats{grid-template-columns:1fr 1fr!important}
-  #devices .page-head>.primary{width:100%!important}
-  .device-list{display:flex!important;flex-direction:column!important}
-  .device-row{
-    display:grid!important;
-    grid-template-columns:minmax(0,1fr) auto auto!important;
-    align-items:center!important;
-    gap:8px!important;
-    width:100%!important;
-    padding:13px 4px!important;
-    border-bottom:1px solid rgba(120,145,165,.25)!important;
-  }
-  .device-main{min-width:0!important}
-  .device-name{display:block!important;font-size:14px!important;line-height:1.25!important;white-space:normal!important;overflow-wrap:anywhere!important}
-  .device-ip{display:block!important;margin-top:3px!important;font-size:9px!important;color:#7d8e9e!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
-  .device-status{font-weight:800!important;font-size:12px!important;white-space:nowrap!important}
-  .device-actions{display:flex!important;gap:5px!important}
-  .device-actions button{width:31px!important;height:31px!important;min-width:31px!important;padding:0!important}
-  .device-actions .del{color:#e65d75!important}
-
-  .form-card{width:100%!important;max-width:none!important}
-  input,select,textarea{max-width:100%!important}
-}
-
-@media (max-width:390px){
-  .content{padding-left:6px!important;padding-right:6px!important}
-  .top-actions .online{display:none!important}
-  .channel-panel th:nth-child(5),.channel-panel td:nth-child(5){display:none!important}
-  .channel-panel th:nth-child(6),.channel-panel td:nth-child(6){width:50px!important}
-  .quick-grid{grid-template-columns:1fr 1fr!important}
-  .device-row{grid-template-columns:minmax(0,1fr) auto auto!important;gap:5px!important}
-  .device-status{font-size:11px!important}
-}
-</style>
-
 </head>
 <body>
 <div class="app">
-<aside class="sidebar" id="sidebar" aria-hidden="true">
-<div class="brand"><div class="logo-mark">VIP<span>TV</span></div><div><strong>VIP NETWORK</strong><small>TV Admin Panel</small></div></div>
-<button class="nav-item active" data-section="dashboard">⌂ <span>Dashboard</span></button>
-<button class="nav-item" data-section="channels">▣ <span>Channel Manager</span></button>
-<button class="nav-item" data-section="add">⊞ <span>Add Channel</span></button>
-<button class="nav-item" data-section="import">☁ <span>Import M3U</span></button>
-<button class="nav-item" data-section="categories">▦ <span>Categories</span></button>
-<button class="nav-item" data-section="settings">⚙ <span>Website Settings</span></button>
-<button class="nav-item" data-section="notice">⚑ <span>Notice / Banner</span></button>
-<button class="nav-item" data-section="devices">▣ <span>Devices / Access</span></button>
-<button class="nav-item" data-section="backup">▤ <span>Backup & Export</span></button>
-<button class="nav-item" data-section="analytics">⌁ <span>Analytics</span></button>
-<button class="nav-item" data-section="tools">⚒ <span>System Tools</span></button>
-<div class="backend-card"><img class="backend-logo" src="https://i.postimg.cc/fWC0JfBr/FB-IMG-1788617876279.jpg" alt="Admin Connect"><div><span class="backend-label">Admin Connect</span><br><b>● Connected</b></div></div>
-<div class="side-footer">Version 1.0.0<br>© 2026 VIP NETWORK<br>All rights reserved.</div>
-</aside>
-<main class="main">
-<header class="topbar">
-<div class="admin-brand"><img src="assets/admin-logo.png" alt="ADMIN"><div><strong>ADMIN</strong><small>TV Admin Panel</small></div></div>
-<div class="search"><span>⌕</span><input id="globalSearch" placeholder="Search anything..."></div>
-<div class="top-actions"><span class="online"><i></i> Online</span><div class="admin-connect-top"><img src="https://i.postimg.cc/fWC0JfBr/FB-IMG-1788617876279.jpg" alt="Admin Connect"><div><b>Admin Connect</b><small>Connected</small></div></div><button id="themeBtn" title="Toggle theme" aria-label="Toggle theme" aria-pressed="false">☾</button><button class="profile profile-btn" id="profileBtn" title="Administrator profile"><div class="avatar">A</div><div><b>ADMIN</b><small>Administrator</small></div></button></div>
-</header>
-<section class="content">
-<div id="dashboard" class="section active-section">
-<div class="page-head"><div><h1>ADMIN Dashboard</h1><p>Monitor and manage your IPTV channels.</p></div><button class="primary" onclick="showSection('add')">＋ Add Channel</button></div>
-<div class="stats"><div class="stat blue"><span>▣</span><div><small>Total Channels</small><strong id="totalStat">0</strong><em>+12 today</em></div></div><div class="stat green"><span>▥</span><div><small>Active Channels</small><strong id="activeStat">0</strong><em>Working</em></div></div><div class="stat red"><span>☒</span><div><small>Dead Channels</small><strong id="deadStat">0</strong><em>Need attention</em></div></div><div class="stat yellow"><span>?</span><div><small>Unknown / Disabled</small><strong id="unknownStat">0</strong><em>Disabled</em></div></div></div>
-<div class="status-bar"><span>⌁</span><b>Backend connection: <i>Connected</i></b><small>Last Sync: <span id="syncTime"></span></small><button onclick="refreshData()">⟳</button></div>
-<div class="quick-grid"><button onclick="showSection('channels')"><span class="quick-icon">☷</span><b>Manage Playlist</b></button><button onclick="showSection('add')"><span class="quick-icon">＋</span><b>Add Channel</b></button><button onclick="showSection('import')"><span class="quick-icon">⇧</span><b>Import File</b></button><button onclick="showSection('notice')"><span class="quick-icon">⚑</span><b>Notice</b></button><button onclick="showSection('devices')"><span class="quick-icon">▣</span><b>Devices</b></button></div>
-<div class="dashboard-workspace"><div class="panel channel-panel"><div class="panel-title"><h2>▣ Channel List</h2><button onclick="refreshData()">⟳ Refresh</button></div><div class="filters"><input id="dashSearch" placeholder="⌕ Search channel..."><select id="dashCat"><option>All Categories</option></select><select id="dashStatus"><option>All Status</option><option>Active</option><option>Dead</option><option>Disabled</option></select></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Logo</th><th>Channel Name</th><th>Category</th><th>Status</th><th>Action</th></tr></thead><tbody id="channelRows"></tbody></table></div><div class="pagination" id="pagination"></div></div>
-<div class="panel preview"><div class="panel-title"><h2>▶ Live Preview</h2><span class="live-dot">● NTV</span></div><div class="video-box"><video id="player" controls playsinline></video><div id="videoPlaceholder">▶<small>Select a channel to preview</small></div></div><div class="preview-info"><p>Channel Name <b id="pName">—</b></p><p>Category <b id="pCategory">—</b></p><p>Stream URL <b id="pUrl">—</b></p><p>Status <b id="pStatus">—</b></p></div><div class="preview-actions"><button class="success" id="playBtn">▶ Play</button><button id="reloadBtn">↻ Reload</button><button id="fullBtn">⛶ Fullscreen</button><button class="purple" id="openBtn">↗ Open in New Tab</button></div><div class="test-box"><label>Test Stream URL</label><div><input id="testUrl" placeholder="Enter stream URL..."><button onclick="testStream()">▶ Test</button></div></div></div></div>
-</div>
-<div id="channels" class="section"><div class="page-head"><div><h1>Channel Manager</h1><p>Edit, delete and preview your channel playlist.</p></div><button class="primary" onclick="showSection('add')">＋ Add Channel</button></div><div class="panel"><div class="filters"><input id="managerSearch" placeholder="⌕ Search channel..."><select id="managerCat"><option>All Categories</option></select><select id="managerStatus"><option>All Status</option><option>Active</option><option>Dead</option><option>Disabled</option></select></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Logo</th><th>Name</th><th>Category</th><th>Status</th><th>Stream URL</th><th>Action</th></tr></thead><tbody id="managerRows"></tbody></table></div></div></div>
-<div id="add" class="section"><div class="page-head"><div><h1>Add Channel</h1><p>Add a single channel to your IPTV playlist.</p></div></div><form class="form-card" id="channelForm"><label>Channel Name<input name="name" required placeholder="e.g. NTV"></label><label>Category<select name="category" id="addCategory"></select></label><label>Logo URL<input name="logo" placeholder="https://example.com/logo.png"></label><label>Stream URL<input name="url" required placeholder="https://example.com/live.m3u8"></label><label>Status<select name="status"><option>Active</option><option>Dead</option><option>Disabled</option></select></label><button class="primary" type="submit">＋ Save Channel</button></form></div>
-<div id="import" class="section"><div class="page-head"><div><h1>Import Playlist</h1><p>Choose M3U URL, M3U file, or Xtream Codes.</p></div></div><div class="import-tabs"><button class="import-tab active" data-import-tab="url">M3U URL</button><button class="import-tab" data-import-tab="file">M3U File</button><button class="import-tab" data-import-tab="xtream">Xtream Codes</button></div><div class="import-grid"><div class="form-card import-pane active" id="import-url"><label>M3U Playlist URL<input id="m3uUrl" type="url" placeholder="https://example.com/playlist.m3u"></label><button class="primary" onclick="importM3UUrl()">☁ Import from URL</button><p class="hint">The playlist server must allow browser CORS requests.</p></div><div class="form-card import-pane" id="import-file"><label>M3U Playlist<textarea id="m3uText" placeholder="#EXTM3U"></textarea></label><button class="primary" onclick="importM3U()">☁ Import Playlist</button><div class="drop" id="drop"><b>Choose M3U file</b><small>or drag & drop here</small><input type="file" id="m3uFile" accept=".m3u,.m3u8,text/plain"></div></div><div class="form-card import-pane" id="import-xtream"><label>Server URL<input id="xtServer" type="url" placeholder="http://example.com:8080"></label><label>Username<input id="xtUser" placeholder="Username"></label><label>Password<input id="xtPass" type="password" placeholder="Password"></label><label>Import limit<select id="xtLimit"><option value="all">All live channels</option><option value="100">First 100</option><option value="250">First 250</option><option value="500">First 500</option></select></label><button class="primary" onclick="importXtream()">⇩ Import Xtream Channels</button></div><div class="panel import-guide"><h2>Import Guide</h2><p>When connected, imports are saved to the Worker/KV.</p></div></div></div>
-<div id="categories" class="section"><div class="page-head"><div><h1>Categories</h1></div></div><div class="panel"><div class="category-add"><input id="newCat" placeholder="New category name"><button class="primary" onclick="addCategory()">＋ Add</button></div><div id="categoryList" class="category-list"></div></div></div>
-<div id="settings" class="section"><div class="page-head"><div><h1>Website Settings</h1></div></div><form class="form-card" id="settingsForm"><label>Website Name<input name="siteName" value="VIP NETWORK"></label><label>Website Subtitle<input name="subtitle" value="Live TV & Entertainment"></label><label>Logo URL<input name="logo" placeholder="https://..."></label><label>Primary Theme<select name="theme"><option>Dark Blue</option><option>Midnight</option><option>Neon</option></select></label><button class="primary">💾 Save Settings</button></form></div>
-<div id="notice" class="section"><div class="page-head"><div><h1>Notice / Banner</h1></div></div><form class="form-card" id="noticeForm"><label>Banner Text<input name="text" placeholder="Welcome to VIP NETWORK"></label><label>Type<select name="type"><option>Information</option><option>Success</option><option>Warning</option><option>Important</option></select></label><label>Enable Banner<select name="enabled"><option>Yes</option><option>No</option></select></label><button class="primary">📢 Save Banner</button></form></div>
-<div id="devices" class="section"><div class="page-head"><div><h1>Devices / Access</h1></div><button class="primary" onclick="loadDevices()">⟳ Refresh Devices</button></div><div class="stats"><div class="stat blue"><span>◉</span><div><small>Connected Devices</small><strong id="deviceConnected">0</strong></div></div><div class="stat green"><span>✓</span><div><small>Allowed</small><strong id="deviceAllowed">0</strong></div></div></div><div class="panel"><div id="deviceList" class="device-list"><div>Loading devices…</div></div></div></div>
-<div id="backup" class="section"><div class="page-head"><div><h1>Backup & Export</h1></div></div><div class="quick-grid two"><button onclick="exportData()">⇩ <b>Export JSON</b></button><button onclick="exportM3U()">⇩ <b>Export M3U</b></button><button onclick="document.getElementById('restoreFile').click()">⇧ <b>Restore JSON</b></button><button onclick="clearAll()">⌫ <b>Clear All Channels</b></button></div><input hidden type="file" id="restoreFile" accept=".json"></div>
-<div id="analytics" class="section"><div class="page-head"><div><h1>Analytics</h1></div></div><div class="panel"><div class="bars"><div><span>Active</span><i id="barActive"></i></div><div><span>Dead</span><i id="barDead"></i></div><div><span>Disabled</span><i id="barDisabled"></i></div></div></div></div>
-<div id="tools" class="section"><div class="page-head"><div><h1>System Tools</h1></div></div><div class="quick-grid two"><button onclick="refreshData()">⟳ <b>Refresh Data</b></button><button onclick="localStorage.removeItem('vipChannels');location.reload()">⌫ <b>Reset Demo</b></button></div></div>
-</section></main></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><div class="crown">♛</div><div><strong>VIP <span>NETWORK</span></strong><small>Admin Panel v2.0</small></div></div>
 
-<div class="modal-backdrop" id="loginModal">
-<div class="login-card vip-login-card">
-<img class="vip-login-brand" src="https://i.postimg.cc/fWC0JfBr/FB-IMG-1788617876279.jpg" alt="VIP NETWORK">
-<h2 class="vip-login-welcome">WELCOME</h2>
-<div class="vip-login-admin">Admin Panel</div>
-<p class="vip-login-secure">🛡️ Secure administrator access</p>
-<label class="vip-login-label">Password</label>
-<div class="vip-login-field"><span class="vip-lock">🔒</span><input id="workerPassword" type="password" autocomplete="current-password" placeholder="Password" value=""><button class="vip-login-eye" type="button" id="vipLoginEye" aria-label="Show password" title="Show password">👁</button></div>
-<label class="vip-login-row"><input id="vipRemember" type="checkbox"><span>Remember me</span></label>
-<button class="primary vip-login-button" id="loginBtn" type="button">⇥ &nbsp; LOGIN</button>
-<small id="loginStatus"></small>
-<div class="vip-login-footer">ADMIN PANEL</div>
-</div></div>
+    <button class="nav-item active" data-section="dashboard">⌂ <span>Dashboard</span></button>
+    <button class="nav-item" data-section="devices">♙ <span>User & Device Management</span></button>
+
+    <div class="nav-group">
+      <button class="nav-item group-head" id="liveGroup">▣ <span>Live TV / Channels</span><b>⌄</b></button>
+      <div class="subnav open" id="liveSub">
+        <button data-section="channels">• <span>Channel Management</span></button>
+        <button data-section="add">• <span>Add Channel</span></button>
+        <button data-section="import">• <span>Playlist / M3U Import</span></button>
+        <button data-section="categories">• <span>Categories</span></button>
+      </div>
+    </div>
+
+    <button class="nav-item" data-section="settings">⚙ <span>Website Settings</span></button>
+    <button class="nav-item" data-section="notice">⚑ <span>Notice / Banner</span></button>
+    <button class="nav-item" data-section="security">♜ <span>Security</span></button>
+    <button class="nav-item" data-section="activity">◷ <span>Activity Logs</span></button>
+    <button class="nav-item" data-section="backup">▤ <span>Backup & Export</span></button>
+
+    <div class="side-status"><b>♛ VIP NETWORK</b><small>Admin Panel v2.0</small><span><i></i> System Online</span></div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <button id="menuBtn" class="menu-btn">☰</button>
+      <div class="page-title">VIP NETWORK <small>ADMIN PANEL</small></div>
+      <div class="search"><span>⌕</span><input id="globalSearch" placeholder="Search channel..."></div>
+      <div class="top-actions"><span class="online"><i></i> Online</span><button id="themeBtn" title="Theme">☾</button><button class="profile" id="profileBtn"><span class="avatar">A</span><span>Admin<small>Super Admin</small></span>⌄</button></div>
+    </header>
+
+    <section class="content">
+      <section id="dashboard" class="section active-section">
+        <div class="page-head"><div><h1>Dashboard</h1><p>VIP NETWORK TV administration overview</p></div><button class="primary" onclick="showSection('add')">＋ Add Channel</button></div>
+        <div class="stats">
+          <div class="stat"><span>▣</span><div><small>Total Channels</small><strong id="totalStat">0</strong></div></div>
+          <div class="stat green"><span>●</span><div><small>Active</small><strong id="activeStat">0</strong></div></div>
+          <div class="stat red"><span>◉</span><div><small>Dead</small><strong id="deadStat">0</strong></div></div>
+          <div class="stat yellow"><span>▤</span><div><small>Categories</small><strong id="categoryStat">0</strong></div></div>
+        </div>
+        <div class="status-bar"><b>● Backend connection: <span id="backendState">Checking...</span></b><small>Last Sync: <span id="syncTime">—</span></small><button onclick="refreshData()">⟳</button></div>
+        <div class="quick-grid">
+          <button onclick="showSection('channels')">☷ <b>Manage Channels</b></button>
+          <button onclick="showSection('add')">＋ <b>Add Channel</b></button>
+          <button onclick="showSection('import')">⇧ <b>Import Playlist</b></button>
+          <button onclick="showSection('devices')">♙ <b>Devices</b></button>
+          <button onclick="showSection('notice')">⚑ <b>Notice</b></button>
+        </div>
+        <div class="workspace">
+          <div class="panel channel-panel">
+            <div class="panel-title"><h2>▣ Recent Channels</h2><button onclick="showSection('channels')">View All</button></div>
+            <div class="filters"><input id="dashSearch" placeholder="Search channel..."><select id="dashCat"></select><select id="dashStatus"><option>All Status</option><option>Active</option><option>Dead</option><option>Disabled</option></select></div>
+            <div class="table-wrap"><table><thead><tr><th>#</th><th>Logo</th><th>Name</th><th>Category</th><th>Status</th><th>Action</th></tr></thead><tbody id="channelRows"></tbody></table></div>
+          </div>
+          <div class="panel preview">
+            <div class="panel-title"><h2>▶ Live Preview</h2><span class="live-dot">● Ready</span></div>
+            <div class="video-box"><video id="player" controls playsinline></video><div id="videoPlaceholder">▶<small>Select a channel</small></div></div>
+            <div class="preview-info"><p>Name <b id="pName">—</b></p><p>Category <b id="pCategory">—</b></p><p>Status <b id="pStatus">—</b></p></div>
+            <div class="test-box"><input id="testUrl" placeholder="Test stream URL"><button onclick="testStream()">Test</button></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="channels" class="section">
+        <div class="page-head"><div><h1>Channel Management</h1><p>Add, edit, delete and control your TV channels.</p></div><button class="primary" onclick="showSection('add')">＋ Add Channel</button></div>
+        <div class="panel"><div class="filters"><input id="managerSearch" placeholder="Search channel..."><select id="managerCat"></select><select id="managerStatus"><option>All Status</option><option>Active</option><option>Dead</option><option>Disabled</option></select></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Logo</th><th>Name</th><th>Category</th><th>Status</th><th>Stream URL</th><th>Action</th></tr></thead><tbody id="managerRows"></tbody></table></div></div>
+      </section>
+
+      <section id="add" class="section"><div class="page-head"><div><h1>Add Channel</h1><p>Add one channel manually.</p></div></div>
+        <form class="form-card" id="channelForm"><label>Channel Name<input name="name" required></label><label>Category<select name="category" id="addCategory"></select></label><label>Logo URL<input name="logo"></label><label>Stream URL<input name="url" required></label><label>Status<select name="status"><option>Active</option><option>Dead</option><option>Disabled</option></select></label><button class="primary">＋ Save Channel</button></form>
+      </section>
+
+      <section id="import" class="section"><div class="page-head"><div><h1>Playlist / M3U Import</h1><p>Import M3U URL, M3U text/file or Xtream Codes.</p></div></div>
+        <div class="tabs"><button class="tab active" data-tab="url">M3U URL</button><button class="tab" data-tab="file">M3U File</button><button class="tab" data-tab="xtream">Xtream Codes</button></div>
+        <div class="import-grid">
+          <div class="form-card import-pane active" id="import-url"><label>M3U Playlist URL<input id="m3uUrl" type="url" placeholder="https://example.com/playlist.m3u"></label><button class="primary" type="button" onclick="importM3UUrl()">☁ Import & Sync</button></div>
+          <div class="form-card import-pane" id="import-file"><label>M3U Playlist Text<textarea id="m3uText" placeholder="#EXTM3U"></textarea></label><input type="file" id="m3uFile" accept=".m3u,.m3u8,text/plain"><button class="primary" type="button" onclick="importM3U()">⇧ Import Playlist</button></div>
+          <div class="form-card import-pane" id="import-xtream"><label>Server URL<input id="xtServer"></label><label>Username<input id="xtUser"></label><label>Password<input id="xtPass" type="password"></label><label>Import limit<select id="xtLimit"><option value="all">All live channels</option><option value="100">First 100</option><option value="250">First 250</option></select></label><button class="primary purple" type="button" onclick="importXtream()">⛓ Connect & Sync</button></div>
+          <div class="panel guide"><h2>Import Guide</h2><p><b>M3U URL:</b> paste your playlist link.</p><p><b>M3U File:</b> upload or paste playlist text.</p><p><b>Xtream Codes:</b> use server, username and password.</p></div>
+        </div>
+      </section>
+
+      <section id="categories" class="section"><div class="page-head"><div><h1>Categories</h1><p>Organize your channels.</p></div></div><div class="panel"><div class="category-add"><input id="newCat" placeholder="New category"><button class="primary" onclick="addCategory()">＋ Add</button></div><div id="categoryList" class="category-list"></div></div></section>
+
+      <section id="settings" class="section"><div class="page-head"><div><h1>Website Settings</h1><p>Basic VIP NETWORK website settings.</p></div></div><form class="form-card" id="settingsForm"><label>Website Name<input name="siteName" value="VIP NETWORK"></label><label>Subtitle<input name="subtitle" value="Live TV & Entertainment"></label><label>Logo URL<input name="logo"></label><button class="primary">💾 Save Settings</button></form></section>
+
+      <section id="notice" class="section"><div class="page-head"><div><h1>Notice / Banner</h1><p>Manage public website announcements.</p></div></div><form class="form-card" id="noticeForm"><label>Banner Text<input name="text"></label><label>Type<select name="type"><option>Information</option><option>Success</option><option>Warning</option><option>Important</option></select></label><label>Enable<select name="enabled"><option>Yes</option><option>No</option></select></label><button class="primary">📢 Save Banner</button></form></section>
+
+      <section id="devices" class="section"><div class="page-head"><div><h1>User & Device Management</h1><p>View devices and Block / Unblock access.</p></div><button class="primary" onclick="loadDevices()">⟳ Refresh</button></div><div class="panel"><div id="deviceList" class="device-list">Loading devices...</div></div></section>
+
+      <section id="security" class="section"><div class="page-head"><div><h1>Security</h1><p>Administrator session and access control.</p></div></div><div class="panel security-card"><h2>Admin Session</h2><p>Use Logout to securely end the current administrator session.</p><button class="primary danger" onclick="logoutWorker()">⇥ Logout Admin</button></div></section>
+
+      <section id="activity" class="section"><div class="page-head"><div><h1>Activity Logs</h1><p>Recent actions performed from this admin panel.</p></div><button class="primary" onclick="clearLogs()">Clear Logs</button></div><div class="panel"><div id="activityList" class="activity-list"></div></div></section>
+
+      <section id="backup" class="section"><div class="page-head"><div><h1>Backup & Export</h1><p>Export your playlist and local backup.</p></div></div><div class="quick-grid two"><button onclick="exportData()">⇩ <b>Export JSON</b></button><button onclick="exportM3U()">⇩ <b>Export M3U</b></button><button onclick="clearAll()">⌫ <b>Clear All Channels</b></button></div></section>
+    </section>
+  </main>
+</div>
+
+<div class="modal-backdrop" id="loginModal"><div class="login-card"><img src="https://i.postimg.cc/fWC0JfBr/FB-IMG-1788617876279.jpg" alt="Admin"><h2>WELCOME</h2><h1>Admin Panel</h1><p>🛡️ Secure administrator access</p><label>Password</label><div class="password-row"><span>🔒</span><input id="workerPassword" type="password" placeholder="Password"><button id="loginEye" type="button">👁</button></div><label class="remember"><input id="vipRemember" type="checkbox"> Remember me</label><button id="loginBtn" type="button" class="primary login-button">⇥ LOGIN</button><div id="loginStatus"></div><small>VIP NETWORK ADMIN PANEL</small></div></div>
 <div class="toast" id="toast"></div>
-<script src="pwa.js"></script>
-<script>
-document.getElementById('vipLoginEye')?.addEventListener('click',()=>{const p=document.getElementById('workerPassword'),b=document.getElementById('vipLoginEye');if(!p||!b)return;const show=p.type==='password';p.type=show?'text':'password';b.textContent=show?'🙈':'👁';b.setAttribute('aria-label',show?'Hide password':'Show password');b.title=show?'Hide password':'Show password';});
-</script>
 <script src="app.js"></script>
 </body></html>
