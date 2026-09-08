@@ -1,16 +1,23 @@
 {
-  "name": "ADMIN+TV",
-  "short_name": "ADMIN+TV",
-  "description": "ADMIN+TV — VIP NETWORK IPTV Admin Panel",
+  "name": "Admin Panel",
+  "short_name": "Admin Panel",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "any",
-  "background_color": "#f4f7fb",
-  "theme_color": "#ffffff",
+  "background_color": "#071423",
+  "theme_color": "#071423",
   "icons": [
-    {"src":"assets/admin-logo-180.png","sizes":"180x180","type":"image/png","purpose":"any"},
-    {"src":"assets/admin-icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
-    {"src":"assets/admin-icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+    {
+      "src": "assets/admin-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/admin-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ]
 }

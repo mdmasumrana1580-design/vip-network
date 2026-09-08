@@ -7,18 +7,19 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>VIP NETWORK — Admin Panel</title>
+<title>Admin Panel</title>
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/admin-logo.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/admin-logo.png">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="app">
 <aside class="sidebar" id="sidebar">
-  <div class="brand"><div class="crown">♛</div><div><strong>VIP <span>NETWORK</span></strong><small>Admin Panel WebApp</small></div></div>
+  <div class="brand">
+    <img class="brand-logo" src="assets/admin-logo.png" alt="Admin Panel">
+    <div><strong>VIP <span>NETWORK</span></strong><small>Admin Panel WebApp</small></div>
+  </div>
   <button class="nav-item active" data-section="dashboard">⌂ <span>Dashboard</span></button>
   <button class="nav-item" data-section="devices">♙ <span>User & Device Management</span></button>
   <button class="nav-item" data-section="channels">▣ <span>Channel Management</span></button>
@@ -30,7 +31,7 @@
   <button class="nav-item" data-section="notice">⚑ <span>Notice / Banner</span></button>
   <button class="nav-item" data-section="activity">◷ <span>Activity Logs</span></button>
   <button class="nav-item" data-section="backup">▤ <span>Backup & Export</span></button>
-  <div class="side-status"><b>♛ VIP NETWORK</b><small>WebApp Ready</small><span><i></i> System Online</span></div>
+  <div class="side-status"><img src="assets/admin-logo.png" alt=""><b>VIP NETWORK</b><small>Admin Panel</small><span><i></i> System Online</span></div>
 </aside>
 
 <main class="main">
@@ -38,11 +39,14 @@
   <button id="menuBtn" class="menu-btn">☰</button>
   <div class="page-title">VIP NETWORK <small>ADMIN PANEL</small></div>
   <div class="search"><span>⌕</span><input id="globalSearch" placeholder="Search channel..."></div>
-  <div class="top-actions"><button id="installBtn" class="install-btn" hidden>⇩ Install App</button>
-    <span class="online"><i></i> Online</span>
-    <button id="themeBtn" title="Theme">☾</button>
+  <div class="top-actions">
     <button id="installBtn" class="install-btn" hidden>⇩ Install App</button>
-    <button class="profile"><span class="avatar">A</span><span>Admin<small>Super Admin</small></span>⌄</button>
+    <span class="online"><i></i> Online</span>
+    <button id="themeBtn" class="theme-btn" title="Dark / Light">☾</button>
+    <button class="profile" type="button">
+      <img class="super-admin-photo" src="assets/super-admin.jpg" alt="Super Admin">
+      <span><b>Super Admin</b><small>VIP NETWORK</small></span>⌄
+    </button>
   </div>
 </header>
 
@@ -56,7 +60,6 @@
     <div class="stat yellow"><span>▤</span><div><small>Categories</small><strong id="categoryStat">0</strong></div></div>
   </div>
   <div class="status-bar"><b>● Backend: <span id="backendState">Checking...</span></b><small>Last Sync: <span id="syncTime">—</span></small><button onclick="refreshData()">⟳</button></div>
-
   <div class="workspace split-workspace">
     <div class="panel channel-panel">
       <div class="panel-title"><h2>▣ Channel List</h2><button onclick="showSection('channels')">Manage</button></div>
@@ -66,7 +69,6 @@
         <tbody id="channelRows"></tbody></table>
       </div>
     </div>
-
     <div class="panel preview">
       <div class="panel-title"><h2>▶ Live Preview</h2><span class="live-dot">● Ready</span></div>
       <div class="video-box"><video id="player" controls playsinline></video><div id="videoPlaceholder">▶<small>Select a channel</small></div></div>
@@ -96,13 +98,8 @@
 <div class="tabs"><button class="tab active" data-tab="url">M3U URL</button><button class="tab" data-tab="file">M3U File</button><button class="tab" data-tab="xtream">Xtream Codes</button></div>
 <div class="import-grid"><div class="form-card import-pane active" id="import-url"><label>M3U Playlist URL<input id="m3uUrl" type="url" placeholder="https://example.com/playlist.m3u"></label><button class="primary" type="button" onclick="importM3UUrl()">☁ Import & Sync</button></div>
 <div class="form-card import-pane" id="import-file"><label>M3U Playlist Text<textarea id="m3uText" placeholder="#EXTM3U"></textarea></label><input type="file" id="m3uFile" accept=".m3u,.m3u8,text/plain"><button class="primary" type="button" onclick="importM3U()">⇧ Import Playlist</button></div>
-<div class="form-card import-pane" id="import-xtream">
-<label>Server URL<input id="xtServer"></label>
-<label>Username<input id="xtUser"></label>
-<label>Password<input id="xtPass" type="password"></label>
-<label>Import limit<select id="xtLimit"><option value="all">All live channels</option><option value="100">First 100</option><option value="250">First 250</option></select></label>
-<button class="primary" type="button" onclick="importXtream()">⛓ Connect & Sync</button>
-</div><div class="panel guide"><h2>Import Guide</h2><p>Playlist import করলে সব Channel backend-এ save হবে।</p></div></div></section>
+<div class="form-card import-pane" id="import-xtream"><label>Server URL<input id="xtServer"></label><label>Username<input id="xtUser"></label><label>Password<input id="xtPass" type="password"></label><label>Import limit<select id="xtLimit"><option value="all">All live channels</option><option value="100">First 100</option><option value="250">First 250</option></select></label><button class="primary" type="button" onclick="importXtream()">⛓ Connect & Sync</button></div>
+<div class="panel guide"><h2>Import Guide</h2><p>Playlist import করলে সব Channel backend-এ save হবে।</p></div></div></section>
 
 <section id="categories" class="section"><div class="page-head"><div><h1>Categories</h1><p>Organize your channels.</p></div></div><div class="panel"><div class="category-add"><input id="newCat" placeholder="New category"><button class="primary" onclick="addCategory()">＋ Add</button></div><div id="categoryList" class="category-list"></div></div></section>
 <section id="settings" class="section"><div class="page-head"><div><h1>Website Settings</h1></div></div><form class="form-card" id="settingsForm"><label>Website Name<input name="siteName" value="VIP NETWORK"></label><label>Subtitle<input name="subtitle" value="Live TV & Entertainment"></label><label>Logo URL<input name="logo"></label><button class="primary">💾 Save Settings</button></form></section>
@@ -114,7 +111,11 @@
 </section>
 </main></div>
 
-<div class="modal-backdrop" id="loginModal"><div class="login-card"><img src="https://i.postimg.cc/fWC0JfBr/FB-IMG-1788617876279.jpg" alt="Admin"><h2>WELCOME</h2><h1>Admin Panel</h1><p>🛡️ Secure administrator access</p><label>Password</label><div class="password-row"><span>🔒</span><input id="workerPassword" type="password" placeholder="Password"><button id="loginEye" type="button">👁</button></div><label class="remember"><input id="vipRemember" type="checkbox"> Remember me</label><button id="loginBtn" type="button" class="primary login-button">⇥ LOGIN</button><div id="loginStatus"></div><small>VIP NETWORK ADMIN WEBAPP</small></div></div>
+<div class="modal-backdrop" id="loginModal"><div class="login-card">
+<img src="assets/admin-logo.png" alt="Admin"><h2>WELCOME</h2><h1>Admin Panel</h1><p>🛡️ Secure administrator access</p>
+<label>Password</label><div class="password-row"><span>🔒</span><input id="workerPassword" type="password" placeholder="Password"><button id="loginEye" type="button">👁</button></div>
+<label class="remember"><input id="vipRemember" type="checkbox"> Remember me</label><button id="loginBtn" type="button" class="primary login-button">⇥ LOGIN</button><div id="loginStatus"></div><small>VIP NETWORK ADMIN WEBAPP</small>
+</div></div>
 <div class="toast" id="toast"></div>
 <script src="app.js"></script>
 </body></html>

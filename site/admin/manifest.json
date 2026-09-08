@@ -1,6 +1,6 @@
 {
-  "name": "VIP NETWORK Admin Panel",
-  "short_name": "VIP Admin",
+  "name": "Admin Panel",
+  "short_name": "Admin Panel",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -8,10 +8,16 @@
   "theme_color": "#071423",
   "icons": [
     {
-      "src": "icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "assets/admin-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "assets/admin-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
