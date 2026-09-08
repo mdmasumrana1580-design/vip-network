@@ -1,0 +1,17 @@
+{
+  "name": "VIP NETWORK Admin Panel",
+  "short_name": "VIP Admin",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#071423",
+  "theme_color": "#071423",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
