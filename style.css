@@ -2681,3 +2681,67 @@ body.vip-player-fullscreen{overflow:hidden!important;background:#000!important;}
   .channel-topbar{right:8px !important;bottom:76px !important;}
   .install-app-btn{height:26px !important;min-height:26px !important;font-size:8px !important;padding:4px 7px !important;}
 }
+
+
+/* VIP NETWORK - PROPER DESKTOP LAYOUT V2
+   Desktop-only presentation layer.
+   Existing JS/player/playlist logic remains untouched.
+*/
+@media (min-width: 1000px) {
+  body.desktop-safe-shell {
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body.desktop-safe-shell > * {
+    box-sizing: border-box;
+  }
+
+  /* Center the application on wide displays. */
+  body.desktop-safe-shell .app,
+  body.desktop-safe-shell .container,
+  body.desktop-safe-shell main,
+  body.desktop-safe-shell .main {
+    width: min(1500px, calc(100vw - 48px));
+    max-width: 1500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Keep the player prominent on desktop. */
+  body.desktop-safe-shell video,
+  body.desktop-safe-shell iframe {
+    max-width: 100%;
+  }
+
+  /* Existing channel grid becomes a dense desktop catalog. */
+  body.desktop-safe-shell .grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  /* Give common channel cards comfortable click targets. */
+  body.desktop-safe-shell .grid > * {
+    min-width: 0;
+  }
+
+  /* Desktop controls can breathe without affecting mobile. */
+  body.desktop-safe-shell button,
+  body.desktop-safe-shell .btn {
+    cursor: pointer;
+  }
+}
+
+/* Very wide PC/TV screens */
+@media (min-width: 1350px) {
+  body.desktop-safe-shell .grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1650px) {
+  body.desktop-safe-shell .grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
