@@ -1,0 +1,4 @@
+/* ViP-tv 3D Telegram floating button */
+.telegram-float-btn{display:block!important;text-decoration:none!important;-webkit-tap-highlight-color:transparent!important;}
+.telegram-float-btn img{display:block!important;}
+@keyframes vipTelegramFloat{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-4px) rotate(1deg)}}
