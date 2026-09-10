@@ -2744,3 +2744,38 @@ body.vip-player-fullscreen{overflow:hidden!important;background:#000!important;}
   .headline-notice{min-width:58px!important;font-size:10px!important;margin-left:8px!important;}
   .headline-track span{font-size:12px!important;}
 }
+
+/* RGB LIGHT — animated channel names */
+.label{
+  color:#fff !important;
+  background:rgba(5,10,15,.78) !important;
+  border:1px solid rgba(255,255,255,.10) !important;
+  text-shadow:
+    0 0 3px rgba(255,255,255,.95),
+    0 0 7px rgba(255,0,80,.75),
+    0 0 11px rgba(0,255,120,.60),
+    0 0 15px rgba(0,150,255,.55) !important;
+  animation:vipChannelRGB 3.8s linear infinite !important;
+}
+@keyframes vipChannelRGB{
+  0%{
+    color:#ff3b3b;
+    text-shadow:0 0 3px #ff3b3b,0 0 8px rgba(255,0,70,.85),0 0 14px rgba(255,0,70,.45);
+  }
+  25%{
+    color:#ffe94a;
+    text-shadow:0 0 3px #ffe94a,0 0 8px rgba(255,220,0,.85),0 0 14px rgba(255,220,0,.45);
+  }
+  50%{
+    color:#39ff88;
+    text-shadow:0 0 3px #39ff88,0 0 8px rgba(0,255,120,.85),0 0 14px rgba(0,255,120,.45);
+  }
+  75%{
+    color:#36a9ff;
+    text-shadow:0 0 3px #36a9ff,0 0 8px rgba(0,150,255,.85),0 0 14px rgba(0,150,255,.45);
+  }
+  100%{
+    color:#ff3bcb;
+    text-shadow:0 0 3px #ff3bcb,0 0 8px rgba(255,0,190,.85),0 0 14px rgba(255,0,190,.45);
+  }
+}
