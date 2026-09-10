@@ -1,0 +1,113 @@
+
+/* ViP-TV desktop layout
+   Only affects screens 1000px and wider.
+   Mobile layout remains controlled by the original stylesheet. */
+
+@media (min-width: 1000px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  .desktop-layout {
+    width: min(1500px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 16px 0 28px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.75fr) minmax(390px, 0.9fr);
+    gap: 18px;
+    align-items: start;
+  }
+
+  /* The old mobile spacer was only needed because the player was fixed.
+     Desktop uses a normal/sticky player, so it must not create a giant gap. */
+  .desktop-layout #playerSpacer {
+    display: none !important;
+  }
+
+  /* LEFT: video/player */
+  .desktop-layout #playerSection {
+    position: sticky !important;
+    top: 78px !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    z-index: 20 !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+  }
+
+  .desktop-layout #playerSection .video-box,
+  .desktop-layout #playerSection #vipVideoBox {
+    width: 100% !important;
+    aspect-ratio: 16 / 9 !important;
+    height: auto !important;
+    max-height: calc(100vh - 110px) !important;
+    object-fit: contain !important;
+  }
+
+  /* RIGHT: channel browser */
+  .desktop-channel-area {
+    min-width: 0;
+    max-height: calc(100vh - 96px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+    scrollbar-width: thin;
+  }
+
+  .desktop-channel-area .headline,
+  .desktop-channel-area .cats,
+  .desktop-channel-area .blue-line,
+  .desktop-channel-area .channel-topbar,
+  .desktop-channel-area #empty,
+  .desktop-channel-area #grid {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .desktop-channel-area #grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    padding: 0 2px 14px !important;
+  }
+
+  .desktop-channel-area #grid .channel-card {
+    min-width: 0;
+  }
+
+  /* Make the sidebar controls compact enough for desktop */
+  .desktop-channel-area .cats {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    backdrop-filter: blur(8px);
+  }
+
+  .desktop-channel-area .headline {
+    margin-top: 0 !important;
+  }
+
+  /* Very wide monitors get 3 channel columns in the sidebar */
+  @media (min-width: 1400px) {
+    .desktop-layout {
+      grid-template-columns: minmax(0, 1.9fr) minmax(440px, 1fr);
+    }
+    .desktop-channel-area #grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+  }
+}
+
+/* At smaller widths, behave like the original page flow. */
+@media (max-width: 999px) {
+  .desktop-layout {
+    display: contents;
+  }
+}

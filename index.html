@@ -1,4 +1,5 @@
-<!doctype html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#000000"><meta name="msapplication-navbutton-color" content="#0b1512"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="color-scheme" content="dark"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="apple-touch-icon" href="vip-tv-logo-180.png"><link rel="manifest" href="./manifest.webmanifest"><title>ViP-TV</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="telegram-float.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css"></head><body>
+<!doctype html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#000000"><meta name="msapplication-navbutton-color" content="#0b1512"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="color-scheme" content="dark"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="apple-touch-icon" href="vip-tv-logo-180.png"><link rel="manifest" href="./manifest.webmanifest"><title>ViP-TV</title><link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="desktop-layout.css"><link rel="stylesheet" href="telegram-float.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css"></head><body>
 <header class="header">
   <div class="brand-wrap"><div class="logo logo-image"><img src="vip-network-logo.png" alt="ViP-tv"></div><div class="header-stats" aria-label="সাইট পরিসংখ্যান"><div class="header-stat total-stat"><span>👥</span><small>Visit</small><strong id="headerTotalVisitors">—</strong></div><div class="header-stat online-stat"><span class="online-dot"></span><small>Online</small><strong id="headerOnlineVisitors">—</strong></div></div></div>
   <div class="actions">
@@ -7,6 +8,7 @@
     </a>
   </div>
 </header>
+<div class="desktop-layout">
 <section id="playerSection" class="player-section">
   <div class="player-head">
     <b id="playerTitle">Live Player</b>
@@ -41,6 +43,9 @@
 <div class="blue-line"></div>
 <div class="channel-topbar"><button id="installAppBtn" class="install-app-btn" type="button" hidden>📲 Install</button></div>
 <main id="grid" class="grid"></main><div id="empty" class="empty" hidden>No channels found</div>
+
+</div>
+
 <footer class="site-footer">© 2026 MASUM.ALL RIGHT RESERVED.</footer>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><script src="config.js"></script><script src="device-guard.js"></script><script src="app.js"></script><script src="pwa.js"></script>
 <script>
