@@ -1,0 +1,4 @@
+Updated to match the supplied reference more closely.
+Desktop: Channel List is on the left and Live Preview is on the right.
+Mobile: the entire UI is compact and scaled so the sidebar + dashboard fit the phone width without horizontal overflow.
+The existing channel/M3U/backup functionality is preserved.

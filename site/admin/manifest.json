@@ -1,0 +1,23 @@
+{
+  "name": "Admin Panel",
+  "short_name": "Admin Panel",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#071423",
+  "theme_color": "#071423",
+  "icons": [
+    {
+      "src": "assets/admin-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/admin-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
