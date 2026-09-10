@@ -1,1 +1,4 @@
-.telegram-float-btn{width:34px;height:34px;display:flex;align-items:center;justify-content:center;text-decoration:none;animation:tgFloat 2.4s ease-in-out infinite;position:relative;z-index:30}.telegram-float-btn img{width:34px;height:34px;display:block;filter:drop-shadow(0 4px 7px rgba(42,171,238,.45))}@keyframes tgFloat{0%,100%{transform:translateY(-1px) rotate(-2deg)}50%{transform:translateY(-7px) rotate(2deg)}}@media(max-width:420px){.telegram-float-btn,.telegram-float-btn img{width:30px;height:30px}}
+/* ViP-tv 3D Telegram floating button */
+.telegram-float-btn{display:block!important;text-decoration:none!important;-webkit-tap-highlight-color:transparent!important;}
+.telegram-float-btn img{display:block!important;}
+@keyframes vipTelegramFloat{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-4px) rotate(1deg)}}
