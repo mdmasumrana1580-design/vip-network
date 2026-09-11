@@ -2578,106 +2578,169 @@ body.vip-player-fullscreen{overflow:hidden!important;background:#000!important;}
      This rule only prevents overflow while the rotation transition completes. */
   body.vip-player-fullscreen{overflow:hidden!important;}
 }
-/* =========================================================
-   ViP-tv DESKTOP — Based on actual index.html structure
-   Player + Notice left | Channel list right
-   Mobile remains unchanged
-   ========================================================= */
+/* ================================
+   ViP-tv DESKTOP LAYOUT
+   1024px and above
+================================ */
 
-@media (min-width: 1000px) {
+@media (min-width: 1024px) {
 
   html,
   body {
-    overflow-x: hidden !important;
+    width: 100%;
+    height: 100%;
+    overflow: hidden !important;
   }
 
-  /* Header stays at top */
+  body {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 1fr);
+    grid-template-rows: auto auto auto auto auto 1fr auto;
+    column-gap: 18px;
+    align-items: start;
+  }
+
+  /* Header */
   .header {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
     position: relative !important;
-    z-index: 100 !important;
+    top: auto !important;
+    z-index: 20 !important;
   }
 
   /* Player: left side */
   .player-section {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+
     position: relative !important;
     top: auto !important;
     left: auto !important;
     right: auto !important;
-    width: calc(60% - 30px) !important;
-    max-width: none !important;
-    margin: 16px 0 0 24px !important;
-    float: left !important;
+
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    float: none !important;
     z-index: 5 !important;
   }
 
   .video-box {
     width: 100% !important;
-    aspect-ratio: 16 / 9 !important;
     height: auto !important;
+    aspect-ratio: 16 / 9 !important;
   }
 
-  .video-box video {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain !important;
-  }
-
-  /* Notice: directly below player */
-  .headline {
-    position: relative !important;
-    width: calc(60% - 30px) !important;
-    margin: 14px 0 0 24px !important;
-    float: left !important;
-    clear: left !important;
-    z-index: 4 !important;
-  }
-
-  /* Category below notice */
-  .cats {
-    clear: both !important;
-    width: 100% !important;
-    padding: 12px 24px !important;
-  }
-
-  /* Channel list: right side */
-  .grid {
-    display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 10px !important;
-
-    position: relative !important;
-    width: calc(40% - 42px) !important;
-    height: calc(100vh - 120px) !important;
-    max-height: none !important;
-
-    margin: 16px 24px 0 0 !important;
-    padding: 0 4px 20px 0 !important;
-
-    float: right !important;
-
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-
-    scrollbar-width: none !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-
-  .grid::-webkit-scrollbar {
+  /* Fixed-player spacer is unnecessary on desktop */
+  .player-spacer {
     display: none !important;
   }
 
-  /* Keep channel cards compact */
-  .card {
+  /* Notice: below player */
+  .headline {
+    grid-column: 1 !important;
+    grid-row: 3 !important;
+
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+
+    width: 100% !important;
+    margin: 14px 0 0 !important;
+    z-index: 4 !important;
+  }
+
+  /* Categories below Notice */
+  .cats {
+    grid-column: 1 / -1 !important;
+    grid-row: 4 !important;
+
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+
+    width: 100% !important;
+    margin: 12px 0 0 !important;
+    z-index: 4 !important;
+  }
+
+  .blue-line {
+    grid-column: 1 / -1 !important;
+    grid-row: 5 !important;
+  }
+
+  /* Channel list: right side and only scrollable area */
+  #grid,
+  main.grid {
+    grid-column: 2 !important;
+    grid-row: 2 / 7 !important;
+
+    width: 100% !important;
+    height: calc(100vh - 115px) !important;
+    max-height: calc(100vh - 115px) !important;
+
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+
+    display: grid !important;
+    align-content: start !important;
+
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+
+    float: none !important;
+    margin: 0 !important;
+    padding: 8px !important;
+
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  #grid::-webkit-scrollbar,
+  main.grid::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+  }
+
+  /* Channel cards */
+  #grid .channel-card,
+  main.grid .channel-card {
     min-width: 0 !important;
   }
 
-  /* Empty state */
-  .empty {
-    clear: both !important;
+  /* Hide duplicate desktop channel topbar if it occupies space */
+  .channel-topbar {
+    position: fixed !important;
+    right: 14px !important;
+    bottom: 14px !important;
+    z-index: 100 !important;
+  }
+
+  /* Empty message stays in right column */
+  #empty {
+    grid-column: 2 !important;
+    grid-row: 2 / 7 !important;
+    align-self: center !important;
+    justify-self: center !important;
   }
 
   /* Footer */
   .site-footer {
-    clear: both !important;
+    grid-column: 1 / -1 !important;
+    grid-row: 7 !important;
+  }
+
+  /* Prevent unwanted horizontal page movement */
+  * {
+    max-width: 100%;
   }
 }
