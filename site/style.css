@@ -2681,104 +2681,26 @@ body.vip-player-fullscreen{overflow:hidden!important;background:#000!important;}
   .channel-topbar{right:8px !important;bottom:76px !important;}
   .install-app-btn{height:26px !important;min-height:26px !important;font-size:8px !important;padding:4px 7px !important;}
 }
-/* =========================================================
-   ViP-tv DESKTOP LAYOUT
-   Mobile layout remains unchanged.
-   Desktop: Player left + Channel list right
-   ========================================================= */
-
 @media (min-width: 1000px) {
 
-  /* Desktop page spacing */
-  body {
-    overflow-x: hidden;
-    background: #03070b;
+  /* Keep desktop layout in place */
+  main {
+    overflow: hidden !important;
   }
 
-  /* Keep the original header and logo */
-  .header {
-    height: 64px !important;
-    padding: 0 24px !important;
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 1100 !important;
-  }
-
-  .logo-image {
-    background: transparent !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-  }
-
-  .logo-image::before,
-  .logo-image::after {
-    display: none !important;
-  }
-
-  .logo-image img {
-    width: 145px !important;
-    max-height: 52px !important;
-  }
-
-  /* Desktop content area */
+  /* Player stays in its position */
   .player-section {
     position: relative !important;
     top: auto !important;
     left: auto !important;
-    right: auto !important;
-
-    width: 58% !important;
-    max-width: none !important;
-
-    margin: 16px 0 0 24px !important;
-    padding: 10px !important;
-
-    float: left !important;
-    z-index: 5 !important;
-
-    background: #071018 !important;
-    border: 1px solid #087cad !important;
-    border-radius: 14px !important;
-    box-shadow: 0 0 22px #00aef033 !important;
+    margin: 0 !important;
   }
 
-  .player-head {
-    display: flex !important;
-    height: 34px !important;
-    font-size: 14px !important;
-  }
-
-  .video-box {
-    width: 100% !important;
-    height: auto !important;
-    aspect-ratio: 16 / 9 !important;
-    border-radius: 10px !important;
-  }
-
-  .video-box video {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain !important;
-    border-radius: 8px !important;
-  }
-
-  /* Right-side channel list */
+  /* Only channel list scrolls */
   .grid {
-    display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 10px !important;
-
-    width: calc(42% - 48px) !important;
-    margin: 16px 24px 0 0 !important;
-    padding: 0 !important;
-
-    float: right !important;
-
-    max-height: 620px !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
-
+    max-height: calc(100vh - 120px) !important;
     scrollbar-width: none !important;
   }
 
@@ -2786,58 +2708,11 @@ body.vip-player-fullscreen{overflow:hidden!important;background:#000!important;}
     display: none !important;
   }
 
-  .card {
-    height: 145px !important;
-    min-width: 0 !important;
-    border-radius: 12px !important;
-  }
-
-  .circle {
-    width: 70px !important;
-    height: 70px !important;
-  }
-
-  .label {
-    font-size: 10px !important;
-  }
-
-  /* Keep the category bar full width below header */
-  .cats {
-    clear: both !important;
-    width: 100% !important;
-    padding: 12px 24px 10px !important;
-  }
-
-  /* Notice below the player */
+  /* Notice remains visible below player */
   .headline {
-    clear: both !important;
-    margin: 12px 24px 0 !important;
-  }
-
-  /* Footer */
-  .site-footer {
-    clear: both !important;
-    padding-top: 18px !important;
-  }
-
-  /* Desktop floating button */
-  .float-fb {
-    width: 52px !important;
-    height: 52px !important;
-    right: 24px !important;
-    bottom: 24px !important;
-  }
-}
-
-/* =========================================================
-   TABLET / MOBILE — DO NOT CHANGE
-   ========================================================= */
-
-@media (max-width: 999px) {
-  .player-section,
-  .grid,
-  .cats,
-  .headline {
-    /* Existing mobile CSS remains active */
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    margin-top: 14px !important;
   }
 }
