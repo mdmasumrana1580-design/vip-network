@@ -2578,141 +2578,99 @@ body.vip-player-fullscreen{overflow:hidden!important;background:#000!important;}
      This rule only prevents overflow while the rotation transition completes. */
   body.vip-player-fullscreen{overflow:hidden!important;}
 }
+/* =========================================================
+   ViP-tv DESKTOP FINAL
+   Player left + Notice below + Channels right
+   Mobile remains unchanged
+   ========================================================= */
 
-
-
-/* ViP-tv APP splash — created only on standalone app launch, never on refresh. */
-.app-splash{
-  position:fixed!important; inset:0!important; width:100vw!important; height:100dvh!important;
-  z-index:2147483647!important; display:flex; align-items:center; justify-content:center;
-  background:#000!important; overflow:hidden!important; opacity:1; visibility:visible;
-  transition:opacity .38s ease,visibility .38s ease;
-}
-.app-splash img{
-  width:100%!important; height:100%!important; max-width:none!important; max-height:none!important;
-  object-fit:cover!important; object-position:center!important; display:block!important;
-}
-.app-splash-hide{opacity:0!important; visibility:hidden!important; pointer-events:none!important}
-
-/* V32 layout: Messenger at upper-right, Install App directly below it. */
-.header .actions{
-  position:fixed !important;
-  top:12px !important;
-  right:12px !important;
-  z-index:2147482000 !important;
-  margin:0 !important;
-}
-.header .messenger-btn{
-  width:42px !important;
-  height:42px !important;
-  flex-basis:42px !important;
-  border-radius:12px !important;
-  margin:0 !important;
-}
-.header .messenger-btn img{
-  width:42px !important;
-  height:42px !important;
-  border-radius:12px !important;
-}
-.channel-topbar{
-  top:60px !important;
-  right:12px !important;
-  bottom:auto !important;
-  z-index:2147481999 !important;
-}
-.install-app-btn{
-  min-height:30px !important;
-  padding:6px 9px !important;
-  font-size:10px !important;
-  border-radius:999px !important;
-}
-@media(max-width:600px){
-  .header .actions{top:10px !important;right:10px !important;}
-  .header .messenger-btn,.header .messenger-btn img{width:38px !important;height:38px !important;flex-basis:38px !important;}
-  .channel-topbar{top:53px !important;right:10px !important;}
-  .install-app-btn{font-size:9px !important;padding:5px 8px !important;}
-}
-
-/* FINAL: Messenger top-right; Install App floating above channel area at bottom-right */
-
-/* ViP-tv clean floating controls */
-.header .actions{
-  position:fixed !important;
-  top:10px !important;
-  right:10px !important;
-  z-index:2147482000 !important;
-}
-.header .messenger-btn{
-  width:38px !important;
-  height:38px !important;
-  min-width:38px !important;
-  padding:0 !important;
-  margin:0 !important;
-  border-radius:50% !important;
-}
-.header .messenger-btn img{
-  width:38px !important;
-  height:38px !important;
-  display:block !important;
-}
-.channel-topbar{
-  position:fixed !important;
-  right:10px !important;
-  bottom:82px !important;
-  top:auto !important;
-  z-index:2147481999 !important;
-  width:auto !important;
-  margin:0 !important;
-  padding:0 !important;
-  background:transparent !important;
-}
-.install-app-btn{
-  min-height:28px !important;
-  height:28px !important;
-  padding:5px 8px !important;
-  font-size:9px !important;
-  line-height:1 !important;
-  border-radius:999px !important;
-  white-space:nowrap !important;
-}
-@media(max-width:420px){
-  .header .actions{top:9px !important;right:8px !important;}
-  .header .messenger-btn,.header .messenger-btn img{width:34px !important;height:34px !important;min-width:34px !important;}
-  .channel-topbar{right:8px !important;bottom:76px !important;}
-  .install-app-btn{height:26px !important;min-height:26px !important;font-size:8px !important;padding:4px 7px !important;}
-}
 @media (min-width: 1000px) {
 
-  /* Keep desktop layout in place */
-  main {
-    overflow: hidden !important;
+  /* Desktop page */
+  body {
+    overflow-x: hidden !important;
   }
 
-  /* Player stays in its position */
+  /* Main layout */
+  main {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 1fr) !important;
+    grid-template-rows: auto auto !important;
+    gap: 16px 20px !important;
+    align-items: start !important;
+    padding: 16px 24px 24px !important;
+  }
+
+  /* Player — left */
   .player-section {
     position: relative !important;
-    top: auto !important;
-    left: auto !important;
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+    max-width: none !important;
     margin: 0 !important;
+    float: none !important;
   }
 
-  /* Only channel list scrolls */
+  .video-box {
+    width: 100% !important;
+    aspect-ratio: 16 / 9 !important;
+    height: auto !important;
+  }
+
+  .video-box video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+  }
+
+  /* Channels — right, only this area scrolls */
   .grid {
+    grid-column: 2 !important;
+    grid-row: 1 / span 2 !important;
+
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+
+    width: 100% !important;
+    height: calc(100vh - 120px) !important;
+    max-height: none !important;
+
+    margin: 0 !important;
+    padding: 0 4px 20px 0 !important;
+
     overflow-y: auto !important;
     overflow-x: hidden !important;
-    max-height: calc(100vh - 120px) !important;
+
     scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 
   .grid::-webkit-scrollbar {
     display: none !important;
   }
 
-  /* Notice remains visible below player */
+  /* Notice — below player */
   .headline {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+
     position: relative !important;
-    top: auto !important;
-    left: auto !important;
-    margin-top: 14px !important;
+    width: 100% !important;
+    margin: 0 !important;
+    clear: none !important;
+  }
+
+  /* Notice content stays full size */
+  .headline,
+  .headline * {
+    max-height: none !important;
+  }
+
+  /* Category below notice */
+  .cats {
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
   }
 }
