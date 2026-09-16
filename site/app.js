@@ -1,4 +1,4 @@
-const PLAYLIST_URL = "https://raw.githubusercontent.com/ahan443/FAST-IPTV/refs/heads/main/z.m3u";
+const PLAYLIST_URL = "http://dv.ttvbd.top:80/playlist/masum25/masum258085/m3u";
 const VIP_WORKER_API = window.VIP_WORKER_API || "";
 
 let channels = [];
