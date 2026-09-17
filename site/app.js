@@ -313,125 +313,74 @@ function play(c, clickedCard, retryOriginal) {
   video.volume = 1;
 
   const originalUrl = c.url;
-  const useFallback = !retryOriginal && c._usingFallback === true;
-  const sourceUrl = useFallback ? STREAM_FALLBACK_URL : originalUrl;
-  let fallbackUsed = useFallback;
+  let fallbackUsed = !retryOriginal && c._usingFallback === true;
+  const sourceUrl = fallbackUsed ? STREAM_FALLBACK_URL : originalUrl;
 
   function showPlaybackError() {
     const note = document.getElementById("note");
-    note.textContent = "ভিডিও চালু করা যাচ্ছে না। অন্য চ্যানেল চেষ্টা করুন।";
+    note.textContent = "ভিডিও চালু করা যাচ্ছে না।";
     note.style.display = "block";
   }
 
-  function startPlayback() {
-    const p = video.play();
-    if (p && p.catch) {
-      p.catch(function () {
-        if (!fallbackUsed) {
-          fallbackUsed = true;
-          c._usingFallback = true;
-          play(Object.assign({}, c, {_usingFallback:true}), clickedCard, false);
-          return;
-        }
-        showPlaybackError();
-      });
-    }
-  }
-
-  function useStreamFallback() {
+  function switchToFallback() {
     if (fallbackUsed) {
       showPlaybackError();
       return;
     }
     fallbackUsed = true;
     c._usingFallback = true;
-    play(Object.assign({}, c, {_usingFallback:true}), clickedCard, false);
+    if (hls) {
+      try { hls.destroy(); } catch (e) {}
+      hls = null;
+    }
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+    video.src = STREAM_FALLBACK_URL;
+    video.addEventListener("loadedmetadata", startPlayback, {once:true});
+    video.addEventListener("canplay", startPlayback, {once:true});
+    startPlayback();
   }
 
-  // HLS stream
+  function startPlayback() {
+    const p = video.play();
+    if (p && p.catch) p.catch(function () {
+      if (!fallbackUsed) switchToFallback();
+      else showPlaybackError();
+    });
+  }
+
   if (/\.m3u8(\?|$)/i.test(sourceUrl) && window.Hls && Hls.isSupported()) {
     hls = new Hls({ enableWorker:true, lowLatencyMode:true, backBufferLength:30 });
     hls.attachMedia(video);
-
     hls.on(Hls.Events.MEDIA_ATTACHED, function () {
       if (hls) hls.loadSource(sourceUrl);
     });
-
     hls.on(Hls.Events.MANIFEST_PARSED, function () {
       video.muted = false;
       video.volume = 1;
       startPlayback();
     });
-
     hls.on(Hls.Events.ERROR, function (_event, data) {
       if (!data || !data.fatal || !hls) return;
-
-      if (data.type === Hls.ErrorTypes.MEDIA_ERROR && !fallbackUsed) {
-        try { hls.recoverMediaError(); } catch (e) { useStreamFallback(); }
+      if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+        try { hls.recoverMediaError(); } catch (e) {}
       } else {
         try { hls.destroy(); } catch (e) {}
         hls = null;
-        useStreamFallback();
+        switchToFallback();
       }
     });
   } else {
     video.src = sourceUrl;
     video.addEventListener("loadedmetadata", startPlayback, {once:true});
     video.addEventListener("canplay", startPlayback, {once:true});
-    video.addEventListener("error", useStreamFallback, {once:true});
+    video.addEventListener("error", function () {
+      if (!fallbackUsed) switchToFallback();
+      else showPlaybackError();
+    }, {once:true});
     startPlayback();
   }
-}
-
-// V31: real fullscreen + landscape on supported Android browsers/PWAs.
-// The fullscreen button uses the browser Fullscreen API first, then locks
-// orientation to landscape. This is required because CSS fullscreen alone
-// cannot reliably rotate a phone in Chrome.
-async function requestNativeFullscreen() {
-  if (!vipVideoBox) return false;
-
-  try {
-    if (!document.fullscreenElement && vipVideoBox.requestFullscreen) {
-      await vipVideoBox.requestFullscreen({ navigationUI: "hide" });
-    }
-  } catch (e) {
-    // Some browsers reject navigationUI; retry without options.
-    try {
-      if (!document.fullscreenElement && vipVideoBox.requestFullscreen) {
-        await vipVideoBox.requestFullscreen();
-      }
-    } catch (e2) {}
-  }
-
-  // Orientation locking is normally permitted after entering fullscreen.
-  try {
-    if (screen.orientation && screen.orientation.lock) {
-      await screen.orientation.lock("landscape");
-    }
-  } catch (e) {
-    // Installed PWAs can still use the manifest orientation setting.
-  }
-
-  vipVideoBox.classList.add("vip-css-fullscreen");
-  document.body.classList.add("vip-player-fullscreen");
-  setFullscreenButtonState();
-  return true;
-}
-
-async function exitNativeFullscreen() {
-  try {
-    if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
-  } catch (e) {}
-
-  try {
-    if (document.fullscreenElement && document.exitFullscreen) {
-      await document.exitFullscreen();
-    }
-  } catch (e) {}
-
-  if (videoBox) videoBox.classList.remove("vip-css-fullscreen", "vip-orientation-fallback");
-  document.body.classList.remove("vip-player-fullscreen");
-  return true;
 }
 
 function isNativeFullscreen() {
@@ -522,6 +471,16 @@ document.querySelectorAll("#cats button").forEach(function (button) {
 empty.hidden = false;
 empty.textContent = "Loading channels...";
 
+function currentChannelUrl() {
+  const c = visibleChannels[currentChannelIndex];
+  return c && c.url ? c.url : "";
+}
+
+function currentChannelName() {
+  const c = visibleChannels[currentChannelIndex];
+  return c && c.name ? c.name : "";
+}
+
 async function fetchPlaylistFromGithub() {
   const response = await fetch(PLAYLIST_URL, {
     cache: "no-store",
@@ -556,9 +515,6 @@ function loadLastGoodPlaylist() {
 }
 
 async function loadVipPlaylist() {
-  // GitHub is the primary playlist source.
-  // A successful playlist is cached locally so a temporary GitHub outage
-  // never replaces the working channel list with an empty/broken list.
   try {
     const fresh = await fetchPlaylistFromGithub();
     saveLastGoodPlaylist(fresh);
@@ -570,9 +526,6 @@ async function loadVipPlaylist() {
   const cached = loadLastGoodPlaylist();
   if (cached.length) return cached;
 
-  // Keep the existing Worker API as a final bootstrap fallback only when
-  // there is no cached GitHub playlist yet. This does not replace GitHub
-  // as the normal/primary source.
   const apiBase = (window.VIP_WORKER_API || "").replace(/\/$/, "");
   if (apiBase) {
     try {
@@ -580,14 +533,16 @@ async function loadVipPlaylist() {
       if (r.ok) {
         const data = await r.json();
         const list = Array.isArray(data?.channels) ? data.channels : [];
-        if (list.length) return list.map(function(c){
-          return {
-            name:c.name||"Live Channel",
-            cat:catFor(c.name,c.category),
-            url:c.url||"",
-            logo:c.logo||""
-          };
-        }).filter(c=>c.url);
+        if (list.length) {
+          return list.map(function(c){
+            return {
+              name:c.name||"Live Channel",
+              cat:catFor(c.name,c.category),
+              url:c.url||"",
+              logo:c.logo||""
+            };
+          }).filter(c=>c.url);
+        }
       }
     } catch (e) {
       console.warn("Worker playlist bootstrap unavailable.", e);
@@ -600,37 +555,24 @@ async function loadVipPlaylist() {
 async function refreshVipPlaylist() {
   try {
     const fresh = await fetchPlaylistFromGithub();
-    const oldCurrentUrl = currentChannelUrl();
-    const oldCurrentName = currentChannelName();
+    const oldCurrentName = currentChannelName ? currentChannelName() : "";
+    const oldWasFallback = currentChannelUrl ? currentChannelUrl() === STREAM_FALLBACK_URL : false;
+
     channels = fresh;
     saveLastGoodPlaylist(fresh);
     render();
 
-    // If the currently playing channel was using the fallback MP4,
-    // retry its real stream after a successful playlist refresh.
-    if (oldCurrentName) {
-      const updated = channels.find(function(c){
-        return c.name === oldCurrentName;
-      });
-      if (updated && (oldCurrentUrl === STREAM_FALLBACK_URL || oldCurrentUrl === "")) {
-        play(updated, null, true);
-      }
+    if (oldCurrentName && oldWasFallback) {
+      const updated = channels.find(function(c){ return c.name === oldCurrentName; });
+      if (updated) play(updated, null, true);
     }
+
     console.log("VIP playlist auto-refreshed:", channels.length);
     return true;
   } catch (e) {
-    console.warn("VIP playlist refresh failed; keeping last good playlist.", e);
+    console.warn("VIP playlist refresh failed; keeping current playlist.", e);
     return false;
   }
-}
-
-function currentChannelName() {
-  const title = document.getElementById("playerTitle");
-  return title ? String(title.textContent || "").trim() : "";
-}
-
-function currentChannelUrl() {
-  return video ? String(video.currentSrc || video.src || "").trim() : "";
 }
 
 setInterval(refreshVipPlaylist, PLAYLIST_REFRESH_MS);
@@ -701,21 +643,6 @@ document.addEventListener("DOMContentLoaded", function(){
   let touchStartAt = 0;
   let touchMoved = false;
   const box = document.getElementById("vipVideoBox");
-  if (!box) return;
-
-  box.addEventListener("touchstart", function(){
-    touchStartAt = Date.now();
-    touchMoved = false;
-  }, {passive:true});
-  box.addEventListener("touchmove", function(){
-    touchMoved = true;
-  }, {passive:true});
-  box.addEventListener("touchend", function(){
-    touchStartAt = 0;
-    touchMoved = false;
-  }, {passive:true});
-})();
-);
   if (!box) return;
 
   box.addEventListener("touchstart", function(){
