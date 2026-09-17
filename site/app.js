@@ -277,8 +277,7 @@ function render() {
 
     el.innerHTML =
       '<div class="circle">' + icon + '</div>' +
-      '<div class="label">' + esc(c.name) + '</div>' +
-      '<div style="font-size:9px;line-height:1.1;margin-top:2px;opacity:.72;">MASUM.TV</div>';
+      '<div class="label">' + esc(c.name) + '</div>';
 
     el.addEventListener("click", function () {
       play(c, el);
@@ -576,6 +575,12 @@ async function refreshVipPlaylist() {
 }
 
 setInterval(refreshVipPlaylist, PLAYLIST_REFRESH_MS);
+
+(function () {
+  var s = document.createElement("style");
+  s.textContent = ".headline-track span{color:#fff !important;}";
+  document.head.appendChild(s);
+})();
 
 async function loadVipNotice() {
   const apiBase = (window.VIP_WORKER_API || "").replace(/\/$/, "");
