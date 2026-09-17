@@ -519,8 +519,6 @@ async function loadVipPlaylist() {
   return parseM3U(await response.text());
 }
 
-(function(){const st=document.createElement('style');st.textContent='.headline-track,.headline-track span,.headline-track *{color:#fff !important;}';document.head.appendChild(st)})();
-
 async function loadVipNotice() {
   const apiBase = (window.VIP_WORKER_API || "").replace(/\/$/, "");
   if (!apiBase) return;
