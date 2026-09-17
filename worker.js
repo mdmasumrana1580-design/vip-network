@@ -1,125 +1,58 @@
-/**
- * ViP NETWORK Worker — Block + Last Login FIX
- * Based on the current public repository version.
- */
-const STATE_KEY='vip_state_v1', DEVICES_KEY='vip_devices_v1', SETTINGS_KEY='vip_settings_v1', SESSION_PREFIX='vip_admin_session:', USER_SESSION_PREFIX='vip_user_session:', USER_SESSION_TTL=31536000;
-const SESSION_TTL=1800;
-const adminPassword=env=>env.ADMIN_PASSWORD||env.ADMIN_PASSWOED||'';
-const kv=env=>(env.VIP_PLAYLIST||env.PLAYLIST_KV);
-const json=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store',...extra}});
-const cors={'access-control-allow-origin':'*','access-control-allow-methods':'GET,POST,PUT,DELETE,OPTIONS','access-control-allow-headers':'Content-Type, Authorization, X-ViP-Device-ID'};
-function withCors(resp){const h=new Headers(resp.headers);Object.entries(cors).forEach(([k,v])=>h.set(k,v));return new Response(resp.body,{status:resp.status,statusText:resp.statusText,headers:h})}
-function norm(c={}){return{name:String(c.name||c.title||'Unnamed'),category:String(c.category||c.group||c.groupTitle||'Other'),logo:String(c.logo||c.tvgLogo||c['tvg-logo']||''),url:String(c.url||c.stream||c.streamUrl||''),status:String(c.status||'Unknown')}}
-function parseM3U(text){const lines=String(text||'').replace(/\r/g,'').split('\n'),out=[];let meta=null;for(const raw of lines){const line=raw.trim();if(!line)continue;if(line.startsWith('#EXTINF')){const comma=line.indexOf(','),name=comma>=0?line.slice(comma+1).trim():'Live Channel',gm=line.match(/group-title="([^"]*)"/i),lm=line.match(/tvg-logo="([^"]*)"/i);meta={name:name||'Live Channel',category:gm?gm[1]:'Other',logo:lm?lm[1]:''};continue}if(line.startsWith('#'))continue;if(meta){if(/^(https?|rtmp|rtsp|hls):\/\//i.test(line))out.push(norm({...meta,url:line,status:'Unknown'}));meta=null}}return out}
-async function readState(env){
-  const store=kv(env);
-  const empty={channels:[],notice:{text:'',type:'Information',enabled:true},headline:''};
-  let raw=await store.get(STATE_KEY);
-  if(raw){try{return JSON.parse(raw)}catch{}}
-  // Compatibility with older VIP-Network KV keys so existing channels are not lost.
-  const legacyState=await store.get('vip:state:v1');
-  if(legacyState){try{const parsed=JSON.parse(legacyState);if(parsed&&typeof parsed==='object')return parsed}catch{}}
-  const legacyPlaylist=await store.get('playlist:m3u');
-  if(legacyPlaylist){
-    const channels=parseM3U(legacyPlaylist);
-    if(channels.length)return {...empty,channels};
-  }
-  return empty;
+const STATE_KEY='vip_state_v1',DEVICES_KEY='vip_devices_v1',SETTINGS_KEY='vip_settings_v1',USERS_KEY='vip_users_v1',ONLINE_KEY='vip_online_v1',ADMIN_SESSION_PREFIX='vip_admin_session:',USER_SESSION_PREFIX='vip_user_session:',ADMIN_TTL=300,USER_TTL=60*60*24*30;
+const adminPassword=e=>e.ADMIN_PASSWORD||e.ADMIN_PASSWOED||'';const kv=e=>e.VIP_PLAYLIST||e.PLAYLIST_KV;const cors={'access-control-allow-origin':'*','access-control-allow-methods':'GET,POST,PUT,DELETE,OPTIONS','access-control-allow-headers':'Content-Type, Authorization, X-ViP-Device-ID'};
+const json=(d,s=200,x={})=>{const h=new Headers({'content-type':'application/json; charset=utf-8','cache-control':'no-store',...(x.headers||{})});return new Response(JSON.stringify(d),{status:s,headers:h})};const withCors=r=>{const h=new Headers(r.headers);for(const[k,v]of Object.entries(cors))h.set(k,v);return new Response(r.body,{status:r.status,headers:h})};
+function cookies(r){const o={};(r.headers.get('Cookie')||'').split(';').forEach(p=>{const i=p.indexOf('=');if(i>0)o[p.slice(0,i).trim()]=decodeURIComponent(p.slice(i+1).trim())});return o}function norm(c={}){return{name:String(c.name||c.title||'Unnamed'),category:String(c.category||c.group||c.groupTitle||'Other'),logo:String(c.logo||c.tvgLogo||c['tvg-logo']||''),url:String(c.url||c.stream||c.streamUrl||''),status:String(c.status||'Unknown')}}
+async function readState(e){const r=await kv(e).get(STATE_KEY);try{return r?JSON.parse(r):{channels:[],notice:{text:'',type:'Information',enabled:true},headline:''}}catch{return{channels:[],notice:{},headline:''}}}async function saveState(e,s){await kv(e).put(STATE_KEY,JSON.stringify(s))}async function readDevices(e){try{return JSON.parse((await kv(e).get(DEVICES_KEY))||'[]')}catch{return[]}}async function saveDevices(e,x){await kv(e).put(DEVICES_KEY,JSON.stringify(x))}async function readSettings(e){try{return JSON.parse((await kv(e).get(SETTINGS_KEY))||'{"deviceLimit":1,"accessMode":"approval"}')}catch{return{deviceLimit:1,accessMode:'approval'}}}async function readUsers(e){try{return JSON.parse((await kv(e).get(USERS_KEY))||'[]')}catch{return[]}}async function saveUsers(e,x){await kv(e).put(USERS_KEY,JSON.stringify(x))}async function readOnline(e){try{return JSON.parse((await kv(e).get(ONLINE_KEY))||'{}')}catch{return{}}}
+async function saveOnline(e,x){await kv(e).put(ONLINE_KEY,JSON.stringify(x),{expirationTtl:120})}
+function cleanOnline(x,now=Date.now()){const out={};for(const[k,v]of Object.entries(x||{})){if(typeof v==='number'&&now-v<60000)out[k]=v}return out}
+async function hash(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}function token(){return crypto.randomUUID()}async function deviceBlocked(e,id){if(!id)return false;const d=(await readDevices(e)).find(x=>x.deviceId===id);return !!d?.blocked}
+async function authorized(r,e){const p=adminPassword(e),c=cookies(r),t=c.VIP_ADMIN_SESSION;if(!p)return false;if(t&&await kv(e).get(ADMIN_SESSION_PREFIX+t))return true;return r.headers.get('Authorization')===`Bearer ${p}`}async function requireAdmin(r,e){return(await authorized(r,e))?null:json({ok:false,error:'Unauthorized'},401)}
+function parseM3U(t){const a=String(t||'').replace(/\r/g,'').split('\n'),o=[];let m=null;for(const q of a){const l=q.trim();if(l.startsWith('#EXTINF')){const c=l.indexOf(','),gm=l.match(/group-title="([^"]*)"/i),lm=l.match(/tvg-logo="([^"]*)"/i);m={name:c>=0?l.slice(c+1).trim():'Live Channel',category:gm?gm[1]:'Other',logo:lm?lm[1]:''};continue}if(l&&!l.startsWith('#')&&m){if(/^(https?|rtmp|rtsp|hls):\/\//i.test(l))o.push(norm({...m,url:l,status:'Unknown'}));m=null}}return o}
+async function userSession(r,e){const t=cookies(r).VIP_USER_SESSION;if(!t)return null;const raw=await kv(e).get(USER_SESSION_PREFIX+t);if(!raw)return null;try{return{token:t,...JSON.parse(raw)}}catch{return null}}
+async function handle(r,e){const u=new URL(r.url),p=u.pathname;if(r.method==='OPTIONS')return withCors(new Response(null,{status:204}));
+if(p==='/api/online/ping'&&r.method==='POST'){
+const b=await r.json().catch(()=>({})),id=String(b.id||'').slice(0,160);
+if(!id)return withCors(json({ok:false,error:'id required'},400));
+const now=Date.now(),online=cleanOnline(await readOnline(e),now);
+online[id]=now;await saveOnline(e,online);
+return withCors(json({ok:true,online:Object.keys(online).length}));
 }
-async function saveState(env,state){await kv(env).put(STATE_KEY,JSON.stringify(state))}
-async function readDevices(env){const raw=await kv(env).get(DEVICES_KEY);try{return raw?JSON.parse(raw):[]}catch{return[]}}
-async function saveDevices(env,list){await kv(env).put(DEVICES_KEY,JSON.stringify(list))}
-async function readSettings(env){const raw=await kv(env).get(SETTINGS_KEY);try{return raw?JSON.parse(raw):{deviceLimit:1,accessMode:'approval'}}catch{return{deviceLimit:1,accessMode:'approval'}}}
-function cookies(request){const raw=request.headers.get('Cookie')||'',out={};raw.split(';').forEach(p=>{const i=p.indexOf('=');if(i>0)out[p.slice(0,i).trim()]=decodeURIComponent(p.slice(i+1).trim())});return out}
-async function authorized(request,env){const expected=adminPassword(env);if(!expected)return false;const c=cookies(request),token=c.VIP_ADMIN_SESSION;if(token){const ok=await kv(env).get(SESSION_PREFIX+token);if(ok)return true}const auth=request.headers.get('Authorization')||'';return auth===`Bearer ${expected}`}
-async function requireAdmin(request,env){if(!(await authorized(request,env)))return json({ok:false,error:'Unauthorized'},401);return null}
-function userCookie(token){return `VIP_USER_SESSION=${encodeURIComponent(token)}; Max-Age=${USER_SESSION_TTL}; Path=/; HttpOnly; Secure; SameSite=Lax`}
-async function userSession(request,env){const token=cookies(request).VIP_USER_SESSION;if(!token)return null;const raw=await kv(env).get(USER_SESSION_PREFIX+token);if(!raw)return null;try{return JSON.parse(raw)}catch{return null}}
-async function hashPassword(password){const data=new TextEncoder().encode(String(password));const digest=await crypto.subtle.digest('SHA-256',data);return [...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('')}
-
-async function checkStreamHealth(streamUrl){
-  const target=String(streamUrl||'').trim();
-  if(!target) return 'Dead';
-  let u;
-  try{u=new URL(target)}catch{return 'Dead'}
-  const protocol=u.protocol.toLowerCase();
-  if(protocol==='rtmp:'||protocol==='rtsp:') return 'Unknown';
-  if(protocol!=='http:'&&protocol!=='https:') return 'Unknown';
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),8000);
-  try{
-    const r=await fetch(target,{method:'GET',redirect:'follow',cache:'no-store',headers:{'Range':'bytes=0-2048'},signal:controller.signal});
-    if(!r.ok && r.status!==206) return 'Dead';
-    const ct=(r.headers.get('content-type')||'').toLowerCase();
-    const looksHls=/\.m3u8(?:$|[?#])/i.test(target)||ct.includes('mpegurl')||ct.includes('application/vnd.apple.mpegurl');
-    if(looksHls){
-      const text=(await r.text()).slice(0,12000);
-      return text.includes('#EXTM3U')?'Active':'Dead';
-    }
-    return 'Active';
-  }catch{return 'Dead'}finally{clearTimeout(timer)}
+if(p==='/api/online'&&r.method==='GET'){
+const raw=await readOnline(e),online=cleanOnline(raw);
+if(Object.keys(raw).length!==Object.keys(online).length)await saveOnline(e,online);
+return withCors(json({ok:true,online:Object.keys(online).length}));
 }
-function m3u(channels){return '#EXTM3U\n'+channels.map(c=>`#EXTINF:-1 tvg-logo="${String(c.logo||'').replace(/"/g,'&quot;')}" group-title="${String(c.category||'Other').replace(/"/g,'&quot;')}",${String(c.name||'Channel').replace(/\n/g,' ')}\n${c.url}`).join('\n')}
-async function blockedDevice(env,id){if(!id)return null;const list=await readDevices(env);return list.find(x=>x.deviceId===id&&((x.status||'').toLowerCase()==='blocked'||x.blocked===true))||null}
-async function handleApi(request,env){const url=new URL(request.url),path=url.pathname;if(request.method==='OPTIONS')return withCors(new Response(null,{status:204}));
-  if(path==='/api/admin/login'&&request.method==='POST'){const b=await request.json().catch(()=>({})),password=String(b.password||'');if(!adminPassword(env)||password!==adminPassword(env))return withCors(json({ok:false,error:'Unauthorized'},401));const token=crypto.randomUUID();await kv(env).put(SESSION_PREFIX+token,'1',{expirationTtl:SESSION_TTL});return withCors(json({ok:true,expiresIn:SESSION_TTL},200,{'Set-Cookie':`VIP_ADMIN_SESSION=${encodeURIComponent(token)}; Max-Age=${SESSION_TTL}; Path=/; HttpOnly; Secure; SameSite=Lax`}))}
-  if(path==='/api/admin/session'&&request.method==='GET'){if(await authorized(request,env))return withCors(json({ok:true,expiresIn:SESSION_TTL}));return withCors(json({ok:false,error:'Unauthorized'},401))}
-  if(path==='/api/admin/logout'&&request.method==='POST'){const c=cookies(request),token=c.VIP_ADMIN_SESSION;if(token)await kv(env).delete(SESSION_PREFIX+token);return withCors(json({ok:true},200,{'Set-Cookie':'VIP_ADMIN_SESSION=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax'}))}
-  if(request.method==='GET'&&path==='/api/state'){const s=await readState(env);return withCors(json({channels:s.channels||[],notice:s.notice||{},headline:s.headline||''}))}
-  if(request.method==='GET'&&path==='/api/playlist'){const s=await readState(env);return withCors(json({channels:s.channels||[]}))}
-  if(path==='/api/user/session'&&request.method==='GET'){
-    const s=await userSession(request,env); if(!s)return withCors(json({ok:false,loggedIn:false},401));
-    const list=await readDevices(env),d=list.find(x=>x.deviceId===s.deviceId);
-    if(!d)return withCors(json({ok:false,loggedIn:false,reason:'removed'},401));
-    if(d.status==='Blocked'||d.blocked===true)return withCors(json({ok:false,loggedIn:false,reason:'blocked',message:'Your device has been blocked'},403));
-    d.lastSeen=new Date().toISOString();await saveDevices(env,list);
-    return withCors(json({ok:true,loggedIn:true,user:{name:d.userName||'',deviceName:d.name||'',deviceId:d.deviceId}}));
-  }
-  if(path==='/api/user/login'&&request.method==='POST'){
-    const b=await request.json().catch(()=>({})),userName=String(b.name||'').trim().slice(0,60),password=String(b.password||''),deviceId=String(b.deviceId||'').trim().slice(0,100),deviceName=String(b.deviceName||'').trim().slice(0,80)||'My Device';
-    if(userName.length<1||password.length<1||!deviceId)return withCors(json({ok:false,error:'Name, password and device name are required'},400));
-    const list=await readDevices(env);let d=list.find(x=>x.deviceId===deviceId);
-    if(d&&(d.status==='Blocked'||d.blocked===true))return withCors(json({ok:false,error:'Your device has been blocked',reason:'blocked'},403));
-    const now=new Date().toISOString();
-    if(!d){d={deviceId,name:deviceName,userName,passwordHash:await hashPassword(password),userAgent:String(b.userAgent||request.headers.get('user-agent')||'').slice(0,200),approved:true,status:'Logged in',createdAt:now,lastSeen:now,lastLogin:now};list.push(d)}
-    else{d.userName=userName;d.name=deviceName;d.passwordHash=await hashPassword(password);d.approved=true;d.status='Logged in';d.lastSeen=now;d.lastLogin=now;d.userAgent=String(b.userAgent||request.headers.get('user-agent')||'').slice(0,200)}
-    await saveDevices(env,list);const token=crypto.randomUUID();await kv(env).put(USER_SESSION_PREFIX+token,JSON.stringify({deviceId:d.deviceId,userName:d.userName}),{expirationTtl:USER_SESSION_TTL});return withCors(json({ok:true,user:{name:d.userName,deviceName:d.name}},200,{'Set-Cookie':userCookie(token)}));
-  }
-  if(path==='/api/user/logout'&&request.method==='POST'){const t=cookies(request).VIP_USER_SESSION;if(t)await kv(env).delete(USER_SESSION_PREFIX+t);return withCors(json({ok:true},200,{'Set-Cookie':'VIP_USER_SESSION=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax'}))}
-  if(path==='/api/device/register'&&request.method==='POST'){
-    const body=await request.json().catch(()=>({})),deviceId=String(body.deviceId||request.headers.get('X-ViP-Device-ID')||'').slice(0,100),userName=String(body.userName||body.name||'Guest').trim().slice(0,60),deviceName=String(body.deviceName||body.name||'My Device').trim().slice(0,80);
-    if(!deviceId)return withCors(json({ok:false,error:'deviceId required'},400));const devices=await readDevices(env);let d=devices.find(x=>x.deviceId===deviceId);
-    if(d&&(d.status==='Blocked'||d.blocked===true))return withCors(json({ok:false,approved:false,blocked:true,error:'Your device has been blocked',message:'Your device has been blocked'},403));
-    const now=new Date().toISOString();
-    if(!d){d={deviceId,name:deviceName,userName,passwordSet:true,userAgent:String(body.userAgent||request.headers.get('user-agent')||'').slice(0,200),approved:true,status:'Logged in',createdAt:now,lastSeen:now,lastLogin:now};devices.push(d)}
-    else{d.userName=userName||d.userName||'Guest';d.name=deviceName||d.name||'My Device';d.approved=true;d.status='Logged in';d.lastSeen=now;d.lastLogin=now}
-    await saveDevices(env,devices);return withCors(json({ok:true,device:d}));
-  }
-  if(path==='/api/device/check'&&request.method==='GET'){
-    const id=url.searchParams.get('deviceId')||request.headers.get('X-ViP-Device-ID')||'',devices=await readDevices(env),d=devices.find(x=>x.deviceId===id),blocked=!!d&&(d.status==='Blocked'||d.blocked===true);
-    return withCors(json({ok:true,approved:!!d?.approved&&!blocked,blocked,device:d||null,settings:await readSettings(env)}));
-  }
-  const guard=await requireAdmin(request,env);if(guard)return withCors(guard);
-  if(path==='/api/admin/ping'&&request.method==='GET')return withCors(json({ok:true,connected:true}));
-  if(path==='/api/admin/state'&&request.method==='GET')return withCors(json({ok:true,state:await readState(env)}));
-  if(path==='/api/admin/state'&&request.method==='PUT'){const b=await request.json().catch(()=>({})),old=await readState(env),state={...old,...b,channels:Array.isArray(b.channels)?b.channels.map(norm):old.channels||[]};await saveState(env,state);return withCors(json({ok:true,state}))}
-  if(path==='/api/admin/playlist'&&request.method==='GET'){const s=await readState(env);return withCors(json({ok:true,channels:s.channels||[]}))}
-  if(path==='/api/admin/playlist'&&request.method==='PUT'){const b=await request.json().catch(()=>({})),channels=Array.isArray(b.channels)?b.channels.map(norm):[],s=await readState(env);s.channels=channels;await saveState(env,s);return withCors(json({ok:true,count:channels.length}))}
-  if(path==='/api/admin/import-m3u'&&request.method==='POST'){const ct=request.headers.get('content-type')||'';let text='';if(ct.includes('application/json')){const b=await request.json();text=String(b.text||b.m3u||'')}else text=await request.text();const channels=parseM3U(text),s=await readState(env);s.channels=channels;await saveState(env,s);return withCors(json({ok:true,count:channels.length}))}
-  if(path==='/api/admin/import-m3u-url'&&request.method==='POST'){const b=await request.json().catch(()=>({})),target=String(b.url||'');if(!/^https?:\/\//i.test(target))return withCors(json({ok:false,error:'Invalid M3U URL'},400));const r=await fetch(target,{redirect:'follow'});if(!r.ok)return withCors(json({ok:false,error:`M3U URL HTTP ${r.status}`},400));const channels=parseM3U(await r.text()),s=await readState(env);s.channels=channels;await saveState(env,s);return withCors(json({ok:true,count:channels.length}))}
-  if(path==='/api/xtream/import'&&request.method==='POST'){const b=await request.json().catch(()=>({})),server=String(b.server||'').replace(/\/$/,''),user=String(b.username||''),pass=String(b.password||'');if(!server||!user||!pass)return withCors(json({ok:false,error:'server, username and password required'},400));const apiUrl=server+'/player_api.php?username='+encodeURIComponent(user)+'&password='+encodeURIComponent(pass)+'&action=get_live_streams',r=await fetch(apiUrl);if(!r.ok)return withCors(json({ok:false,error:`Xtream HTTP ${r.status}`},400));const data=await r.json();if(!Array.isArray(data))return withCors(json({ok:false,error:'Xtream returned invalid data'},400));const lim=String(b.limit||'all'),items=lim==='all'?data:data.slice(0,Number(lim)||100),base=server+'/live/'+encodeURIComponent(user)+'/'+encodeURIComponent(pass)+'/',channels=items.map(x=>norm({name:x.name||('Channel '+x.stream_id),category:x.category_name||'Other',logo:x.stream_icon||'',url:base+encodeURIComponent(String(x.stream_id))+'.m3u8',status:'Unknown'})),s=await readState(env);s.channels=channels;await saveState(env,s);return withCors(json({ok:true,count:channels.length}))}
-  if(path==='/api/admin/health-check'&&request.method==='POST'){const b=await request.json().catch(()=>({}));const status=await checkStreamHealth(b.url);return withCors(json({ok:true,status,checkedAt:new Date().toISOString()}))}
-  if(path==='/api/admin/check-all'&&request.method==='POST'){const s=await readState(env),channels=s.channels||[],checked=[];for(const c of channels){const status=await checkStreamHealth(c.url);checked.push({...c,status,lastCheckedAt:new Date().toISOString()})}s.channels=checked;await saveState(env);return withCors(json({ok:true,count:checked.length,channels:checked}))}
-  if(path==='/api/admin/settings'&&request.method==='GET')return withCors(json({ok:true,settings:await readSettings(env)}));
-  if(path==='/api/admin/settings'&&request.method==='PUT'){const b=await request.json().catch(()=>({})),s={...(await readSettings(env)),...b};await kv(env).put(SETTINGS_KEY,JSON.stringify(s));return withCors(json({ok:true,settings:s}))}
-  if(path==='/api/admin/devices'&&request.method==='GET'){const devices=await readDevices(env);devices.sort((a,b)=>new Date(b.lastLogin||b.lastSeen||b.createdAt||0)-new Date(a.lastLogin||a.lastSeen||a.createdAt||0));return withCors(json({ok:true,devices,settings:await readSettings(env)}))}
-  if(path==='/api/admin/devices/approve'&&request.method==='POST'){const b=await request.json().catch(()=>({})),id=String(b.deviceId||''),list=await readDevices(env),d=list.find(x=>x.deviceId===id);if(!d)return withCors(json({ok:false,error:'Device not found'},404));if(d.status==='Blocked'||d.blocked===true)return withCors(json({ok:false,error:'Device is blocked. Use Unblock first.'},409));d.approved=true;d.status='Approved';await saveDevices(env,list);return withCors(json({ok:true,device:d}))}
-  if(path==='/api/admin/devices/approve-all'&&request.method==='POST'){const list=await readDevices(env);list.forEach(d=>{if(d.status!=='Blocked'&&d.blocked!==true){d.approved=true;d.status='Approved'}});await saveDevices(env,list);return withCors(json({ok:true,count:list.length}))}
-  if(path==='/api/admin/devices/logout-all'&&request.method==='POST'){const list=await readDevices(env);list.forEach(d=>{if(d.status!=='Blocked'&&d.blocked!==true){d.approved=false;d.status='Logged out'}});await saveDevices(env,list);return withCors(json({ok:true}))}
-  if(path==='/api/admin/devices/block'&&request.method==='POST'){const b=await request.json().catch(()=>({})),id=String(b.deviceId||''),list=await readDevices(env),d=list.find(x=>x.deviceId===id);if(!d)return withCors(json({ok:false,error:'Device not found'},404));d.blocked=true;d.approved=false;d.status='Blocked';d.blockedAt=new Date().toISOString();await saveDevices(env,list);return withCors(json({ok:true,device:d,message:'Your device has been blocked'}))}
-  if(path==='/api/admin/devices/unblock'&&request.method==='POST'){const b=await request.json().catch(()=>({})),id=String(b.deviceId||''),list=await readDevices(env),d=list.find(x=>x.deviceId===id);if(!d)return withCors(json({ok:false,error:'Device not found'},404));d.blocked=false;d.approved=true;d.status='Approved';d.unblockedAt=new Date().toISOString();await saveDevices(env,list);return withCors(json({ok:true,device:d}))}
-  if(path==='/api/admin/devices'&&request.method==='PUT'){const b=await request.json().catch(()=>({})),list=await readDevices(env),id=String(b.deviceId||''),d=list.find(x=>x.deviceId===id);if(!d)return withCors(json({ok:false,error:'Device not found'},404));if(b.status==='Blocked'||b.blocked===true){d.blocked=true;d.approved=false;d.status='Blocked';d.blockedAt=new Date().toISOString()}else if(b.blocked===false){d.blocked=false;Object.assign(d,b);d.status=b.status||'Approved'}else{if(d.status==='Blocked'||d.blocked===true)return withCors(json({ok:false,error:'Device is blocked. Use Unblock first.'},409));Object.assign(d,b)}await saveDevices(env,list);return withCors(json({ok:true,device:d}))}
-  if(path==='/api/admin/devices'&&request.method==='DELETE'){const id=url.searchParams.get('deviceId')||'',list=(await readDevices(env)).filter(x=>x.deviceId!==id);await saveDevices(env,list);return withCors(json({ok:true}))}
-  if(path==='/api/admin/export-m3u'&&request.method==='GET'){const s=await readState(env);return new Response(m3u(s.channels||[]),{headers:{'content-type':'audio/x-mpegurl','cache-control':'no-store',...cors}})}
-  return withCors(json({ok:false,error:'API route not found'},404))}
-export default{async fetch(request,env){const url=new URL(request.url);if(url.pathname.startsWith('/api/'))return handleApi(request,env);return env.ASSETS.fetch(request)}};
+if(p==='/api/user/login'&&r.method==='POST'){const b=await r.json().catch(()=>({})),username=String(b.username||'').trim(),password=String(b.password||''),deviceId=String(b.deviceId||r.headers.get('X-ViP-Device-ID')||''),deviceName=String(b.deviceName||'Unknown device').slice(0,100);if(username.length<3||password.length<4)return withCors(json({ok:false,error:'Username or password is too short'},400));if(await deviceBlocked(e,deviceId))return withCors(json({ok:false,error:'This device has been blocked',blocked:true},403));const users=await readUsers(e);let user=users.find(x=>x.username.toLowerCase()===username.toLowerCase()),created=false;if(!user){const salt=crypto.randomUUID();user={id:crypto.randomUUID(),username,passwordHash:await hash(salt+password),salt,createdAt:new Date().toISOString(),lastLoginAt:null,lastDeviceId:null,lastDeviceName:''};users.push(user);await saveUsers(e,users);created=true}else if(user.passwordHash!==await hash(String(user.salt||'')+password))return withCors(json({ok:false,error:'Incorrect username or password'},401));user.lastLoginAt=new Date().toISOString();user.lastDeviceId=deviceId||user.lastDeviceId||null;user.lastDeviceName=deviceName||user.lastDeviceName||'';await saveUsers(e,users);if(deviceId){const ds=await readDevices(e);let d=ds.find(x=>x.deviceId===deviceId);if(d?.blocked)return withCors(json({ok:false,error:'This device has been blocked',blocked:true},403));if(!d){d={deviceId,name:deviceName,userAgent:r.headers.get('user-agent')||'',approved:true,blocked:false,status:'Logged in',createdAt:new Date().toISOString(),lastSeen:new Date().toISOString(),username:user.username};ds.push(d)}else{d.name=deviceName||d.name;d.username=user.username;d.lastSeen=new Date().toISOString();d.status='Logged in'}await saveDevices(e,ds)}const t=token();await kv(e).put(USER_SESSION_PREFIX+t,JSON.stringify({userId:user.id,username:user.username,deviceId}),{expirationTtl:USER_TTL});return withCors(json({ok:true,created,username:user.username},200,{headers:{'Set-Cookie':`VIP_USER_SESSION=${encodeURIComponent(t)}; Max-Age=${USER_TTL}; Path=/; HttpOnly; Secure; SameSite=Lax`}}))}
+if(p==='/api/user/session'&&r.method==='GET'){const s=await userSession(r,e);if(!s)return withCors(json({ok:false,error:'Unauthorized'},401));if(await deviceBlocked(e,s.deviceId))return withCors(json({ok:false,error:'Blocked',blocked:true},403));return withCors(json({ok:true,username:s.username}))}
+if(p==='/api/user/logout'&&r.method==='POST'){const t=cookies(r).VIP_USER_SESSION;if(t)await kv(e).delete(USER_SESSION_PREFIX+t);return withCors(json({ok:true},200,{headers:{'Set-Cookie':'VIP_USER_SESSION=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax'}}))}
+if(p==='/api/admin/login'&&r.method==='POST'){const b=await r.json().catch(()=>({}));if(!adminPassword(e)||String(b.password||'')!==adminPassword(e))return withCors(json({ok:false,error:'Unauthorized'},401));const t=token();await kv(e).put(ADMIN_SESSION_PREFIX+t,'1',{expirationTtl:ADMIN_TTL});return withCors(json({ok:true,expiresIn:ADMIN_TTL},200,{headers:{'Set-Cookie':`VIP_ADMIN_SESSION=${t}; Max-Age=${ADMIN_TTL}; Path=/; HttpOnly; Secure; SameSite=Lax`}}))}
+if(p==='/api/admin/session'&&r.method==='GET')return withCors((await authorized(r,e))?json({ok:true,expiresIn:ADMIN_TTL}):json({ok:false,error:'Unauthorized'},401));if(p==='/api/admin/logout'&&r.method==='POST'){const t=cookies(r).VIP_ADMIN_SESSION;if(t)await kv(e).delete(ADMIN_SESSION_PREFIX+t);return withCors(json({ok:true},200,{headers:{'Set-Cookie':'VIP_ADMIN_SESSION=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax'}}))}
+if(r.method==='GET'&&p==='/api/state'){const s=await readState(e);return withCors(json({channels:s.channels||[],notice:s.notice||{},headline:s.headline||''}))}if(r.method==='GET'&&p==='/api/playlist'){const s=await readState(e);return withCors(json({channels:s.channels||[]}))}
+if(p==='/api/device/register'&&r.method==='POST'){const b=await r.json().catch(()=>({})),id=String(b.deviceId||r.headers.get('X-ViP-Device-ID')||'');if(!id)return withCors(json({ok:false,error:'deviceId required'},400));const ds=await readDevices(e);let d=ds.find(x=>x.deviceId===id);if(d?.blocked)return withCors(json({ok:false,error:'Blocked',blocked:true},403));if(!d){d={deviceId:id,name:String(b.name||'Unknown device'),userAgent:String(b.userAgent||r.headers.get('user-agent')||'').slice(0,200),approved:false,blocked:false,createdAt:new Date().toISOString(),lastSeen:new Date().toISOString()};ds.push(d)}else d.lastSeen=new Date().toISOString();await saveDevices(e,ds);return withCors(json({ok:true,device:d,settings:await readSettings(e)}))}
+if(p==='/api/device/check'&&r.method==='GET'){const id=u.searchParams.get('deviceId')||r.headers.get('X-ViP-Device-ID')||'',d=(await readDevices(e)).find(x=>x.deviceId===id);if(d?.blocked)return withCors(json({ok:false,approved:false,blocked:true,device:d,settings:await readSettings(e)},403));return withCors(json({ok:true,approved:!!d?.approved,device:d||null,settings:await readSettings(e)}))}
+const g=await requireAdmin(r,e);if(g)return withCors(g);
+if(p==='/api/admin/ping'&&r.method==='GET')return withCors(json({ok:true,connected:true}));if(p==='/api/admin/state'&&r.method==='GET')return withCors(json({ok:true,state:await readState(e)}));if(p==='/api/admin/state'&&r.method==='PUT'){const b=await r.json().catch(()=>({})),s={...(await readState(e)),...b};if(Array.isArray(b.channels))s.channels=b.channels.map(norm);await saveState(e,s);return withCors(json({ok:true,state:s}))}
+if(p==='/api/admin/users'&&r.method==='GET'){
+const users=await readUsers(e),ds=await readDevices(e);
+const safe=users.map(u=>({
+id:u.id,username:u.username,createdAt:u.createdAt||null,lastLoginAt:u.lastLoginAt||null,
+lastDeviceId:u.lastDeviceId||null,lastDeviceName:u.lastDeviceName||'',
+devices:ds.filter(d=>d.username===u.username).map(d=>({deviceId:d.deviceId,name:d.name,status:d.status||'',blocked:!!d.blocked,lastSeen:d.lastSeen||null}))
+}));
+return withCors(json({ok:true,users:safe}))
+}
+if(p==='/api/admin/users/reset-password'&&r.method==='POST'){
+const b=await r.json().catch(()=>({})),id=String(b.userId||''),newPassword=String(b.newPassword||'');
+if(newPassword.length<4)return withCors(json({ok:false,error:'Password must be at least 4 characters'},400));
+const users=await readUsers(e),u=users.find(x=>x.id===id);
+if(!u)return withCors(json({ok:false,error:'User not found'},404));
+u.salt=crypto.randomUUID();u.passwordHash=await hash(u.salt+newPassword);u.passwordChangedAt=new Date().toISOString();
+await saveUsers(e,users);return withCors(json({ok:true}))
+}
+if(p==='/api/admin/devices'&&r.method==='GET')return withCors(json({ok:true,devices:await readDevices(e),settings:await readSettings(e)}));for(const action of ['block','unblock','approve'])if(p==='/api/admin/devices/'+action&&r.method==='POST'){const b=await r.json().catch(()=>({})),ds=await readDevices(e),d=ds.find(x=>x.deviceId===String(b.deviceId||''));if(!d)return withCors(json({ok:false,error:'Device not found'},404));if(action==='block'){d.blocked=true;d.approved=false;d.status='Blocked'}if(action==='unblock'){d.blocked=false;d.approved=false;d.status='Logged out'}if(action==='approve'){d.approved=true;d.blocked=false;d.status='Approved'}await saveDevices(e,ds);return withCors(json({ok:true,device:d}))}
+if(p==='/api/admin/devices'&&r.method==='DELETE'){const id=u.searchParams.get('deviceId')||'';await saveDevices(e,(await readDevices(e)).filter(x=>x.deviceId!==id));return withCors(json({ok:true}))}
+if(p==='/api/admin/settings'&&r.method==='GET')return withCors(json({ok:true,settings:await readSettings(e)}));if(p==='/api/admin/settings'&&r.method==='PUT'){const b=await r.json().catch(()=>({})),s={...(await readSettings(e)),...b};await kv(e).put(SETTINGS_KEY,JSON.stringify(s));return withCors(json({ok:true,settings:s}))}
+if(p==='/api/admin/import-m3u-url'&&r.method==='POST'){const b=await r.json().catch(()=>({}));if(!/^https?:\/\//i.test(String(b.url||'')))return withCors(json({ok:false,error:'Invalid M3U URL'},400));const x=await fetch(b.url),s=await readState(e);if(!x.ok)return withCors(json({ok:false,error:'M3U URL failed'},400));s.channels=parseM3U(await x.text());await saveState(e,s);return withCors(json({ok:true,count:s.channels.length}))}
+if(p==='/api/admin/import-m3u'&&r.method==='POST'){const b=await r.text(),s=await readState(e);s.channels=parseM3U(b);await saveState(e,s);return withCors(json({ok:true,count:s.channels.length}))}
+return withCors(json({ok:false,error:'API route not found'},404))}
+export default{async fetch(r,e){return new URL(r.url).pathname.startsWith('/api/')?handle(r,e):e.ASSETS.fetch(r)}};
