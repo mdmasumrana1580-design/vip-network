@@ -22,29 +22,6 @@ async function requireAdmin(request,env){if(!(await authorized(request,env)))ret
 function userCookie(token){return `VIP_USER_SESSION=${encodeURIComponent(token)}; Max-Age=${USER_SESSION_TTL}; Path=/; HttpOnly; Secure; SameSite=Lax`}
 async function userSession(request,env){const token=cookies(request).VIP_USER_SESSION;if(!token)return null;const raw=await kv(env).get(USER_SESSION_PREFIX+token);if(!raw)return null;try{return JSON.parse(raw)}catch{return null}}
 async function hashPassword(password){const data=new TextEncoder().encode(String(password));const digest=await crypto.subtle.digest('SHA-256',data);return [...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('')}
-
-async function checkStreamHealth(streamUrl){
-  const target=String(streamUrl||'').trim();
-  if(!target) return 'Dead';
-  let u;
-  try{u=new URL(target)}catch{return 'Dead'}
-  const protocol=u.protocol.toLowerCase();
-  if(protocol==='rtmp:'||protocol==='rtsp:') return 'Unknown';
-  if(protocol!=='http:'&&protocol!=='https:') return 'Unknown';
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),8000);
-  try{
-    const r=await fetch(target,{method:'GET',redirect:'follow',cache:'no-store',headers:{'Range':'bytes=0-2048'},signal:controller.signal});
-    if(!r.ok && r.status!==206) return 'Dead';
-    const ct=(r.headers.get('content-type')||'').toLowerCase();
-    const looksHls=/\.m3u8(?:$|[?#])/i.test(target)||ct.includes('mpegurl')||ct.includes('application/vnd.apple.mpegurl');
-    if(looksHls){
-      const text=(await r.text()).slice(0,12000);
-      return text.includes('#EXTM3U')?'Active':'Dead';
-    }
-    return 'Active';
-  }catch{return 'Dead'}finally{clearTimeout(timer)}
-}
 function m3u(channels){return '#EXTM3U\n'+channels.map(c=>`#EXTINF:-1 tvg-logo="${String(c.logo||'').replace(/"/g,'&quot;')}" group-title="${String(c.category||'Other').replace(/"/g,'&quot;')}",${String(c.name||'Channel').replace(/\n/g,' ')}\n${c.url}`).join('\n')}
 async function blockedDevice(env,id){if(!id)return null;const list=await readDevices(env);return list.find(x=>x.deviceId===id&&((x.status||'').toLowerCase()==='blocked'||x.blocked===true))||null}
 async function handleApi(request,env){const url=new URL(request.url),path=url.pathname;if(request.method==='OPTIONS')return withCors(new Response(null,{status:204}));
@@ -94,8 +71,28 @@ async function handleApi(request,env){const url=new URL(request.url),path=url.pa
   if(path==='/api/admin/import-m3u'&&request.method==='POST'){const ct=request.headers.get('content-type')||'';let text='';if(ct.includes('application/json')){const b=await request.json();text=String(b.text||b.m3u||'')}else text=await request.text();const channels=parseM3U(text),s=await readState(env);s.channels=channels;await saveState(env,s);return withCors(json({ok:true,count:channels.length}))}
   if(path==='/api/admin/import-m3u-url'&&request.method==='POST'){const b=await request.json().catch(()=>({})),target=String(b.url||'');if(!/^https?:\/\//i.test(target))return withCors(json({ok:false,error:'Invalid M3U URL'},400));const r=await fetch(target,{redirect:'follow'});if(!r.ok)return withCors(json({ok:false,error:`M3U URL HTTP ${r.status}`},400));const channels=parseM3U(await r.text()),s=await readState(env);s.channels=channels;await saveState(env,s);return withCors(json({ok:true,count:channels.length}))}
   if(path==='/api/xtream/import'&&request.method==='POST'){const b=await request.json().catch(()=>({})),server=String(b.server||'').replace(/\/$/,''),user=String(b.username||''),pass=String(b.password||'');if(!server||!user||!pass)return withCors(json({ok:false,error:'server, username and password required'},400));const apiUrl=server+'/player_api.php?username='+encodeURIComponent(user)+'&password='+encodeURIComponent(pass)+'&action=get_live_streams',r=await fetch(apiUrl);if(!r.ok)return withCors(json({ok:false,error:`Xtream HTTP ${r.status}`},400));const data=await r.json();if(!Array.isArray(data))return withCors(json({ok:false,error:'Xtream returned invalid data'},400));const lim=String(b.limit||'all'),items=lim==='all'?data:data.slice(0,Number(lim)||100),base=server+'/live/'+encodeURIComponent(user)+'/'+encodeURIComponent(pass)+'/',channels=items.map(x=>norm({name:x.name||('Channel '+x.stream_id),category:x.category_name||'Other',logo:x.stream_icon||'',url:base+encodeURIComponent(String(x.stream_id))+'.m3u8',status:'Unknown'})),s=await readState(env);s.channels=channels;await saveState(env,s);return withCors(json({ok:true,count:channels.length}))}
-  if(path==='/api/admin/health-check'&&request.method==='POST'){const b=await request.json().catch(()=>({}));const status=await checkStreamHealth(b.url);return withCors(json({ok:true,status,checkedAt:new Date().toISOString()}))}
-  if(path==='/api/admin/check-all'&&request.method==='POST'){const s=await readState(env),channels=s.channels||[],checked=[];for(const c of channels){const status=await checkStreamHealth(c.url);checked.push({...c,status,lastCheckedAt:new Date().toISOString()})}s.channels=checked;await saveState(env);return withCors(json({ok:true,count:checked.length,channels:checked}))}
+  if(path==='/api/admin/check-all'&&request.method==='POST'){
+    const s=await readState(env),channels=s.channels||[];
+    const checked=await Promise.all(channels.map(async c=>{
+      const url=String(c.url||'').trim();
+      const checkedAt=new Date().toISOString();
+      if(!url) return {...c,status:'Dead',lastCheckedAt:checkedAt};
+      if(/^(rtmp|rtsp):\/\//i.test(url)) return {...c,status:'Unknown',lastCheckedAt:checkedAt};
+      const controller=new AbortController();
+      const timer=setTimeout(()=>controller.abort(),8000);
+      try{
+        const r=await fetch(url,{method:'GET',redirect:'follow',cache:'no-store',signal:controller.signal,headers:{Range:'bytes=0-1'}});
+        clearTimeout(timer);
+        return {...c,status:(r.ok||r.status===206)?'Active':'Dead',lastCheckedAt:checkedAt};
+      }catch{
+        clearTimeout(timer);
+        return {...c,status:'Dead',lastCheckedAt:checkedAt};
+      }
+    }));
+    s.channels=checked;
+    await saveState(env,s);
+    return withCors(json({ok:true,count:checked.length,channels:checked}));
+  }
   if(path==='/api/admin/settings'&&request.method==='GET')return withCors(json({ok:true,settings:await readSettings(env)}));
   if(path==='/api/admin/settings'&&request.method==='PUT'){const b=await request.json().catch(()=>({})),s={...(await readSettings(env)),...b};await kv(env).put(SETTINGS_KEY,JSON.stringify(s));return withCors(json({ok:true,settings:s}))}
   if(path==='/api/admin/devices'&&request.method==='GET'){const devices=await readDevices(env);devices.sort((a,b)=>new Date(b.lastLogin||b.lastSeen||b.createdAt||0)-new Date(a.lastLogin||a.lastSeen||a.createdAt||0));return withCors(json({ok:true,devices,settings:await readSettings(env)}))}
