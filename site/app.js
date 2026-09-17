@@ -1,4 +1,7 @@
-const PLAYLIST_URL = "http://dv.ttvbd.top:80/playlist/masum25/masum258085/m3u";
+const PLAYLIST_URL = "https://raw.githubusercontent.com/mdmasumrana1580-design/Playlist-/refs/heads/main/Playlist";
+const PLAYLIST_CACHE_KEY = "vip-network-last-good-playlist-v1";
+const PLAYLIST_REFRESH_MS = 10 * 60 * 1000;
+const STREAM_FALLBACK_URL = "https://mp3tourl.com/videos/1789615987340-af8196aa-b471-46d6-b1a6-ce56f31a1da8.mp4";
 const VIP_WORKER_API = window.VIP_WORKER_API || "";
 
 let channels = [];
@@ -274,7 +277,8 @@ function render() {
 
     el.innerHTML =
       '<div class="circle">' + icon + '</div>' +
-      '<div class="label">' + esc(c.name) + '</div>';
+      '<div class="label">' + esc(c.name) + '</div>' +
+      '<div style="font-size:9px;line-height:1.1;margin-top:2px;opacity:.72;">MASUM.TV</div>';
 
     el.addEventListener("click", function () {
       play(c, el);
@@ -284,15 +288,13 @@ function render() {
   });
 }
 
-function play(c, clickedCard) {
+function play(c, clickedCard, retryOriginal) {
   currentChannelIndex = visibleChannels.indexOf(c);
   if (welcomeVideo) welcomeVideo.classList.add("welcome-hidden");
   if (videoBox) videoBox.classList.remove("welcome-active");
   const liveBadge = document.getElementById("liveBadge");
   if (liveBadge) liveBadge.style.display = "flex";
 
-  // The player is permanently reserved on the page and visually fixed below the header.
-  // Selecting a channel therefore never inserts/removes layout and never changes scrollTop.
   section.hidden = false;
   document.getElementById("playerTitle").textContent = c.name;
   document.getElementById("note").style.display = "none";
@@ -307,54 +309,79 @@ function play(c, clickedCard) {
   video.load();
   video.autoplay = true;
   video.playsInline = true;
-  // Start with sound enabled. Because the channel card click is a user gesture,
-  // browsers are more likely to allow playback with audio. Some mobile browsers
-  // may still enforce their own autoplay policy.
   video.muted = false;
   video.volume = 1;
+
+  const originalUrl = c.url;
+  const useFallback = !retryOriginal && c._usingFallback === true;
+  const sourceUrl = useFallback ? STREAM_FALLBACK_URL : originalUrl;
+  let fallbackUsed = useFallback;
+
+  function showPlaybackError() {
+    const note = document.getElementById("note");
+    note.textContent = "ভিডিও চালু করা যাচ্ছে না। অন্য চ্যানেল চেষ্টা করুন।";
+    note.style.display = "block";
+  }
 
   function startPlayback() {
     const p = video.play();
     if (p && p.catch) {
       p.catch(function () {
-        const note = document.getElementById("note");
-        note.textContent = "ভিডিও চালু করা যাচ্ছে না। অন্য চ্যানেল চেষ্টা করুন।";
-        note.style.display = "block";
+        if (!fallbackUsed) {
+          fallbackUsed = true;
+          c._usingFallback = true;
+          play(Object.assign({}, c, {_usingFallback:true}), clickedCard, false);
+          return;
+        }
+        showPlaybackError();
       });
     }
   }
 
-  if (/\.m3u8(\?|$)/i.test(c.url) && window.Hls && Hls.isSupported()) {
+  function useStreamFallback() {
+    if (fallbackUsed) {
+      showPlaybackError();
+      return;
+    }
+    fallbackUsed = true;
+    c._usingFallback = true;
+    play(Object.assign({}, c, {_usingFallback:true}), clickedCard, false);
+  }
+
+  // HLS stream
+  if (/\.m3u8(\?|$)/i.test(sourceUrl) && window.Hls && Hls.isSupported()) {
     hls = new Hls({ enableWorker:true, lowLatencyMode:true, backBufferLength:30 });
     hls.attachMedia(video);
+
     hls.on(Hls.Events.MEDIA_ATTACHED, function () {
-      if (hls) hls.loadSource(c.url);
+      if (hls) hls.loadSource(sourceUrl);
     });
+
     hls.on(Hls.Events.MANIFEST_PARSED, function () {
       video.muted = false;
       video.volume = 1;
       startPlayback();
     });
+
     hls.on(Hls.Events.ERROR, function (_event, data) {
       if (!data || !data.fatal || !hls) return;
-      if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-        try { hls.recoverMediaError(); } catch (e) {}
+
+      if (data.type === Hls.ErrorTypes.MEDIA_ERROR && !fallbackUsed) {
+        try { hls.recoverMediaError(); } catch (e) { useStreamFallback(); }
       } else {
         try { hls.destroy(); } catch (e) {}
         hls = null;
-        const note = document.getElementById("note");
-        note.textContent = "ভিডিও লোড করা যাচ্ছে না। অন্য চ্যানেল চেষ্টা করুন।";
-        note.style.display = "block";
+        useStreamFallback();
       }
     });
   } else {
-    video.src = c.url;
+    video.src = sourceUrl;
     video.addEventListener("loadedmetadata", startPlayback, {once:true});
     video.addEventListener("canplay", startPlayback, {once:true});
+    video.addEventListener("error", useStreamFallback, {once:true});
     startPlayback();
   }
 }
-
 
 // V31: real fullscreen + landscape on supported Android browsers/PWAs.
 // The fullscreen button uses the browser Fullscreen API first, then locks
@@ -495,10 +522,57 @@ document.querySelectorAll("#cats button").forEach(function (button) {
 empty.hidden = false;
 empty.textContent = "Loading channels...";
 
+async function fetchPlaylistFromGithub() {
+  const response = await fetch(PLAYLIST_URL, {
+    cache: "no-store",
+    headers: {"cache-control":"no-cache"}
+  });
+  if (!response.ok) throw new Error("GitHub playlist load failed: " + response.status);
+  const parsed = parseM3U(await response.text());
+  if (!parsed.length) throw new Error("GitHub playlist is empty or invalid");
+  return parsed;
+}
+
+function saveLastGoodPlaylist(list) {
+  try {
+    localStorage.setItem(PLAYLIST_CACHE_KEY, JSON.stringify({
+      savedAt: Date.now(),
+      channels: list
+    }));
+  } catch (e) {
+    console.warn("Could not cache playlist", e);
+  }
+}
+
+function loadLastGoodPlaylist() {
+  try {
+    const raw = localStorage.getItem(PLAYLIST_CACHE_KEY);
+    if (!raw) return [];
+    const data = JSON.parse(raw);
+    return Array.isArray(data && data.channels) ? data.channels : [];
+  } catch (e) {
+    return [];
+  }
+}
+
 async function loadVipPlaylist() {
-  // When the site is deployed with the unified Cloudflare Worker,
-  // the admin panel writes the current playlist to /api/playlist.
-  // Keep the original GitHub playlist as a fallback for static hosting.
+  // GitHub is the primary playlist source.
+  // A successful playlist is cached locally so a temporary GitHub outage
+  // never replaces the working channel list with an empty/broken list.
+  try {
+    const fresh = await fetchPlaylistFromGithub();
+    saveLastGoodPlaylist(fresh);
+    return fresh;
+  } catch (githubError) {
+    console.warn("GitHub playlist unavailable; using last successful playlist.", githubError);
+  }
+
+  const cached = loadLastGoodPlaylist();
+  if (cached.length) return cached;
+
+  // Keep the existing Worker API as a final bootstrap fallback only when
+  // there is no cached GitHub playlist yet. This does not replace GitHub
+  // as the normal/primary source.
   const apiBase = (window.VIP_WORKER_API || "").replace(/\/$/, "");
   if (apiBase) {
     try {
@@ -507,17 +581,59 @@ async function loadVipPlaylist() {
         const data = await r.json();
         const list = Array.isArray(data?.channels) ? data.channels : [];
         if (list.length) return list.map(function(c){
-          return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||""};
+          return {
+            name:c.name||"Live Channel",
+            cat:catFor(c.name,c.category),
+            url:c.url||"",
+            logo:c.logo||""
+          };
         }).filter(c=>c.url);
       }
     } catch (e) {
-      console.warn("VIP Worker playlist unavailable; using GitHub fallback.", e);
+      console.warn("Worker playlist bootstrap unavailable.", e);
     }
   }
-  const response = await fetch(PLAYLIST_URL, {cache:"no-store"});
-  if (!response.ok) throw new Error("Playlist load failed");
-  return parseM3U(await response.text());
+
+  throw new Error("Playlist load failed");
 }
+
+async function refreshVipPlaylist() {
+  try {
+    const fresh = await fetchPlaylistFromGithub();
+    const oldCurrentUrl = currentChannelUrl();
+    const oldCurrentName = currentChannelName();
+    channels = fresh;
+    saveLastGoodPlaylist(fresh);
+    render();
+
+    // If the currently playing channel was using the fallback MP4,
+    // retry its real stream after a successful playlist refresh.
+    if (oldCurrentName) {
+      const updated = channels.find(function(c){
+        return c.name === oldCurrentName;
+      });
+      if (updated && (oldCurrentUrl === STREAM_FALLBACK_URL || oldCurrentUrl === "")) {
+        play(updated, null, true);
+      }
+    }
+    console.log("VIP playlist auto-refreshed:", channels.length);
+    return true;
+  } catch (e) {
+    console.warn("VIP playlist refresh failed; keeping last good playlist.", e);
+    return false;
+  }
+}
+
+function currentChannelName() {
+  const title = document.getElementById("playerTitle");
+  return title ? String(title.textContent || "").trim() : "";
+}
+
+function currentChannelUrl() {
+  return video ? String(video.currentSrc || video.src || "").trim() : "";
+}
+
+setInterval(refreshVipPlaylist, PLAYLIST_REFRESH_MS);
 
 async function loadVipNotice() {
   const apiBase = (window.VIP_WORKER_API || "").replace(/\/$/, "");
@@ -585,6 +701,21 @@ document.addEventListener("DOMContentLoaded", function(){
   let touchStartAt = 0;
   let touchMoved = false;
   const box = document.getElementById("vipVideoBox");
+  if (!box) return;
+
+  box.addEventListener("touchstart", function(){
+    touchStartAt = Date.now();
+    touchMoved = false;
+  }, {passive:true});
+  box.addEventListener("touchmove", function(){
+    touchMoved = true;
+  }, {passive:true});
+  box.addEventListener("touchend", function(){
+    touchStartAt = 0;
+    touchMoved = false;
+  }, {passive:true});
+})();
+);
   if (!box) return;
 
   box.addEventListener("touchstart", function(){
