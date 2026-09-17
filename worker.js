@@ -71,6 +71,21 @@ async function handleApi(request,env){const url=new URL(request.url),path=url.pa
   if(path==='/api/admin/import-m3u'&&request.method==='POST'){const ct=request.headers.get('content-type')||'';let text='';if(ct.includes('application/json')){const b=await request.json();text=String(b.text||b.m3u||'')}else text=await request.text();const channels=parseM3U(text),s=await readState(env);s.channels=channels;await saveState(env,s);return withCors(json({ok:true,count:channels.length}))}
   if(path==='/api/admin/import-m3u-url'&&request.method==='POST'){const b=await request.json().catch(()=>({})),target=String(b.url||'');if(!/^https?:\/\//i.test(target))return withCors(json({ok:false,error:'Invalid M3U URL'},400));const r=await fetch(target,{redirect:'follow'});if(!r.ok)return withCors(json({ok:false,error:`M3U URL HTTP ${r.status}`},400));const channels=parseM3U(await r.text()),s=await readState(env);s.channels=channels;await saveState(env,s);return withCors(json({ok:true,count:channels.length}))}
   if(path==='/api/xtream/import'&&request.method==='POST'){const b=await request.json().catch(()=>({})),server=String(b.server||'').replace(/\/$/,''),user=String(b.username||''),pass=String(b.password||'');if(!server||!user||!pass)return withCors(json({ok:false,error:'server, username and password required'},400));const apiUrl=server+'/player_api.php?username='+encodeURIComponent(user)+'&password='+encodeURIComponent(pass)+'&action=get_live_streams',r=await fetch(apiUrl);if(!r.ok)return withCors(json({ok:false,error:`Xtream HTTP ${r.status}`},400));const data=await r.json();if(!Array.isArray(data))return withCors(json({ok:false,error:'Xtream returned invalid data'},400));const lim=String(b.limit||'all'),items=lim==='all'?data:data.slice(0,Number(lim)||100),base=server+'/live/'+encodeURIComponent(user)+'/'+encodeURIComponent(pass)+'/',channels=items.map(x=>norm({name:x.name||('Channel '+x.stream_id),category:x.category_name||'Other',logo:x.stream_icon||'',url:base+encodeURIComponent(String(x.stream_id))+'.m3u8',status:'Unknown'})),s=await readState(env);s.channels=channels;await saveState(env,s);return withCors(json({ok:true,count:channels.length}))}
+  if(path==='/api/admin/health-check'&&request.method==='POST'){
+    const b=await request.json().catch(()=>({})),target=String(b.url||'').trim();
+    const checkedAt=new Date().toISOString();
+    if(!target)return withCors(json({ok:true,status:'Dead',lastCheckedAt:checkedAt}));
+    if(/^(rtmp|rtsp):\/\//i.test(target))return withCors(json({ok:true,status:'Unknown',lastCheckedAt:checkedAt}));
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
+    try{
+      const r=await fetch(target,{method:'GET',redirect:'follow',cache:'no-store',signal:controller.signal,headers:{Range:'bytes=0-1'}});
+      clearTimeout(timer);
+      return withCors(json({ok:true,status:(r.ok||r.status===206)?'Active':'Dead',httpStatus:r.status,lastCheckedAt:checkedAt}));
+    }catch(e){
+      clearTimeout(timer);
+      return withCors(json({ok:true,status:'Dead',lastCheckedAt:checkedAt}));
+    }
+  }
   if(path==='/api/admin/check-all'&&request.method==='POST'){
     const s=await readState(env),channels=s.channels||[];
     const checked=await Promise.all(channels.map(async c=>{
