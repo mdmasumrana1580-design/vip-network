@@ -2778,3 +2778,10 @@ body::after{
   pointer-events:none !important;
   z-index:2147483647 !important;
 }
+
+/* Final Notice Board text color fix */
+.headline-track span{
+  color:#fff !important;
+  -webkit-text-fill-color:#fff !important;
+  text-shadow:0 1px 3px rgba(0,0,0,.75) !important;
+}
