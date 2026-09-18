@@ -19,7 +19,7 @@
     d.id='vipVisitorGate';
 
     d.innerHTML=`
-      <div class="vip-gate-card" role="dialog" aria-modal="true" aria-label="VIP-Network.TV Login">
+      <div class="vip-gate-card" role="dialog" aria-modal="true">
 
         <img
           class="vip-gate-logo"
@@ -51,7 +51,7 @@
             <input
               id="vipUserName"
               autocomplete="name"
-              placeholder="নাম"
+              placeholder="নাম / Username"
               required
             >
           </label>
@@ -79,10 +79,7 @@
             >
           </label>
 
-          <button
-            class="vip-login-btn"
-            type="submit"
-          >
+          <button class="vip-login-btn" type="submit">
             ⇥ &nbsp; LOGIN
           </button>
 
@@ -108,10 +105,13 @@
   }
 
   async function checkSession(){
+
     try{
+
       const r=await fetch(
         base+'/api/user/session',
         {
+          method:'GET',
           credentials:'include',
           cache:'no-store'
         }
@@ -121,20 +121,17 @@
 
       const data=await r.json().catch(()=>({}));
 
-      return !!(
-        data.ok &&
-        data.username &&
-        !data.blocked
-      );
+      return data.ok===true;
 
     }catch(e){
+
       return false;
+
     }
   }
 
   async function init(){
 
-    // Already logged in হলে login screen দেখাবে না
     if(await checkSession()) return;
 
     const gate=makeGate();
@@ -147,7 +144,6 @@
     const num=gate.querySelector('#vipUserNumber');
     const dn=gate.querySelector('#vipDeviceName');
 
-    // আগের Device Name থাকলে automatically বসাবে
     dn.value=deviceName();
 
     form.onsubmit=async function(e){
@@ -156,17 +152,13 @@
 
       if(btn.disabled) return;
 
-      status.textContent='';
-      status.style.color='';
-
       const username=u.value.trim();
       const number=normalizeNumber(num.value.trim());
       const deviceNameValue=dn.value.trim();
       const deviceId=window.VIP_DEVICE_ID||'';
 
-      // Basic validation
       if(username.length<2){
-        status.textContent='সঠিক নাম দিন';
+        status.textContent='সঠিক নাম / Username দিন';
         status.style.color='#ff9ba7';
         u.focus();
         return;
@@ -189,11 +181,10 @@
       btn.disabled=true;
       btn.textContent='Connecting...';
       status.textContent='Login হচ্ছে...';
-      status.style.color='#ffffff';
+      status.style.color='#fff';
 
       try{
 
-        // Device Name মনে রাখবে
         localStorage.setItem(
           'vip-network-device-name',
           deviceNameValue
@@ -210,7 +201,6 @@
             },
 
             credentials:'include',
-
             cache:'no-store',
 
             body:JSON.stringify({
@@ -224,41 +214,34 @@
 
         const data=await r.json().catch(()=>({}));
 
-        if(!r.ok || !data.ok){
+        if(!r.ok || data.ok!==true){
 
-          status.textContent=
+          throw new Error(
             data.error ||
             data.message ||
-            'Login failed. আবার চেষ্টা করুন।';
-
-          status.style.color='#ff9ba7';
-
-          return;
+            'Login failed'
+          );
         }
 
-        // Login successful
         localStorage.setItem(key,'1');
 
         status.textContent='Login successful ✓';
         status.style.color='#7dffae';
 
-        // একটু সময় দিয়ে gate remove
-        setTimeout(function(){
+        setTimeout(()=>{
           gate.remove();
           window.dispatchEvent(
-            new CustomEvent(
-              'vip:user-login',
-              {
-                detail:data
-              }
-            )
+            new CustomEvent('vip:user-login',{
+              detail:data
+            })
           );
         },300);
 
       }catch(err){
 
         status.textContent=
-          'Server-এর সাথে সংযোগ করা যাচ্ছে না।';
+          err.message ||
+          'Login failed';
 
         status.style.color='#ff9ba7';
 
