@@ -32,18 +32,79 @@ function parseM3U(text){const l=String(text||'').replace(/\r/g,'').split('\n'),o
 async function importM3U(){const list=parseM3U($('m3uText').value);if(!list.length)return toast('No valid channels found');channels=list;categories=[...new Set([...categories,...list.map(x=>x.category)])];if(await saveRemoteState()){render();toast(list.length+' channels imported')}}
 async function importXtream(){const server=$('xtServer').value.trim(),username=$('xtUser').value.trim(),password=$('xtPass').value,limit=$('xtLimit').value;if(!server||!username||!password)return toast('Enter server, username and password');try{const d=await api('/api/xtream/import',{method:'POST',body:JSON.stringify({server,username,password,limit})});await loadRemoteState();logAction('Imported Xtream playlist');toast((d.count||0)+' channels imported')}catch(e){toast('Xtream import failed: '+e.message)}}
 async function importM3UUrl(){const url=$('m3uUrl').value.trim();if(!url)return toast('Enter M3U URL');try{const d=await api('/api/admin/import-m3u-url',{method:'POST',body:JSON.stringify({url})});await loadRemoteState();toast((d.count||0)+' channels imported')}catch(e){toast('Import failed: '+e.message)}}
-async function addCategory(){const e=$('newCat'),n=e.value.trim();if(!n)return;if(categories.includes(n))return toast('Already exists');categories.push(n);saveLocal();render();e.value=''}
+function addCategory(){const e=$('newCat'),n=e.value.trim();if(!n)return;if(categories.includes(n))return toast('Already exists');categories.push(n);saveLocal();render();e.value=''}
 function removeCategory(i){const n=categories[i];if(channels.some(x=>x.category===n))return toast('Category is in use');categories.splice(i,1);saveLocal();render()}
 function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function exportData(){download('vip-network-backup.json',JSON.stringify({channels,categories},null,2),'application/json')}
 function exportM3U(){download('vip-network-playlist.m3u','#EXTM3U\n'+channels.map(c=>`#EXTINF:-1 tvg-logo="${c.logo}" group-title="${c.category}",${c.name}\n${c.url}`).join('\n'),'audio/x-mpegurl')}
 async function clearAll(){if(!confirm('Clear all channels?'))return;channels=[];selected=-1;if(await saveRemoteState()){render();toast('All channels cleared')}}
-async function refreshData(){try{if(connected)await loadRemoteState();else render();toast('Data refreshed')}catch(e){toast(e.message)}}
 async function loadLatestUser(){try{const d=await api('/api/admin/users');showLatestLogin(d.latest||((d.users||[])[0]||null));}catch(e){showLatestLogin(null)}}
-async function loadDevices(){const box=$('deviceList');if(!box)return;if(!connected){box.textContent='Please login first.';return}box.textContent='Loading devices...';try{const d=await api('/api/admin/devices'),list=(d.devices||[]).slice().sort((a,b)=>(Date.parse(b.lastSeen||b.createdAt||'')||0)-(Date.parse(a.lastSeen||a.createdAt||'')||0));box.innerHTML=list.length?list.map(x=>{const id=esc(x.deviceId||''),blocked=x.blocked||x.status==='Blocked';return `<div><b>${esc(x.username||'Unknown user')}</b> — ${esc(x.name||'Unknown device')}<br><small>${esc(x.deviceId||'')} • ${esc(x.lastSeen||x.createdAt||'')}</small><div class="device-actions">${blocked?`<button onclick="unblockDevice('${id}')">Unblock</button>`:`<button onclick="blockDevice('${id}')">Block</button>`}<button onclick="deleteDevice('${id}')">Delete</button></div></div>`}).join(''):'No devices registered.'}catch(e){box.textContent='Could not load devices: '+e.message}}
+
+async function loadDevices(){
+  const box=$('deviceList');
+  if(!box)return;
+  if(!connected){box.textContent='Please login first.';return}
+  box.textContent='Loading users & devices...';
+
+  try{
+    const [deviceData,userData]=await Promise.all([
+      api('/api/admin/devices'),
+      api('/api/admin/users')
+    ]);
+
+    const users=Array.isArray(userData.users)?userData.users:[];
+    const userMap={};
+    users.forEach(u=>{userMap[String(u.username||'').toLowerCase()]=u});
+
+    const list=(deviceData.devices||[]).slice().sort((a,b)=>
+      (Date.parse(b.lastSeen||b.createdAt||'')||0)-
+      (Date.parse(a.lastSeen||a.createdAt||'')||0)
+    );
+
+    if(!list.length){
+      box.innerHTML='No devices registered.';
+      return;
+    }
+
+    box.innerHTML=list.map(x=>{
+      const id=esc(x.deviceId||'');
+      const username=String(x.username||'Unknown user');
+      const user=userMap[username.toLowerCase()];
+      const hasNumber=!!user?.hasNumber;
+      const blocked=x.blocked||x.status==='Blocked';
+
+      return `<div>
+        <b>${esc(username)}</b>
+        <br><small>📱 Number: <strong>${hasNumber?'Set ✓':'Not set'}</strong></small>
+        <br><small>💻 Device: ${esc(x.name||'Unknown device')}</small>
+        <br><small>🕒 ${esc(x.lastSeen||x.createdAt||'')}</small>
+        <div class="device-actions">
+          <button onclick="setUserNumber('${esc(user?.id||'')}','${esc(username)}')">${hasNumber?'Change Number':'Set Number'}</button>
+          ${blocked?`<button onclick="unblockDevice('${id}')">Unblock</button>`:`<button onclick="blockDevice('${id}')">Block</button>`}
+          <button class="danger-btn" onclick="deleteDevice('${id}')">Delete</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    box.textContent='Could not load users/devices: '+e.message;
+  }
+}
+
+async function setUserNumber(userId,username){
+  if(!userId)return toast('User ID not found');
+  const number=prompt('Enter number for '+username+':','');
+  if(number===null)return;
+  const normalized=String(number).replace(/[০-৯]/g,c=>String('০১২৩৪৫৬৭৮৯'.indexOf(c))).replace(/[^0-9+]/g,'');
+  if(normalized.length<6)return toast('Enter a valid number');
+  try{
+    await api('/api/admin/users/set-number',{method:'POST',body:JSON.stringify({userId,number:normalized})});
+    toast('Number saved for '+username);
+    await loadDevices();
+  }catch(e){toast('Number save failed: '+e.message)}
+}
 async function blockDevice(id){try{await api('/api/admin/devices/block',{method:'POST',body:JSON.stringify({deviceId:id})});await loadDevices()}catch(e){toast(e.message)}}
 async function unblockDevice(id){try{await api('/api/admin/devices/unblock',{method:'POST',body:JSON.stringify({deviceId:id})});await loadDevices()}catch(e){toast(e.message)}}
-async function deleteDevice(id){if(!confirm('Delete this device?'))return;try{await api('/api/admin/devices?deviceId='+encodeURIComponent(id),{method:'DELETE'});await loadDevices()}catch(e){toast(e.message)}}
+async function deleteDevice(id){if(!id)return;if(!confirm('Delete this device permanently?'))return;try{const d=await api('/api/admin/devices?deviceId='+encodeURIComponent(id),{method:'DELETE'});if(d.deleted===false)return toast('Device not found');toast('Device deleted successfully');await loadDevices()}catch(e){toast('Delete failed: '+e.message)}}
 function renderLogs(){const box=$('activityList');if(!box)return;const a=JSON.parse(localStorage.getItem('vipActivity')||'[]');box.innerHTML=a.length?a.map(x=>`<div><b>${esc(x.text)}</b><small>${esc(x.time)}</small></div>`).join(''):'No activity yet.'}
 function clearLogs(){localStorage.removeItem('vipActivity');renderLogs();toast('Activity logs cleared')}
 function showSection(id,fromHistory=false){if(!$(id))id='dashboard';document.querySelectorAll('.section').forEach(x=>x.classList.remove('active-section'));$(id).classList.add('active-section');document.querySelectorAll('[data-section]').forEach(x=>x.classList.toggle('active',x.dataset.section===id));$('sidebar').classList.remove('open');if(id==='devices')loadDevices();if(!fromHistory)history.pushState({adminSection:id},'',location.pathname+location.search+'#'+encodeURIComponent(id));window.scrollTo({top:0,behavior:'smooth'})}
@@ -65,5 +126,5 @@ $('settingsForm').addEventListener('submit',async e=>{e.preventDefault();try{awa
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;$('installBtn').hidden=false});
 $('installBtn').addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;$('installBtn').hidden=true});
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
-Object.assign(window,{showSection,loginWorker,logoutWorker,refreshData,preview,editChannel,deleteChannel,saveSelectedChannel,deleteSelectedChannel,importM3U,importM3UUrl,importXtream,addCategory,removeCategory,exportData,exportM3U,clearAll,loadDevices,blockDevice,unblockDevice,deleteDevice,clearLogs});
+Object.assign(window,{showSection,loginWorker,logoutWorker,refreshData,preview,editChannel,deleteChannel,saveSelectedChannel,deleteSelectedChannel,importM3U,importM3UUrl,importXtream,addCategory,removeCategory,exportData,exportM3U,clearAll,loadDevices,blockDevice,unblockDevice,deleteDevice,setUserNumber,clearLogs});
 (async function init(){const lc=JSON.parse(localStorage.getItem('vipChannels')||'null'),cat=JSON.parse(localStorage.getItem('vipCategories')||'null');if(Array.isArray(lc))channels=lc.map(norm);if(Array.isArray(cat))categories=cat;applyTheme(localStorage.getItem('vipAdminTheme')||'dark');render();renderLogs();const initial=decodeURIComponent(location.hash.slice(1)||'dashboard');history.replaceState({adminSection:initial},'',location.pathname+location.search+'#'+encodeURIComponent(initial));showSection(initial,true);try{await api('/api/admin/session');setBackend(true);showLogin(false);await loadRemoteState();await loadDevices();await loadLatestUser()}catch{setBackend(false);showLogin(true)}})();
