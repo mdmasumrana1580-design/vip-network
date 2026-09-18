@@ -70,7 +70,6 @@ async function loadDevices(){
       const id=esc(x.deviceId||'');
       const username=String(x.username||'Unknown user');
       const user=userMap[username.toLowerCase()];
-      const hasNumber=!!user?.hasNumber;
       const blocked=x.blocked||x.status==='Blocked';
 
       return `<div>
@@ -79,7 +78,7 @@ async function loadDevices(){
         <br><small>💻 Device: ${esc(x.name||'Unknown device')}</small>
         <br><small>🕒 ${esc(x.lastSeen||x.createdAt||'')}</small>
         <div class="device-actions">
-          <button onclick="setUserNumber('${esc(user?.id||'')}','${esc(username)}')">${hasNumber?'Change Number':'Set Number'}</button>
+          <button onclick="setUserNumber('${esc(user?.id||'')}','${esc(username)}')">Set / Change Number</button>
           ${blocked?`<button onclick="unblockDevice('${id}')">Unblock</button>`:`<button onclick="blockDevice('${id}')">Block</button>`}
           <button class="danger-btn" onclick="deleteDevice('${id}')">Delete</button>
         </div>
