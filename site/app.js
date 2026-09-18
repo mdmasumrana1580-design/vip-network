@@ -386,6 +386,65 @@ function isNativeFullscreen() {
   return !!(document.fullscreenElement || (videoBox && videoBox.classList.contains("vip-css-fullscreen")));
 }
 
+
+async function requestNativeFullscreen() {
+  if (!videoBox) return;
+
+  // Android Chrome supports the Fullscreen API on the player element.
+  try {
+    if (!document.fullscreenElement) {
+      if (videoBox.requestFullscreen) {
+        await videoBox.requestFullscreen({ navigationUI: "hide" });
+      } else if (videoBox.webkitRequestFullscreen) {
+        videoBox.webkitRequestFullscreen();
+      }
+    }
+  } catch (e) {
+    // Some browsers reject the options object; retry with the legacy call.
+    try {
+      if (!document.fullscreenElement && videoBox.requestFullscreen) {
+        await videoBox.requestFullscreen();
+      } else if (!document.webkitFullscreenElement && videoBox.webkitRequestFullscreen) {
+        videoBox.webkitRequestFullscreen();
+      }
+    } catch (e2) {}
+  }
+
+  // The orientation lock is the part that actually rotates the Android screen.
+  // It is requested only after fullscreen, because browsers generally require
+  // fullscreen/user activation for orientation locking.
+  try {
+    if (screen.orientation && screen.orientation.lock) {
+      await screen.orientation.lock("landscape");
+      videoBox.classList.remove("vip-orientation-fallback");
+    } else {
+      videoBox.classList.add("vip-orientation-fallback");
+    }
+  } catch (e) {
+    // Older WebViews may not expose orientation.lock. The CSS fallback keeps
+    // the player visually landscape instead of leaving it stuck in portrait.
+    videoBox.classList.add("vip-orientation-fallback");
+  }
+}
+
+async function exitNativeFullscreen() {
+  try {
+    if (screen.orientation && screen.orientation.unlock) {
+      screen.orientation.unlock();
+    }
+  } catch (e) {}
+
+  videoBox && videoBox.classList.remove("vip-orientation-fallback");
+
+  try {
+    if (document.fullscreenElement && document.exitFullscreen) {
+      await document.exitFullscreen();
+    } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+  } catch (e) {}
+}
+
 async function toggleNativeFullscreen() {
   if (isNativeFullscreen()) {
     await exitNativeFullscreen();
