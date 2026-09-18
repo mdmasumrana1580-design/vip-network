@@ -44,53 +44,29 @@ async function loadDevices(){
   const box=$('deviceList');
   if(!box)return;
   if(!connected){box.textContent='Please login first.';return}
-  box.textContent='Loading users & devices...';
-
+  box.textContent='Loading devices...';
   try{
-    const [deviceData,userData]=await Promise.all([
-      api('/api/admin/devices'),
-      api('/api/admin/users')
-    ]);
-
-    const users=Array.isArray(userData.users)?userData.users:[];
-    const userMap={};
-    users.forEach(u=>{userMap[String(u.username||'').toLowerCase()]=u});
-
-    const list=(deviceData.devices||[]).slice().sort((a,b)=>
-      (Date.parse(b.lastSeen||b.createdAt||'')||0)-
-      (Date.parse(a.lastSeen||a.createdAt||'')||0)
-    );
-
-    if(!list.length){
-      box.innerHTML='No devices registered.';
-      return;
-    }
-
+    const d=await api('/api/admin/devices');
+    const list=(d.devices||[]).slice().sort((a,b)=>(Date.parse(b.lastSeen||b.createdAt||'')||0)-(Date.parse(a.lastSeen||a.createdAt||'')||0));
+    if(!list.length){box.innerHTML='No devices registered.';return}
     box.innerHTML=list.map(x=>{
       const id=esc(x.deviceId||'');
       const username=String(x.username||'Unknown user');
-      const user=userMap[username.toLowerCase()];
       const blocked=x.blocked||x.status==='Blocked';
-
-      return `<div>
-        <b>${esc(username)}</b>
-        <br><small>📱 Number: <strong>${hasNumber?'Set ✓':'Not set'}</strong></small>
-        <br><small>💻 Device: ${esc(x.name||'Unknown device')}</small>
-        <br><small>🕒 ${esc(x.lastSeen||x.createdAt||'')}</small>
-        <div class="device-actions">
-          <button onclick="setUserNumber('${esc(user?.id||'')}','${esc(username)}')">Set / Change Number</button>
-          ${blocked?`<button onclick="unblockDevice('${id}')">Unblock</button>`:`<button onclick="blockDevice('${id}')">Block</button>`}
-          <button class="danger-btn" onclick="deleteDevice('${id}')">Delete</button>
-        </div>
-      </div>`;
+      return `<div class="device-card"><b>${esc(username)}</b><br><small>💻 ${esc(x.name||'Unknown device')}</small><br><small>🕒 ${esc(x.lastSeen||x.createdAt||'')}</small><div class="device-actions"><button onclick="setUserNumberByName('${esc(username)}')">Set Number</button>${blocked?`<button onclick="unblockDevice('${id}')">Unblock</button>`:`<button onclick="blockDevice('${id}')">Block</button>`}<button class="danger-btn" onclick="deleteDevice('${id}')">Delete</button></div></div>`;
     }).join('');
-  }catch(e){
-    box.textContent='Could not load users/devices: '+e.message;
-  }
+  }catch(e){box.textContent='Could not load devices: '+e.message}
 }
-
+async function setUserNumberByName(username){
+  try{
+    const d=await api('/api/admin/users');
+    const users=Array.isArray(d.users)?d.users:[];
+    const u=users.find(x=>String(x.username||'').toLowerCase()===String(username||'').toLowerCase());
+    if(!u?.id)return toast('User not found');
+    await setUserNumber(u.id,username);
+  }catch(e){toast('Could not load user: '+e.message)}
+}
 async function setUserNumber(userId,username){
-  if(!userId)return toast('User ID not found');
   const number=prompt('Enter number for '+username+':','');
   if(number===null)return;
   const normalized=String(number).replace(/[০-৯]/g,c=>String('০১২৩৪৫৬৭৮৯'.indexOf(c))).replace(/[^0-9+]/g,'');
@@ -125,5 +101,5 @@ $('settingsForm').addEventListener('submit',async e=>{e.preventDefault();try{awa
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;$('installBtn').hidden=false});
 $('installBtn').addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;$('installBtn').hidden=true});
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
-Object.assign(window,{showSection,loginWorker,logoutWorker,refreshData,preview,editChannel,deleteChannel,saveSelectedChannel,deleteSelectedChannel,importM3U,importM3UUrl,importXtream,addCategory,removeCategory,exportData,exportM3U,clearAll,loadDevices,blockDevice,unblockDevice,deleteDevice,setUserNumber,clearLogs});
+Object.assign(window,{showSection,loginWorker,logoutWorker,refreshData,preview,editChannel,deleteChannel,saveSelectedChannel,deleteSelectedChannel,importM3U,importM3UUrl,importXtream,addCategory,removeCategory,exportData,exportM3U,clearAll,loadDevices,blockDevice,unblockDevice,deleteDevice,setUserNumber,setUserNumberByName,clearLogs});
 (async function init(){const lc=JSON.parse(localStorage.getItem('vipChannels')||'null'),cat=JSON.parse(localStorage.getItem('vipCategories')||'null');if(Array.isArray(lc))channels=lc.map(norm);if(Array.isArray(cat))categories=cat;applyTheme(localStorage.getItem('vipAdminTheme')||'dark');render();renderLogs();const initial=decodeURIComponent(location.hash.slice(1)||'dashboard');history.replaceState({adminSection:initial},'',location.pathname+location.search+'#'+encodeURIComponent(initial));showSection(initial,true);try{await api('/api/admin/session');setBackend(true);showLogin(false);await loadRemoteState();await loadDevices();await loadLatestUser()}catch{setBackend(false);showLogin(true)}})();
