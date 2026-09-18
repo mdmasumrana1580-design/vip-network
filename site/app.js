@@ -382,65 +382,84 @@ function play(c, clickedCard, retryOriginal) {
   }
 }
 
-function isNativeFullscreen() {
-  return !!(document.fullscreenElement || (videoBox && videoBox.classList.contains("vip-css-fullscreen")));
+// Fullscreen/orientation state. CSS fullscreen is used when the browser/PWA
+// can lock orientation without the Fullscreen API; native fullscreen is used
+// when the browser requires it for Screen Orientation Lock.
+let vipCssFullscreenActive = false;
+
+function hasNativeFullscreen() {
+  return !!(document.fullscreenElement || document.webkitFullscreenElement);
 }
 
+function isNativeFullscreen() {
+  return hasNativeFullscreen() || vipCssFullscreenActive;
+}
+
+async function lockLandscape() {
+  try {
+    if (screen.orientation && screen.orientation.lock) {
+      await screen.orientation.lock("landscape");
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
 
 async function requestNativeFullscreen() {
   if (!videoBox) return;
 
-  // Android Chrome supports the Fullscreen API on the player element.
+  // First try the Screen Orientation API directly. This works in many
+  // installed Android PWAs and keeps the normal Android status/navigation UI.
+  const directLock = await lockLandscape();
+  if (directLock) {
+    vipCssFullscreenActive = true;
+    videoBox.classList.remove("vip-orientation-fallback");
+    return;
+  }
+
+  // If direct orientation lock is rejected, enter real fullscreen and retry.
   try {
-    if (!document.fullscreenElement) {
+    if (!hasNativeFullscreen()) {
       if (videoBox.requestFullscreen) {
-        await videoBox.requestFullscreen({ navigationUI: "hide" });
+        try {
+          await videoBox.requestFullscreen({ navigationUI: "hide" });
+        } catch (e) {
+          await videoBox.requestFullscreen();
+        }
       } else if (videoBox.webkitRequestFullscreen) {
         videoBox.webkitRequestFullscreen();
       }
     }
-  } catch (e) {
-    // Some browsers reject the options object; retry with the legacy call.
-    try {
-      if (!document.fullscreenElement && videoBox.requestFullscreen) {
-        await videoBox.requestFullscreen();
-      } else if (!document.webkitFullscreenElement && videoBox.webkitRequestFullscreen) {
-        videoBox.webkitRequestFullscreen();
-      }
-    } catch (e2) {}
-  }
+  } catch (e) {}
 
-  // The orientation lock is the part that actually rotates the Android screen.
-  // It is requested only after fullscreen, because browsers generally require
-  // fullscreen/user activation for orientation locking.
-  try {
-    if (screen.orientation && screen.orientation.lock) {
-      await screen.orientation.lock("landscape");
-      videoBox.classList.remove("vip-orientation-fallback");
-    } else {
-      videoBox.classList.add("vip-orientation-fallback");
-    }
-  } catch (e) {
-    // Older WebViews may not expose orientation.lock. The CSS fallback keeps
-    // the player visually landscape instead of leaving it stuck in portrait.
-    videoBox.classList.add("vip-orientation-fallback");
+  if (hasNativeFullscreen()) {
+    await new Promise(function(resolve) { requestAnimationFrame(resolve); });
+    await lockLandscape();
+    vipCssFullscreenActive = false;
+    videoBox.classList.remove("vip-orientation-fallback");
+  } else {
+    // Last-resort app-style fullscreen when no native API exists.
+    // Do not rotate the video with CSS; that produces a sideways player.
+    vipCssFullscreenActive = true;
+    videoBox.classList.remove("vip-orientation-fallback");
   }
 }
 
 async function exitNativeFullscreen() {
-  try {
-    if (screen.orientation && screen.orientation.unlock) {
-      screen.orientation.unlock();
-    }
-  } catch (e) {}
-
-  videoBox && videoBox.classList.remove("vip-orientation-fallback");
+  vipCssFullscreenActive = false;
+  if (videoBox) videoBox.classList.remove("vip-orientation-fallback");
 
   try {
     if (document.fullscreenElement && document.exitFullscreen) {
       await document.exitFullscreen();
     } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
       document.webkitExitFullscreen();
+    }
+  } catch (e) {}
+
+  try {
+    if (screen.orientation && screen.orientation.unlock) {
+      screen.orientation.unlock();
     }
   } catch (e) {}
 }
@@ -479,7 +498,7 @@ function changeChannel(step) {
   if (i < 0) i = 0;
   i = (i + step + visibleChannels.length) % visibleChannels.length;
   currentChannelIndex = i;
-  const wasFs = isNativeFullscreen() || (videoBox && videoBox.classList.contains("vip-css-fullscreen"));
+  const wasFs = isNativeFullscreen();
   play(visibleChannels[i], null);
   if (wasFs) {
     // Reassert the overlay after the stream source changes.
@@ -495,8 +514,22 @@ document.getElementById("nextChannel").addEventListener("click", function(e) {
 });
 
 window.addEventListener("orientationchange", syncFullscreenState);
-document.addEventListener("fullscreenchange", syncFullscreenState);
-document.addEventListener("webkitfullscreenchange", syncFullscreenState);
+document.addEventListener("fullscreenchange", function () {
+  if (!hasNativeFullscreen()) {
+    vipCssFullscreenActive = false;
+    if (videoBox) videoBox.classList.remove("vip-orientation-fallback");
+    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
+  }
+  syncFullscreenState();
+});
+document.addEventListener("webkitfullscreenchange", function () {
+  if (!hasNativeFullscreen()) {
+    vipCssFullscreenActive = false;
+    if (videoBox) videoBox.classList.remove("vip-orientation-fallback");
+    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
+  }
+  syncFullscreenState();
+});
 syncFullscreenState();
 
 function closePlayer() {

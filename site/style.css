@@ -2746,81 +2746,35 @@ body.vip-player-fullscreen{overflow:hidden!important;background:#000!important;}
 }
 
 
-/* =========================================================
-   VIP-TV FINAL MOBILE ROTATION + BOTTOM EDGE FIX
-   - Fullscreen button enters real fullscreen
-   - Android orientation is locked to landscape when supported
-   - CSS fallback rotates the player when orientation.lock is unavailable
-   - Removes the thin white line at the bottom of the viewport
-   ========================================================= */
-
-html,
-body {
-  background:#03070b !important;
-  border:0 !important;
-  outline:0 !important;
-  box-shadow:none !important;
+/* VIP-TV final stability patch: device rotation is handled by the Screen
+   Orientation API, not by rotating the player element. */
+.video-box.vip-css-fullscreen,
+.video-box.vip-fullscreen,
+.video-box.is-fullscreen{
+  transform:none !important;
 }
-
-body::after {
-  content:"";
+@media (orientation:portrait){
+  #vipVideoBox:fullscreen,
+  #vipVideoBox:-webkit-full-screen,
+  .video-box.vip-css-fullscreen,
+  .video-box.vip-fullscreen,
+  .video-box.is-fullscreen{
+    transform:none !important;
+  }
+}
+html,body,#grid{
+  border-bottom:0 !important;
+  outline:none !important;
+}
+body::after{
+  content:"" !important;
   position:fixed !important;
   left:0 !important;
   right:0 !important;
   bottom:0 !important;
-  height:3px !important;
+  height:2px !important;
   background:#03070b !important;
   border:0 !important;
-  outline:0 !important;
-  box-shadow:none !important;
   pointer-events:none !important;
-  z-index:2147483646 !important;
-}
-
-.video-box.vip-orientation-fallback {
-  position:fixed !important;
-  left:50% !important;
-  top:50% !important;
-  right:auto !important;
-  bottom:auto !important;
-  width:100dvh !important;
-  height:100dvw !important;
-  max-width:none !important;
-  max-height:none !important;
-  margin:0 !important;
-  transform:translate(-50%,-50%) rotate(90deg) !important;
-  transform-origin:center center !important;
   z-index:2147483647 !important;
-  overflow:hidden !important;
-  border-radius:0 !important;
-}
-
-.video-box.vip-orientation-fallback > #video,
-.video-box.vip-orientation-fallback > .welcome-video {
-  width:100% !important;
-  height:100% !important;
-  max-width:none !important;
-  max-height:none !important;
-  object-fit:contain !important;
-}
-
-@media (max-width:700px) {
-  body.vip-player-fullscreen::after {
-    background:#000 !important;
-    height:2px !important;
-  }
-
-  .video-box.vip-fullscreen,
-  .video-box.is-fullscreen,
-  .video-box.vip-css-fullscreen {
-    background:#000 !important;
-  }
-}
-
-/* Keep the bottom edge dark even when the Android gesture/navigation area
-   changes the safe-area size. */
-@supports (height: env(safe-area-inset-bottom)) {
-  body::after {
-    height:max(2px, env(safe-area-inset-bottom)) !important;
-  }
 }
