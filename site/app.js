@@ -382,86 +382,8 @@ function play(c, clickedCard, retryOriginal) {
   }
 }
 
-// Fullscreen/orientation state. CSS fullscreen is used when the browser/PWA
-// can lock orientation without the Fullscreen API; native fullscreen is used
-// when the browser requires it for Screen Orientation Lock.
-let vipCssFullscreenActive = false;
-
-function hasNativeFullscreen() {
-  return !!(document.fullscreenElement || document.webkitFullscreenElement);
-}
-
 function isNativeFullscreen() {
-  return hasNativeFullscreen() || vipCssFullscreenActive;
-}
-
-async function lockLandscape() {
-  try {
-    if (screen.orientation && screen.orientation.lock) {
-      await screen.orientation.lock("landscape");
-      return true;
-    }
-  } catch (e) {}
-  return false;
-}
-
-async function requestNativeFullscreen() {
-  if (!videoBox) return;
-
-  // First try the Screen Orientation API directly. This works in many
-  // installed Android PWAs and keeps the normal Android status/navigation UI.
-  const directLock = await lockLandscape();
-  if (directLock) {
-    vipCssFullscreenActive = true;
-    videoBox.classList.remove("vip-orientation-fallback");
-    return;
-  }
-
-  // If direct orientation lock is rejected, enter real fullscreen and retry.
-  try {
-    if (!hasNativeFullscreen()) {
-      if (videoBox.requestFullscreen) {
-        try {
-          await videoBox.requestFullscreen({ navigationUI: "hide" });
-        } catch (e) {
-          await videoBox.requestFullscreen();
-        }
-      } else if (videoBox.webkitRequestFullscreen) {
-        videoBox.webkitRequestFullscreen();
-      }
-    }
-  } catch (e) {}
-
-  if (hasNativeFullscreen()) {
-    await new Promise(function(resolve) { requestAnimationFrame(resolve); });
-    await lockLandscape();
-    vipCssFullscreenActive = false;
-    videoBox.classList.remove("vip-orientation-fallback");
-  } else {
-    // Last-resort app-style fullscreen when no native API exists.
-    // Do not rotate the video with CSS; that produces a sideways player.
-    vipCssFullscreenActive = true;
-    videoBox.classList.remove("vip-orientation-fallback");
-  }
-}
-
-async function exitNativeFullscreen() {
-  vipCssFullscreenActive = false;
-  if (videoBox) videoBox.classList.remove("vip-orientation-fallback");
-
-  try {
-    if (document.fullscreenElement && document.exitFullscreen) {
-      await document.exitFullscreen();
-    } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
-      document.webkitExitFullscreen();
-    }
-  } catch (e) {}
-
-  try {
-    if (screen.orientation && screen.orientation.unlock) {
-      screen.orientation.unlock();
-    }
-  } catch (e) {}
+  return !!(document.fullscreenElement || (videoBox && videoBox.classList.contains("vip-css-fullscreen")));
 }
 
 async function toggleNativeFullscreen() {
@@ -498,7 +420,7 @@ function changeChannel(step) {
   if (i < 0) i = 0;
   i = (i + step + visibleChannels.length) % visibleChannels.length;
   currentChannelIndex = i;
-  const wasFs = isNativeFullscreen();
+  const wasFs = isNativeFullscreen() || (videoBox && videoBox.classList.contains("vip-css-fullscreen"));
   play(visibleChannels[i], null);
   if (wasFs) {
     // Reassert the overlay after the stream source changes.
@@ -514,22 +436,8 @@ document.getElementById("nextChannel").addEventListener("click", function(e) {
 });
 
 window.addEventListener("orientationchange", syncFullscreenState);
-document.addEventListener("fullscreenchange", function () {
-  if (!hasNativeFullscreen()) {
-    vipCssFullscreenActive = false;
-    if (videoBox) videoBox.classList.remove("vip-orientation-fallback");
-    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
-  }
-  syncFullscreenState();
-});
-document.addEventListener("webkitfullscreenchange", function () {
-  if (!hasNativeFullscreen()) {
-    vipCssFullscreenActive = false;
-    if (videoBox) videoBox.classList.remove("vip-orientation-fallback");
-    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
-  }
-  syncFullscreenState();
-});
+document.addEventListener("fullscreenchange", syncFullscreenState);
+document.addEventListener("webkitfullscreenchange", syncFullscreenState);
 syncFullscreenState();
 
 function closePlayer() {
