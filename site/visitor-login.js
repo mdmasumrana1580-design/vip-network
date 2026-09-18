@@ -3,6 +3,7 @@
   const key='vip-network-user-session';
   function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
   function deviceName(){return localStorage.getItem('vip-network-device-name')||''}
+  function normalizeNumber(s){return String(s||'').replace(/[০-৯]/g,c=>String('০১২৩৪৫৬৭৮৯'.indexOf(c))).replace(/[^0-9+]/g,'')}
   function makeGate(){
     const d=document.createElement('div');d.id='vipVisitorGate';
     d.innerHTML=`<div class="vip-gate-card" role="dialog" aria-modal="true" aria-label="VIP-Network.TV Login">
@@ -15,6 +16,8 @@
     </div>`;document.body.appendChild(d);return d;
   }
   async function checkSession(){try{const r=await fetch(base+'/api/user/session',{credentials:'include',cache:'no-store'});return r.ok}catch(e){return false}}
-  async function init(){if(await checkSession())return;const gate=makeGate();const form=gate.querySelector('#vipVisitorLogin'),status=gate.querySelector('#vipGateStatus'),btn=gate.querySelector('.vip-login-btn'),u=gate.querySelector('#vipUserName'),num=gate.querySelector('#vipUserNumber'),dn=gate.querySelector('#vipDeviceName');dn.value=deviceName();form.onsubmit=async e=>{e.preventDefault();btn.disabled=true;status.textContent='Connecting...';try{localStorage.setItem('vip-network-device-name',dn.value.trim());const r=await fetch(base+'/api/user/login',{method:'POST',headers:{'content-type':'application/json','X-ViP-Device-ID':window.VIP_DEVICE_ID||''},credentials:'include',body:JSON.stringify({username:u.value.trim(),number:num.value.trim(),deviceId:window.VIP_DEVICE_ID||'',deviceName:dn.value.trim()})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Login failed');localStorage.setItem(key,'1');gate.remove()}catch(err){status.textContent=err.message||'Login failed';status.style.color='#ff9ba7'}finally{btn.disabled=false}}}
+  async function init(){if(await checkSession())return;const gate=makeGate();const form=gate.querySelector('#vipVisitorLogin'),status=gate.querySelector('#vipGateStatus'),btn=gate.querySelector('.vip-login-btn'),u=gate.querySelector('#vipUserName'),num=gate.querySelector('#vipUserNumber'),dn=gate.querySelector('#vipDeviceName');dn.value=deviceName();form.onsubmit=async e=>{e.preventDefault();btn.disabled=true;status.textContent='Connecting...';try{localStorage.setItem('vip-network-device-name',dn.value.trim());const normalizedNumber=normalizeNumber(num.value.trim());
+      if(normalizedNumber.length<6){status.textContent='সঠিক নাম্বার দিন';status.style.color='#ff9ba7';return}
+      const r=await fetch(base+'/api/user/login',{method:'POST',headers:{'content-type':'application/json','X-ViP-Device-ID':window.VIP_DEVICE_ID||''},credentials:'include',body:JSON.stringify({username:u.value.trim(),number:normalizedNumber,deviceId:window.VIP_DEVICE_ID||'',deviceName:dn.value.trim()})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Login failed');localStorage.setItem(key,'1');gate.remove()}catch(err){status.textContent=err.message||'Login failed';status.style.color='#ff9ba7'}finally{btn.disabled=false}}}
   init();
 })();
