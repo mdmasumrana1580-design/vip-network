@@ -38,40 +38,7 @@ function exportData(){download('vip-network-backup.json',JSON.stringify({channel
 function exportM3U(){download('vip-network-playlist.m3u','#EXTM3U\n'+channels.map(c=>`#EXTINF:-1 tvg-logo="${c.logo}" group-title="${c.category}",${c.name}\n${c.url}`).join('\n'),'audio/x-mpegurl')}
 async function clearAll(){if(!confirm('Clear all channels?'))return;channels=[];selected=-1;if(await saveRemoteState()){render();toast('All channels cleared')}}
 async function refreshData(){try{if(connected)await loadRemoteState();else render();toast('Data refreshed')}catch(e){toast(e.message)}}
-async function loadDevices(){
-  const box=$('deviceList'),latestBox=$('latestLoginCard');
-  if(!box)return;
-  if(!connected){box.textContent='Please login first.';if(latestBox)latestBox.style.display='none';return}
-  box.textContent='Loading devices...';
-  try{
-    const [dd,ud]=await Promise.all([api('/api/admin/devices'),api('/api/admin/users')]);
-    const list=dd.devices||[],users=ud.users||[];
-    const byUser=new Map(users.map(u=>[String(u.username||'').toLowerCase(),u]));
-    const latest=[...users].filter(u=>u.lastLoginAt).sort((a,b)=>new Date(b.lastLoginAt)-new Date(a.lastLoginAt))[0];
-    if(latestBox){
-      if(latest){
-        latestBox.style.display='';
-        latestBox.innerHTML=`<div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.7;margin-bottom:6px">🟢 Latest Login</div>
-          <div style="font-size:22px;font-weight:800">👤 ${esc(latest.username||'Unknown user')}</div>
-          <div style="margin-top:6px;opacity:.85">📱 ${esc(latest.number||'Number not available')} &nbsp; • &nbsp; 💻 ${esc(latest.lastDeviceName||'Unknown device')}</div>
-          <div style="margin-top:4px;opacity:.7">🕒 ${esc(latest.lastLoginAt||'—')}</div>`;
-      }else latestBox.style.display='none';
-    }
-    box.innerHTML=list.length?list.map(x=>{
-      const id=esc(x.deviceId||''),blocked=x.blocked||x.status==='Blocked';
-      const u=byUser.get(String(x.username||'').toLowerCase());
-      const number=u?.number||'Number not available';
-      return `<div><b>${esc(x.username||'Unknown user')}</b><br>
-        <span>📱 ${esc(number)}</span> — <span>💻 ${esc(x.name||'Unknown device')}</span>
-        <br><small>${esc(x.deviceId||'')} • ${esc(x.lastSeen||x.createdAt||'')}</small>
-        <div class="device-actions">${blocked?`<button onclick="unblockDevice('${id}')">Unblock</button>`:`<button onclick="blockDevice('${id}')">Block</button>`}<button onclick="deleteDevice('${id}')">Delete</button></div>
-      </div>`
-    }).join(''):'No devices registered.'
-  }catch(e){
-    box.textContent='Could not load devices: '+e.message;
-    if(latestBox)latestBox.style.display='none';
-  }
-}
+async function loadDevices(){const box=$('deviceList');if(!box)return;if(!connected){box.textContent='Please login first.';return}box.textContent='Loading users...';try{const [ud,dd]=await Promise.all([api('/api/admin/users'),api('/api/admin/devices')]);const users=ud.users||[],list=dd.devices||[];const latest=users.filter(u=>u.lastLoginAt).sort((a,b)=>new Date(b.lastLoginAt)-new Date(a.lastLoginAt))[0];const latestHtml=latest?`<div class="latest-login-card"><div class="latest-title">🟢 Latest Login</div><b>👤 ${esc(latest.username||'Unknown user')}</b><div>📱 Number: ${esc(latest.number||'Not available')}</div><div>💻 Device: ${esc(latest.lastDeviceName||'Unknown device')}</div><small>🕒 ${esc(latest.lastLoginAt||'—')}</small></div>`:'';const byUser={};users.forEach(u=>byUser[String(u.username||'').toLowerCase()]=u);box.innerHTML=latestHtml+(list.length?list.map(x=>{const id=esc(x.deviceId||''),blocked=x.blocked||x.status==='Blocked',u=byUser[String(x.username||'').toLowerCase()]||{};return `<div><b>👤 ${esc(x.username||'Unknown user')}</b><br><span>📱 Number: ${esc(u.number||'Not available')}</span><br><span>💻 Device: ${esc(x.name||'Unknown device')}</span><br><small>🕒 Last Login: ${esc(u.lastLoginAt||x.lastSeen||x.createdAt||'—')}<br>🆔 ${esc(x.deviceId||'')}</small><div class="device-actions">${blocked?`<button onclick="unblockDevice('${id}')">Unblock</button>`:`<button onclick="blockDevice('${id}')">Block</button>`}<button onclick="deleteDevice('${id}')">Delete</button></div></div>`}).join(''):'<div>No users/devices registered.</div>')}catch(e){box.textContent='Could not load users/devices: '+e.message}}
 async function blockDevice(id){try{await api('/api/admin/devices/block',{method:'POST',body:JSON.stringify({deviceId:id})});await loadDevices()}catch(e){toast(e.message)}}
 async function unblockDevice(id){try{await api('/api/admin/devices/unblock',{method:'POST',body:JSON.stringify({deviceId:id})});await loadDevices()}catch(e){toast(e.message)}}
 async function deleteDevice(id){if(!confirm('Delete this device?'))return;try{await api('/api/admin/devices?deviceId='+encodeURIComponent(id),{method:'DELETE'});await loadDevices()}catch(e){toast(e.message)}}
