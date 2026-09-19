@@ -2744,3 +2744,63 @@ body.vip-player-fullscreen{overflow:hidden!important;background:#000!important;}
     max-width: 100%;
   }
 }
+
+
+/* VIP-TV FINAL FIX: 6 categories + white Notice text */
+.headline-track span,
+.headline-track span:first-child,
+.headline-track span:last-child {
+  background: none !important;
+  background-image: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  -webkit-text-fill-color: #fff !important;
+  color: #fff !important;
+  text-shadow: 0 0 5px rgba(255,255,255,.18) !important;
+}
+
+/* MOVIE & SERIES icon */
+.cats button:nth-child(6)::before {
+  content: '▶' !important;
+  font-size: 8px !important;
+}
+
+/* Keep all category buttons compact after removing NEW STYLE */
+.cats button {
+  white-space: nowrap !important;
+}
+
+@media (max-width: 700px) {
+  .cats {
+    gap: 5px !important;
+    padding: 7px 6px 6px !important;
+  }
+  .cats button {
+    min-width: 70px !important;
+    height: 32px !important;
+    padding-left: 27px !important;
+    padding-right: 9px !important;
+    font-size: 11px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .cats {
+    gap: 4px !important;
+    padding: 6px 5px 5px !important;
+  }
+  .cats button {
+    min-width: 68px !important;
+    height: 30px !important;
+    padding-left: 25px !important;
+    padding-right: 7px !important;
+    font-size: 10px !important;
+  }
+  .cats button:nth-child(3)::before,
+  .cats button:nth-child(4)::before {
+    font-size: 6px !important;
+  }
+  .cats button:nth-child(6)::before {
+    font-size: 7px !important;
+  }
+}
