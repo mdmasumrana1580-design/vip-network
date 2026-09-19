@@ -5,7 +5,7 @@ const STREAM_FALLBACK_URL = "https://mp3tourl.com/videos/1789615987340-af8196aa-
 const VIP_WORKER_API = window.VIP_WORKER_API || "";
 
 let channels = [];
-let current = "All";
+let current = "ALL";
 let hls = null;
 let currentChannelIndex = -1;
 let visibleChannels = [];
@@ -190,25 +190,13 @@ function esc(value) {
 
 function catFor(name, group) {
   const text = ((name || "") + " " + (group || "")).toLowerCase();
-
-  // SPORTS comes first, so sports channels stay together even if they are BD/India.
-  if (/sport|cricket|football|fifa|eurosport|willow|ten\s*cricket|ptv\s*sports|tsn|espn|bein|wwe|golf|nfl|nba/.test(text)) {
-    return "Sports";
-  }
-
-  // Bangladesh channels
-  if (/bangla|bangladesh|bd\b|somoy|jamuna|ekattor|ekattor tv|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi tv|gtv|b tv|bengal|duronto|deepto|nagorik|mohona|asian tv|desh tv|bijoy tv|mytv|satv|ekushey|bishwa|bangla tv|btv/.test(text)) {
-    return "BD";
-  }
-
-  // India channels
-  if (/india|indian|sony|zee|star|colors|set\b|sab\b|aaj tak|ndtv|republic|news18|times now|india tv|dd national|dd sports|sun tv|asianet|vijay|jaya|starplus|star gold|sony max|sony pix|sony wah|sony yay|sony pal|&pictures|b4u|movies now|mnx|hbo india/.test(text)) {
-    return "India";
-  }
-
-  return "Others";
+  if (/new\s*style|newstyle/.test(text)) return "NEW STYLE";
+  if (/movie|movies|film|series|web\s*series|ott|cinema|flix/.test(text)) return "MOVIE & SERIES";
+  if (/sport|cricket|football|fifa|espn|bein|wwe|golf|nfl|nba|ten\s*cricket|ptv\s*sports/.test(text)) return "SPORTS";
+  if (/bangladesh|\bbd\b|bangla|somoy|jamuna|ekattor|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi\s*tv|btv|duronto|deepto|nagorik|mohona|asian\s*tv|desh\s*tv|bijoy\s*tv|mytv|satv|ekushey/.test(text)) return "BD";
+  if (/india|indian|sony|zee|star|colors|set\b|sab\b|aaj\s*tak|ndtv|republic|news18|times\s*now|india\s*tv|dd\s*(national|sports)|sun\s*tv|asianet|vijay|jaya|starplus|star\s*gold|sony\s*(max|pix|wah|yay|pal)|&pictures|b4u|movies\s*now|mnx|hbo\s*india/.test(text)) return "INDIA";
+  return "OTHER";
 }
-
 function parseM3U(text) {
   const lines = String(text || "").replace(/\r/g, "").split("\n");
   const out = [];
@@ -256,7 +244,7 @@ function render() {
   grid.innerHTML = "";
 
   const list = channels.filter(function (c) {
-    const categoryOk = current === "All" || c.cat === current;
+    const categoryOk = current === "ALL" || c.cat === current;
     const searchOk = c.name.toLowerCase().includes(q);
     return categoryOk && searchOk;
   });
@@ -382,86 +370,43 @@ function play(c, clickedCard, retryOriginal) {
   }
 }
 
-// Fullscreen/orientation state. CSS fullscreen is used when the browser/PWA
-// can lock orientation without the Fullscreen API; native fullscreen is used
-// when the browser requires it for Screen Orientation Lock.
-let vipCssFullscreenActive = false;
-
-function hasNativeFullscreen() {
-  return !!(document.fullscreenElement || document.webkitFullscreenElement);
-}
-
-function isNativeFullscreen() {
-  return hasNativeFullscreen() || vipCssFullscreenActive;
-}
-
-async function lockLandscape() {
+async function requestNativeFullscreen() {
+  if (!videoBox) return;
+  try {
+    if (videoBox.requestFullscreen) {
+      await videoBox.requestFullscreen({navigationUI:"hide"});
+    } else if (videoBox.webkitRequestFullscreen) {
+      videoBox.webkitRequestFullscreen();
+    } else {
+      videoBox.classList.add("vip-css-fullscreen");
+    }
+  } catch (e) {
+    videoBox.classList.add("vip-css-fullscreen");
+  }
   try {
     if (screen.orientation && screen.orientation.lock) {
       await screen.orientation.lock("landscape");
-      return true;
     }
-  } catch (e) {}
-  return false;
-}
-
-async function requestNativeFullscreen() {
-  if (!videoBox) return;
-
-  // First try the Screen Orientation API directly. This works in many
-  // installed Android PWAs and keeps the normal Android status/navigation UI.
-  const directLock = await lockLandscape();
-  if (directLock) {
-    vipCssFullscreenActive = true;
-    videoBox.classList.remove("vip-orientation-fallback");
-    return;
-  }
-
-  // If direct orientation lock is rejected, enter real fullscreen and retry.
-  try {
-    if (!hasNativeFullscreen()) {
-      if (videoBox.requestFullscreen) {
-        try {
-          await videoBox.requestFullscreen({ navigationUI: "hide" });
-        } catch (e) {
-          await videoBox.requestFullscreen();
-        }
-      } else if (videoBox.webkitRequestFullscreen) {
-        videoBox.webkitRequestFullscreen();
-      }
-    }
-  } catch (e) {}
-
-  if (hasNativeFullscreen()) {
-    await new Promise(function(resolve) { requestAnimationFrame(resolve); });
-    await lockLandscape();
-    vipCssFullscreenActive = false;
-    videoBox.classList.remove("vip-orientation-fallback");
-  } else {
-    // Last-resort app-style fullscreen when no native API exists.
-    // Do not rotate the video with CSS; that produces a sideways player.
-    vipCssFullscreenActive = true;
-    videoBox.classList.remove("vip-orientation-fallback");
+  } catch (e) {
+    // Orientation locking is browser-dependent; keep normal fullscreen if unavailable.
   }
 }
 
 async function exitNativeFullscreen() {
-  vipCssFullscreenActive = false;
-  if (videoBox) videoBox.classList.remove("vip-orientation-fallback");
-
   try {
-    if (document.fullscreenElement && document.exitFullscreen) {
-      await document.exitFullscreen();
-    } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
-      document.webkitExitFullscreen();
-    }
+    if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
+    else if (document.webkitFullscreenElement && document.webkitExitFullscreen) document.webkitExitFullscreen();
   } catch (e) {}
-
+  if (videoBox) {
+    videoBox.classList.remove("vip-css-fullscreen","vip-fullscreen","is-fullscreen","vip-orientation-fallback");
+  }
   try {
-    if (screen.orientation && screen.orientation.unlock) {
-      screen.orientation.unlock();
-    }
+    if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
   } catch (e) {}
+}
+
+function isNativeFullscreen() {
+  return !!(document.fullscreenElement || (videoBox && videoBox.classList.contains("vip-css-fullscreen")));
 }
 
 async function toggleNativeFullscreen() {
@@ -498,7 +443,7 @@ function changeChannel(step) {
   if (i < 0) i = 0;
   i = (i + step + visibleChannels.length) % visibleChannels.length;
   currentChannelIndex = i;
-  const wasFs = isNativeFullscreen();
+  const wasFs = isNativeFullscreen() || (videoBox && videoBox.classList.contains("vip-css-fullscreen"));
   play(visibleChannels[i], null);
   if (wasFs) {
     // Reassert the overlay after the stream source changes.
@@ -514,22 +459,8 @@ document.getElementById("nextChannel").addEventListener("click", function(e) {
 });
 
 window.addEventListener("orientationchange", syncFullscreenState);
-document.addEventListener("fullscreenchange", function () {
-  if (!hasNativeFullscreen()) {
-    vipCssFullscreenActive = false;
-    if (videoBox) videoBox.classList.remove("vip-orientation-fallback");
-    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
-  }
-  syncFullscreenState();
-});
-document.addEventListener("webkitfullscreenchange", function () {
-  if (!hasNativeFullscreen()) {
-    vipCssFullscreenActive = false;
-    if (videoBox) videoBox.classList.remove("vip-orientation-fallback");
-    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
-  }
-  syncFullscreenState();
-});
+document.addEventListener("fullscreenchange", function(){ if(!document.fullscreenElement){ try{screen.orientation?.unlock?.()}catch(e){} } syncFullscreenState(); });
+document.addEventListener("webkitfullscreenchange", function(){ syncFullscreenState(); });
 syncFullscreenState();
 
 function closePlayer() {
@@ -572,6 +503,18 @@ function currentChannelName() {
   return c && c.name ? c.name : "";
 }
 
+async function fetchPlaylistFromWorker() {
+  const apiBase = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/, "");
+  if (!apiBase) return [];
+  const r = await fetch(apiBase + "/api/playlist", {cache:"no-store"});
+  if (!r.ok) throw new Error("Worker playlist load failed: " + r.status);
+  const data = await r.json();
+  const list = Array.isArray(data?.channels) ? data.channels : [];
+  return list.map(function(c){
+    return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||""};
+  }).filter(function(c){return c.url;});
+}
+
 async function fetchPlaylistFromGithub() {
   const response = await fetch(PLAYLIST_URL, {
     cache: "no-store",
@@ -606,58 +549,46 @@ function loadLastGoodPlaylist() {
 }
 
 async function loadVipPlaylist() {
+  const apiBase = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/, "");
+  if (apiBase) {
+    try {
+      const managed = await fetchPlaylistFromWorker();
+      if (managed.length) {
+        saveLastGoodPlaylist(managed);
+        return managed;
+      }
+    } catch (e) {
+      console.warn("Worker playlist unavailable; trying GitHub.", e);
+    }
+  }
+
   try {
     const fresh = await fetchPlaylistFromGithub();
     saveLastGoodPlaylist(fresh);
     return fresh;
   } catch (githubError) {
-    console.warn("GitHub playlist unavailable; using last successful playlist.", githubError);
+    console.warn("GitHub playlist load failed; using last successful playlist.", githubError);
   }
 
   const cached = loadLastGoodPlaylist();
   if (cached.length) return cached;
-
-  const apiBase = (window.VIP_WORKER_API || "").replace(/\/$/, "");
-  if (apiBase) {
-    try {
-      const r = await fetch(apiBase + "/api/playlist", {cache:"no-store"});
-      if (r.ok) {
-        const data = await r.json();
-        const list = Array.isArray(data?.channels) ? data.channels : [];
-        if (list.length) {
-          return list.map(function(c){
-            return {
-              name:c.name||"Live Channel",
-              cat:catFor(c.name,c.category),
-              url:c.url||"",
-              logo:c.logo||""
-            };
-          }).filter(c=>c.url);
-        }
-      }
-    } catch (e) {
-      console.warn("Worker playlist bootstrap unavailable.", e);
-    }
-  }
-
   throw new Error("Playlist load failed");
 }
 
 async function refreshVipPlaylist() {
   try {
-    const fresh = await fetchPlaylistFromGithub();
+    let fresh = [];
+    try { fresh = await fetchPlaylistFromWorker(); } catch (e) {}
+    if (!fresh.length) fresh = await fetchPlaylistFromGithub();
     const oldCurrentName = currentChannelName ? currentChannelName() : "";
     const oldWasFallback = currentChannelUrl ? currentChannelUrl() === STREAM_FALLBACK_URL : false;
-
     channels = fresh;
     saveLastGoodPlaylist(fresh);
     render();
-
     if (oldCurrentName && oldWasFallback) {
       const updated = channels.find(function(c){ return c.name === oldCurrentName; });
       if (updated) play(updated, null, true);
     }
-
     console.log("VIP playlist auto-refreshed:", channels.length);
     return true;
   } catch (e) {

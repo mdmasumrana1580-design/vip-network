@@ -1,4 +1,4 @@
-const CACHE = 'vip-tv-pwa-v2';
+const CACHE = 'vip-tv-pwa-v3';
 const CORE = [
   '/',
   '/index.html',
@@ -6,6 +6,7 @@ const CORE = [
   '/app.js',
   '/config.js',
   '/device-guard.js',
+  '/visitor-login.js',
   '/pwa.js',
   '/manifest.webmanifest',
   '/vip-network-logo.png',
