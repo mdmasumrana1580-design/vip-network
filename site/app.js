@@ -190,8 +190,7 @@ function esc(value) {
 
 function catFor(name, group) {
   const text = ((name || "") + " " + (group || "")).toLowerCase();
-  if (/new\s*style|newstyle/.test(text)) return "NEW STYLE";
-  if (/movie|movies|film|series|web\s*series|ott|cinema|flix/.test(text)) return "MOVIE & SERIES";
+    if (/movie|movies|film|series|web\s*series|ott|cinema|flix/.test(text)) return "MOVIE & SERIES";
   if (/sport|cricket|football|fifa|espn|bein|wwe|golf|nfl|nba|ten\s*cricket|ptv\s*sports/.test(text)) return "SPORTS";
   if (/bangladesh|\bbd\b|bangla|somoy|jamuna|ekattor|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi\s*tv|btv|duronto|deepto|nagorik|mohona|asian\s*tv|desh\s*tv|bijoy\s*tv|mytv|satv|ekushey/.test(text)) return "BD";
   if (/india|indian|sony|zee|star|colors|set\b|sab\b|aaj\s*tak|ndtv|republic|news18|times\s*now|india\s*tv|dd\s*(national|sports)|sun\s*tv|asianet|vijay|jaya|starplus|star\s*gold|sony\s*(max|pix|wah|yay|pal)|&pictures|b4u|movies\s*now|mnx|hbo\s*india/.test(text)) return "INDIA";
@@ -503,10 +502,12 @@ function currentChannelName() {
   return c && c.name ? c.name : "";
 }
 
-async function fetchPlaylistFromWorker(type='tv') {
+async function fetchMoviePlaylistFromWorker(){const apiBase=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');const r=await fetch(apiBase+'/api/movie-playlist',{cache:'no-store'});if(!r.ok)throw new Error('Movie playlist load failed: '+r.status);const data=await r.json();return (Array.isArray(data?.channels)?data.channels:[]).map(c=>({name:c.name||'Movie',cat:'MOVIE & SERIES',url:c.url||'',logo:c.logo||''})).filter(c=>c.url);}
+
+async function fetchPlaylistFromWorker() {
   const apiBase = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/, "");
   if (!apiBase) return [];
-  const r = await fetch(apiBase + "/api/playlist?type=" + encodeURIComponent(type), {cache:"no-store"});
+  const r = await fetch(apiBase + "/api/playlist", {cache:"no-store"});
   if (!r.ok) throw new Error("Worker playlist load failed: " + r.status);
   const data = await r.json();
   const list = Array.isArray(data?.channels) ? data.channels : [];
@@ -514,8 +515,6 @@ async function fetchPlaylistFromWorker(type='tv') {
     return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||""};
   }).filter(function(c){return c.url;});
 }
-
-async function fetchMoviePlaylistFromWorker(){const apiBase=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');if(!apiBase)return [];const r=await fetch(apiBase+'/api/playlist?type=movies',{cache:'no-store'});if(!r.ok)throw new Error('Movie playlist load failed: '+r.status);const d=await r.json();return (Array.isArray(d?.channels)?d.channels:[]).map(c=>({name:c.name||'Movie',cat:'MOVIE & SERIES',url:c.url||'',logo:c.logo||''})).filter(c=>c.url);}
 
 async function fetchPlaylistFromGithub() {
   const response = await fetch(PLAYLIST_URL, {
@@ -554,7 +553,8 @@ async function loadVipPlaylist() {
   const apiBase = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/, "");
   if (apiBase) {
     try {
-      const managed = await fetchPlaylistFromWorker();
+      let managed = await fetchPlaylistFromWorker();
+      try { const movies=await fetchMoviePlaylistFromWorker(); managed=managed.concat(movies); } catch(e) { console.warn('Movie playlist unavailable',e); }
       if (managed.length) {
         saveLastGoodPlaylist(managed);
         return managed;
@@ -582,9 +582,9 @@ async function refreshVipPlaylist() {
     let fresh = [];
     try { fresh = await fetchPlaylistFromWorker(); } catch (e) {}
     if (!fresh.length) fresh = await fetchPlaylistFromGithub();
+    try { fresh = fresh.concat(await fetchMoviePlaylistFromWorker()); } catch(e) { console.warn('Movie playlist refresh unavailable',e); }
     const oldCurrentName = currentChannelName ? currentChannelName() : "";
     const oldWasFallback = currentChannelUrl ? currentChannelUrl() === STREAM_FALLBACK_URL : false;
-    if (current === 'MOVIE & SERIES') return true;
     channels = fresh;
     saveLastGoodPlaylist(fresh);
     render();
