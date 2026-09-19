@@ -190,6 +190,7 @@ function esc(value) {
 
 function catFor(name, group) {
   const text = ((name || "") + " " + (group || "")).toLowerCase();
+  if (/new\s*style|newstyle/.test(text)) return "NEW STYLE";
   if (/movie|movies|film|series|web\s*series|ott|cinema|flix/.test(text)) return "MOVIE & SERIES";
   if (/sport|cricket|football|fifa|espn|bein|wwe|golf|nfl|nba|ten\s*cricket|ptv\s*sports/.test(text)) return "SPORTS";
   if (/bangladesh|\bbd\b|bangla|somoy|jamuna|ekattor|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi\s*tv|btv|duronto|deepto|nagorik|mohona|asian\s*tv|desh\s*tv|bijoy\s*tv|mytv|satv|ekushey/.test(text)) return "BD";
@@ -502,10 +503,10 @@ function currentChannelName() {
   return c && c.name ? c.name : "";
 }
 
-async function fetchPlaylistFromWorker() {
+async function fetchPlaylistFromWorker(type='tv') {
   const apiBase = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/, "");
   if (!apiBase) return [];
-  const r = await fetch(apiBase + "/api/playlist", {cache:"no-store"});
+  const r = await fetch(apiBase + "/api/playlist?type=" + encodeURIComponent(type), {cache:"no-store"});
   if (!r.ok) throw new Error("Worker playlist load failed: " + r.status);
   const data = await r.json();
   const list = Array.isArray(data?.channels) ? data.channels : [];
@@ -513,6 +514,8 @@ async function fetchPlaylistFromWorker() {
     return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||""};
   }).filter(function(c){return c.url;});
 }
+
+async function fetchMoviePlaylistFromWorker(){const apiBase=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');if(!apiBase)return [];const r=await fetch(apiBase+'/api/playlist?type=movies',{cache:'no-store'});if(!r.ok)throw new Error('Movie playlist load failed: '+r.status);const d=await r.json();return (Array.isArray(d?.channels)?d.channels:[]).map(c=>({name:c.name||'Movie',cat:'MOVIE & SERIES',url:c.url||'',logo:c.logo||''})).filter(c=>c.url);}
 
 async function fetchPlaylistFromGithub() {
   const response = await fetch(PLAYLIST_URL, {
@@ -581,6 +584,7 @@ async function refreshVipPlaylist() {
     if (!fresh.length) fresh = await fetchPlaylistFromGithub();
     const oldCurrentName = currentChannelName ? currentChannelName() : "";
     const oldWasFallback = currentChannelUrl ? currentChannelUrl() === STREAM_FALLBACK_URL : false;
+    if (current === 'MOVIE & SERIES') return true;
     channels = fresh;
     saveLastGoodPlaylist(fresh);
     render();
