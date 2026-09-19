@@ -12,6 +12,15 @@
 <link rel="icon" href="assets/admin-logo.png" type="image/png">
 <link rel="apple-touch-icon" href="assets/admin-logo.png">
 <link rel="stylesheet" href="style.css">
+<style>
+.latest-login{margin-bottom:12px;padding:14px;border:1px solid #1767a6;border-radius:12px;background:linear-gradient(135deg,rgba(15,84,140,.28),rgba(5,19,34,.75))}
+.latest-title{font-size:12px;color:#62d5ff;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+.latest-name{font-size:20px;font-weight:900;margin-top:4px}
+.latest-meta,.latest-time{font-size:13px;color:#9bb6cc;margin-top:4px}
+.device-card{padding:13px;margin:9px 0;border:1px solid #103e62;border-radius:11px;background:#061525}
+.device-meta{margin-top:7px;color:#9bb6cc;font-size:13px;line-height:1.65}
+@media(max-width:650px){.latest-login{padding:11px}.latest-name{font-size:18px}.device-card{padding:11px}}
+</style>
 </head>
 <body>
 <div class="app">
@@ -104,7 +113,7 @@
 <section id="categories" class="section"><div class="page-head"><div><h1>Categories</h1><p>Organize your channels.</p></div></div><div class="panel"><div class="category-add"><input id="newCat" placeholder="New category"><button class="primary" onclick="addCategory()">＋ Add</button></div><div id="categoryList" class="category-list"></div></div></section>
 <section id="settings" class="section"><div class="page-head"><div><h1>Website Settings</h1></div></div><form class="form-card" id="settingsForm"><label>Website Name<input name="siteName" value="VIP NETWORK"></label><label>Subtitle<input name="subtitle" value="Live TV & Entertainment"></label><label>Logo URL<input name="logo"></label><button class="primary">💾 Save Settings</button></form></section>
 <section id="notice" class="section"><div class="page-head"><div><h1>Notice / Banner</h1></div></div><form class="form-card" id="noticeForm"><label>Banner Text<input name="text"></label><label>Type<select name="type"><option>Information</option><option>Success</option><option>Warning</option><option>Important</option></select></label><label>Enable<select name="enabled"><option>Yes</option><option>No</option></select></label><button class="primary">📢 Save Banner</button></form></section>
-<section id="devices" class="section"><div class="page-head"><div><h1>User & Device Management</h1><p>Name, mobile number, device and Block / Unblock access.</p></div><div><button class="primary" onclick="loadDevices()">⟳ Refresh</button></div></div><div class="panel"><div id="deviceList" class="device-list">Loading devices...</div></div></section>
+<section id="devices" class="section"><div class="page-head"><div><h1>User & Device Management</h1><p>Username, device and Block / Unblock access.</p></div><div><button class="primary" onclick="loadDevices()">⟳ Refresh</button></div></div><div class="panel"><div id="latestLogin" class="latest-login">Loading latest login...</div><div id="deviceList" class="device-list">Loading devices...</div></div></section>
 <section id="security" class="section"><div class="page-head"><div><h1>Security</h1><p>Administrator session and access control.</p></div></div><div class="panel security-card"><h2>Admin Session</h2><p>Use Logout to securely end the current administrator session.</p><button class="primary danger" onclick="logoutWorker()">⇥ Logout Admin</button></div></section>
 <section id="activity" class="section"><div class="page-head"><div><h1>Activity Logs</h1></div><button class="primary" onclick="clearLogs()">Clear Logs</button></div><div class="panel"><div id="activityList" class="activity-list"></div></div></section>
 <section id="backup" class="section"><div class="page-head"><div><h1>Backup & Export</h1></div></div><div class="quick-grid two"><button onclick="exportData()">⇩ <b>Export JSON</b></button><button onclick="exportM3U()">⇩ <b>Export M3U</b></button><button onclick="clearAll()">⌫ <b>Clear All Channels</b></button></div></section>
