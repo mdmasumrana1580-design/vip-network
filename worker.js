@@ -1,5 +1,6 @@
 const STATE_KEY='vip_state_v1';
 const DEVICES_KEY='vip_devices_v1';
+const GUESTS_KEY='vip_guest_visitors_v1';
 const SETTINGS_KEY='vip_settings_v1';
 const USERS_KEY='vip_users_v1';
 const ONLINE_KEY='vip_online_v1';
@@ -41,12 +42,14 @@ async function readMovies(e){try{const r=await kv(e).get(MOVIE_KEY);return Array
 async function saveMovies(e,x){const movies=Array.isArray(x)?x.map(movieNorm).filter(v=>v.url):[];await kv(e).put(MOVIE_KEY,JSON.stringify(movies));return movies;}
 async function readDevices(e){try{return JSON.parse((await kv(e).get(DEVICES_KEY))||'[]')}catch{return[]}}
 async function saveDevices(e,x){await kv(e).put(DEVICES_KEY,JSON.stringify(x))}
+async function readGuests(e){try{return JSON.parse((await kv(e).get(GUESTS_KEY))||'[]')}catch{return[]}}
+async function saveGuests(e,x){await kv(e).put(GUESTS_KEY,JSON.stringify(x))}
 async function readSettings(e){try{return JSON.parse((await kv(e).get(SETTINGS_KEY))||'{"deviceLimit":1,"accessMode":"approval"}')}catch{return{deviceLimit:1,accessMode:'approval'}}}
 async function readUsers(e){try{return JSON.parse((await kv(e).get(USERS_KEY))||'[]')}catch{return[]}}
 async function saveUsers(e,x){await kv(e).put(USERS_KEY,JSON.stringify(x))}
 async function readOnline(e){try{return JSON.parse((await kv(e).get(ONLINE_KEY))||'{}')}catch{return{}}}
 async function saveOnline(e,x){await kv(e).put(ONLINE_KEY,JSON.stringify(x),{expirationTtl:120})}
-function cleanOnline(x,now=Date.now()){const out={};for(const[k,v]of Object.entries(x||{})){if(typeof v==='number'&&now-v<60000)out[k]=v}return out}
+function cleanOnline(x,now=Date.now()){const out={};for(const[k,v]of Object.entries(x||{})){if(typeof v==='number'&&now-v<10*60*1000)out[k]=v}return out}
 async function hash(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
 function token(){return crypto.randomUUID()}
 async function deviceBlocked(e,id){if(!id)return false;const d=(await readDevices(e)).find(x=>x.deviceId===id);return !!d?.blocked}
@@ -66,8 +69,8 @@ async function fetchXtream(server,username,password,limit){
 async function userSession(r,e){const t=cookies(r).VIP_USER_SESSION;if(!t)return null;const raw=await kv(e).get(USER_SESSION_PREFIX+t);if(!raw)return null;try{return{token:t,...JSON.parse(raw)}}catch{return null}}
 async function handle(r,e){
   const u=new URL(r.url),p=u.pathname;if(r.method==='OPTIONS')return withCors(new Response(null,{status:204}));
-  if(p==='/api/online/ping'&&r.method==='POST'){const b=await r.json().catch(()=>({})),id=String(b.id||'').slice(0,160);if(!id)return withCors(json({ok:false,error:'id required'},400));const now=Date.now(),online=cleanOnline(await readOnline(e),now);online[id]=now;await saveOnline(e,online);return withCors(json({ok:true,online:Object.keys(online).length}))}
-  if(p==='/api/online'&&r.method==='GET'){const raw=await readOnline(e),online=cleanOnline(raw);if(Object.keys(raw).length!==Object.keys(online).length)await saveOnline(e,online);return withCors(json({ok:true,online:Object.keys(online).length}))}
+  if(p==='/api/online/ping'&&r.method==='POST'){const b=await r.json().catch(()=>({})),id=String(b.id||'').slice(0,160);if(!id)return withCors(json({ok:false,error:'id required'},400));const now=Date.now(),raw=await readOnline(e),online=cleanOnline(raw,now);const previous=online[id]||0;online[id]=now;if(now-previous>=5*60*1000)await saveOnline(e,online);return withCors(json({ok:true,online:Object.keys(online).length}))}
+  if(p==='/api/online'&&r.method==='GET'){const raw=await readOnline(e),online=cleanOnline(raw);return withCors(json({ok:true,online:Object.keys(online).length}))}
 
   if(p==='/api/user/login'&&r.method==='POST'){
     const b=await r.json().catch(()=>({}));
@@ -101,6 +104,38 @@ async function handle(r,e){
   if(r.method==='GET'&&p==='/api/state'){const s=await readState(e);return withCors(json({channels:s.channels||[],categories:s.categories||[],notice:s.notice||{},headline:s.headline||''}))}
   if(r.method==='GET'&&p==='/api/movie-playlist'){return withCors(json({channels:await readMovies(e),categories:['MOVIE & SERIES']}))}
   if(r.method==='GET'&&p==='/api/playlist'){const s=await readState(e);return withCors(json({channels:s.channels||[],categories:s.categories||[]}))}
+  if(p==='/api/guest/register'&&r.method==='POST'){
+    const b=await r.json().catch(()=>({}));
+    const id=String(b.visitorId||b.deviceId||'').trim().slice(0,160);
+    if(!id)return withCors(json({ok:false,error:'visitorId required'},400));
+    const now=new Date().toISOString(),gs=await readGuests(e);
+    let g=gs.find(x=>x.visitorId===id);
+    if(g?.blocked)return withCors(json({ok:false,blocked:true,error:'এই visitor ব্লক করা হয়েছে'},403));
+    const ua=String(b.userAgent||r.headers.get('user-agent')||'').slice(0,240);
+    const deviceName=String(b.deviceName||'').trim().slice(0,100)||'Guest Device';
+    const ip=String(r.headers.get('CF-Connecting-IP')||'').slice(0,80);
+    if(!g){g={visitorId:id,deviceName,userAgent:ua,ip,createdAt:now,lastSeen:now,status:'Online',blocked:false,category:'',channel:''};gs.push(g)}
+    else{g.deviceName=deviceName||g.deviceName;g.userAgent=ua||g.userAgent;g.ip=ip||g.ip;g.lastSeen=now;g.status='Online'}
+    // Guest Account access must never depend on KV. Registration is intentionally read-only.
+    // Visitor persistence is handled by the throttled /api/guest/ping endpoint.
+    return withCors(json({ok:true,visitor:g,tracking:'best-effort'}));
+  }
+  if(p==='/api/guest/ping'&&r.method==='POST'){
+    const b=await r.json().catch(()=>({})),id=String(b.visitorId||'').trim().slice(0,160);
+    if(!id)return withCors(json({ok:false,error:'visitorId required'},400));
+    const gs=await readGuests(e),g=gs.find(x=>x.visitorId===id);
+    if(g?.blocked)return withCors(json({ok:false,blocked:true,error:'এই visitor ব্লক করা হয়েছে'},403));
+    const now=new Date().toISOString(),nowMs=Date.now();
+    if(!g){
+      gs.push({visitorId:id,deviceName:String(b.deviceName||'Guest Device').slice(0,100),userAgent:String(r.headers.get('user-agent')||'').slice(0,240),ip:String(r.headers.get('CF-Connecting-IP')||'').slice(0,80),createdAt:now,lastSeen:now,status:'Online',blocked:false,category:String(b.category||'').slice(0,80),channel:String(b.channel||'').slice(0,200)});
+      try{await saveGuests(e,gs)}catch(err){}
+    }else{
+      const previousMs=Date.parse(g.lastSeen||'')||0;
+      g.status='Online';if(b.category!==undefined)g.category=String(b.category).slice(0,80);if(b.channel!==undefined)g.channel=String(b.channel).slice(0,200);
+      if(nowMs-previousMs>=30*60*1000){g.lastSeen=now;try{await saveGuests(e,gs)}catch(err){}}
+    }
+    return withCors(json({ok:true}));
+  }
   if(p==='/api/device/register'&&r.method==='POST'){const b=await r.json().catch(()=>({})),id=String(b.deviceId||r.headers.get('X-ViP-Device-ID')||'');if(!id)return withCors(json({ok:false,error:'deviceId required'},400));const ds=await readDevices(e);let d=ds.find(x=>x.deviceId===id);if(d?.blocked)return withCors(json({ok:false,error:'Blocked',blocked:true},403));if(!d){d={deviceId:id,name:String(b.name||'Unknown device'),userAgent:String(b.userAgent||r.headers.get('user-agent')||'').slice(0,200),approved:false,blocked:false,createdAt:new Date().toISOString(),lastSeen:new Date().toISOString()};ds.push(d)}else d.lastSeen=new Date().toISOString();await saveDevices(e,ds);return withCors(json({ok:true,device:d,settings:await readSettings(e)}))}
   if(p==='/api/device/check'&&r.method==='GET'){const id=u.searchParams.get('deviceId')||r.headers.get('X-ViP-Device-ID')||'',d=(await readDevices(e)).find(x=>x.deviceId===id);if(d?.blocked)return withCors(json({ok:false,approved:false,blocked:true,device:d,settings:await readSettings(e)},403));return withCors(json({ok:true,approved:!!d?.approved,device:d||null,settings:await readSettings(e)}))}
 
@@ -117,7 +152,21 @@ async function handle(r,e){
   if(p==='/api/admin/users/reset-password'&&r.method==='POST')return withCors(json({ok:false,error:'Password login has been removed. Use Set Number instead.'},410));
   if(p==='/api/admin/devices'&&r.method==='GET')return withCors(json({ok:true,devices:await readDevices(e),settings:await readSettings(e)}));
   for(const action of ['block','unblock','approve'])if(p==='/api/admin/devices/'+action&&r.method==='POST'){const b=await r.json().catch(()=>({})),ds=await readDevices(e),d=ds.find(x=>x.deviceId===String(b.deviceId||''));if(!d)return withCors(json({ok:false,error:'Device not found'},404));if(action==='block'){d.blocked=true;d.approved=false;d.status='Blocked'}if(action==='unblock'){d.blocked=false;d.approved=false;d.status='Logged out'}if(action==='approve'){d.approved=true;d.blocked=false;d.status='Approved'}await saveDevices(e,ds);return withCors(json({ok:true,device:d}))}
-  if(p==='/api/admin/devices'&&r.method==='DELETE'){const id=u.searchParams.get('deviceId')||'';await saveDevices(e,(await readDevices(e)).filter(x=>x.deviceId!==id));return withCors(json({ok:true}))}
+  if(p==='/api/admin/devices'&&r.method==='DELETE'){const id=u.searchParams.get('deviceId')||'';await saveDevices(e,(await readDevices(e)).filter(x=>x.deviceId!==id));return withCors(json({ok:true}))}  if(p==='/api/admin/guests'&&r.method==='GET'){
+    const now=Date.now(),gs=await readGuests(e);let changed=false;
+    for(const g of gs){const age=now-Date.parse(g.lastSeen||0);const st=age<=12*60*1000?'Online':'Offline';if(g.status!==st&& !g.blocked){g.status=st;changed=true}}
+    // Do not write KV just because the admin refreshed the guest list.
+    // The displayed status is computed in memory for this response.
+    return withCors(json({ok:true,guests:gs}));
+  }
+  if(p==='/api/admin/guests/block'&&r.method==='POST'){
+    const b=await r.json().catch(()=>({})),gs=await readGuests(e),g=gs.find(x=>x.visitorId===String(b.visitorId||''));if(!g)return withCors(json({ok:false,error:'Guest not found'},404));g.blocked=true;g.status='Blocked';await saveGuests(e,gs);return withCors(json({ok:true,guest:g}));
+  }
+  if(p==='/api/admin/guests/unblock'&&r.method==='POST'){
+    const b=await r.json().catch(()=>({})),gs=await readGuests(e),g=gs.find(x=>x.visitorId===String(b.visitorId||''));if(!g)return withCors(json({ok:false,error:'Guest not found'},404));g.blocked=false;g.status='Offline';await saveGuests(e,gs);return withCors(json({ok:true,guest:g}));
+  }
+  if(p==='/api/admin/guests'&&r.method==='DELETE'){const id=u.searchParams.get('visitorId')||'';await saveGuests(e,(await readGuests(e)).filter(x=>x.visitorId!==id));return withCors(json({ok:true}))}
+
   if(p==='/api/admin/settings'&&r.method==='GET')return withCors(json({ok:true,settings:await readSettings(e)}));
   if(p==='/api/admin/settings'&&r.method==='PUT'){const b=await r.json().catch(()=>({})),s={...(await readSettings(e)),...b};await kv(e).put(SETTINGS_KEY,JSON.stringify(s));return withCors(json({ok:true,settings:s}))}
   if(p==='/api/admin/import-m3u-url'&&r.method==='POST'){const b=await r.json().catch(()=>({}));if(!/^https?:\/\//i.test(String(b.url||'')))return withCors(json({ok:false,error:'Invalid M3U URL'},400));const x=await fetch(b.url);if(!x.ok)return withCors(json({ok:false,error:'M3U URL failed: '+x.status},400));const s=await readState(e);s.channels=parseM3U(await x.text());s.categories=defaultState().categories;return withCors(json({ok:true,count:s.channels.length,state:await saveState(e,s)}))}
