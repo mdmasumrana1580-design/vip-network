@@ -128,7 +128,7 @@ async function initGuestTracker(){
     const deviceName=(navigator.userAgentData?.platform||navigator.platform||'Guest Browser')+' / '+(navigator.userAgentData?.mobile?'Mobile':'Browser');
     const send=async()=>{
       try{
-        const r=await fetch(api+'/api/guest/ping',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceName,category:current,channel:document.title}),cache:'no-store'});
+        const r=await fetch(api+'/api/guest/ping',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceId:window.VIP_DEVICE_ID||'',deviceName,category:current,channel:document.title}),cache:'no-store'});
         if(r.status===403){
           console.warn('Guest visitor is blocked');
           try{localStorage.removeItem('vip-guest-visitor-id');localStorage.removeItem('vipGuestVisitorId-v1');localStorage.removeItem('vip-network-guest-session');}catch(e){}
@@ -138,7 +138,9 @@ async function initGuestTracker(){
       }catch(e){console.warn('Guest tracker unavailable',e)}
       return true;
     };
-    await fetch(api+'/api/guest/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceName}),cache:'no-store'}).catch(()=>{});
+    await fetch(api+'/api/guest/register',{method:'POST',headers:{'content-type':'application/json','X-ViP-Device-ID':window.VIP_DEVICE_ID||''},credentials:'include',body:JSON.stringify({visitorId,deviceId:window.VIP_DEVICE_ID||'',deviceName}),cache:'no-store'})
+      .then(function(r){if(r.status===403 && typeof window.VIP_SHOW_BLOCKED_PAGE==='function') window.VIP_SHOW_BLOCKED_PAGE()})
+      .catch(()=>{});
     send(); setInterval(send,5*60*1000);
   }catch(e){console.warn('Guest ID unavailable',e)}
 }

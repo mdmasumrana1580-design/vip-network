@@ -72,10 +72,11 @@
     try{
       const r=await fetch(base()+'/api/device/check?deviceId='+encodeURIComponent(id),{
         headers:{'X-ViP-Device-ID':id},
+        credentials:'include',
         cache:'no-store'
       });
       const d=await r.json().catch(()=>({}));
-      if(d.blocked===true || d.device?.blocked===true || String(d.device?.status||'').toLowerCase()==='blocked'){
+      if(r.status===403 || d.blocked===true || d.device?.blocked===true || String(d.device?.status||'').toLowerCase()==='blocked'){
         showBlocked();
         return false;
       }
@@ -85,7 +86,14 @@
     }
   }
 
-  check();
+  // Register the device so Admin can block the same browser/device even when it is a guest.
+  fetch(base()+'/api/device/register',{
+    method:'POST',
+    headers:{'content-type':'application/json','X-ViP-Device-ID':id},
+    credentials:'include',
+    body:JSON.stringify({deviceId:id,name:localStorage.getItem('vip-network-device-name')||((/Mobi|Android/i.test(navigator.userAgent))?'Mobile Device':'Browser')})
+  }).then(async r=>{if(r.status===403){showBlocked();return} await check()}).catch(()=>check());
+
   setInterval(check,10000);
   window.addEventListener('focus',check);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)check()});
