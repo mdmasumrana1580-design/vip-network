@@ -35,7 +35,7 @@
         localStorage.setItem('vip-guest-visitor-id',visitorId);
         const deviceNameValue=deviceName()||((/Mobi|Android/i.test(navigator.userAgent))?'Mobile Guest':'Guest Device');
         localStorage.setItem('vip-network-device-name',deviceNameValue);
-        const r=await fetch(base+'/api/guest/register',{method:'POST',headers:{'content-type':'application/json','X-ViP-Device-ID':window.VIP_DEVICE_ID||''},credentials:'include',body:JSON.stringify({visitorId,deviceId:window.VIP_DEVICE_ID||'',deviceName:deviceNameValue}),cache:'no-store'});
+        const r=await fetch(base+'/api/guest/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceId:window.VIP_DEVICE_ID||'',deviceName:deviceNameValue}),cache:'no-store'});
         const data=await r.json().catch(()=>({}));
         if(r.status===403||data.blocked){ if(typeof window.VIP_SHOW_BLOCKED_PAGE==='function') window.VIP_SHOW_BLOCKED_PAGE(); return; }
         // Guest entry must remain available even if the optional KV visitor tracker has hit its daily limit.

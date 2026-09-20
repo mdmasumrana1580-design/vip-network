@@ -70,30 +70,28 @@
   async function check(){
     if(blocked)return false;
     try{
-      const r=await fetch(base()+'/api/device/check?deviceId='+encodeURIComponent(id),{
-        headers:{'X-ViP-Device-ID':id},
-        credentials:'include',
+      const api=base();
+      const name=localStorage.getItem('vip-network-device-name')||((/Mobi|Android/i.test(navigator.userAgent))?'Mobile Device':'Browser Device');
+      const reg=await fetch(api+'/api/device/register',{
+        method:'POST',
+        headers:{'content-type':'application/json','X-ViP-Device-ID':id},
+        body:JSON.stringify({deviceId:id,name,userAgent:navigator.userAgent}),
         cache:'no-store'
+      });
+      const rd=await reg.json().catch(()=>({}));
+      if(reg.status===403 || rd.blocked===true || rd.device?.blocked===true){showBlocked();return false;}
+      const r=await fetch(api+'/api/device/check?deviceId='+encodeURIComponent(id),{
+        headers:{'X-ViP-Device-ID':id},cache:'no-store'
       });
       const d=await r.json().catch(()=>({}));
       if(r.status===403 || d.blocked===true || d.device?.blocked===true || String(d.device?.status||'').toLowerCase()==='blocked'){
-        showBlocked();
-        return false;
+        showBlocked();return false;
       }
       return true;
-    }catch(e){
-      return true;
-    }
+    }catch(e){return true;}
   }
 
-  // Register the device so Admin can block the same browser/device even when it is a guest.
-  fetch(base()+'/api/device/register',{
-    method:'POST',
-    headers:{'content-type':'application/json','X-ViP-Device-ID':id},
-    credentials:'include',
-    body:JSON.stringify({deviceId:id,name:localStorage.getItem('vip-network-device-name')||((/Mobi|Android/i.test(navigator.userAgent))?'Mobile Device':'Browser')})
-  }).then(async r=>{if(r.status===403){showBlocked();return} await check()}).catch(()=>check());
-
+  check();
   setInterval(check,10000);
   window.addEventListener('focus',check);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)check()});
