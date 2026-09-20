@@ -19,6 +19,7 @@ const cors={
 };
 const json=(d,s=200,x={})=>{
   const h=new Headers({'content-type':'application/json; charset=utf-8','cache-control':'no-store',...(x.headers||{})});
+  for(const c of (x.setCookies||[]))h.append('Set-Cookie',c);
   return new Response(JSON.stringify(d),{status:s,headers:h});
 };
 const withCors=r=>{const h=new Headers(r.headers);for(const[k,v]of Object.entries(cors))h.set(k,v);return new Response(r.body,{status:r.status,headers:h});};
@@ -52,7 +53,25 @@ async function saveOnline(e,x){await kv(e).put(ONLINE_KEY,JSON.stringify(x),{exp
 function cleanOnline(x,now=Date.now()){const out={};for(const[k,v]of Object.entries(x||{})){if(typeof v==='number'&&now-v<10*60*1000)out[k]=v}return out}
 async function hash(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
 function token(){return crypto.randomUUID()}
-async function deviceBlocked(e,id){if(!id)return false;const d=(await readDevices(e)).find(x=>x.deviceId===id);return !!d?.blocked}
+async function deviceBlocked(e,id){
+  if(!id)return false;
+  const d=(await readDevices(e)).find(x=>x.deviceId===id);
+  return !!d?.blocked;
+}
+async function blockedUser(e,id){
+  if(!id)return false;
+  const u=(await readUsers(e)).find(x=>String(x.id||'')===String(id));
+  return !!u?.blocked;
+}
+function blockedPage(){
+  return new Response(`<!doctype html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VIP NETWORK — Blocked</title><style>
+  *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#030609;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Arial,"Noto Sans Bengali",sans-serif}
+  body{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 50% 20%,rgba(255,190,30,.12),transparent 32%),#020508}
+  .card{width:min(680px,100%);text-align:center;padding:28px 18px 48px}.logo{width:min(54vw,230px);max-height:150px;object-fit:contain}.lock{width:170px;height:170px;margin:18px auto 24px;border-radius:50%;display:grid;place-items:center;font-size:78px;border:5px solid #e4aa21;background:#0a0e12;box-shadow:0 0 28px rgba(255,190,30,.25)}
+  h1{display:inline-block;margin:0;padding:12px 22px;border:2px solid #e5ad24;border-radius:999px;color:#ffd85a;font-size:clamp(24px,6vw,40px)}
+  p{font-size:clamp(18px,4.5vw,28px);line-height:1.55;color:#eee}.foot{margin-top:45px;color:#f3c84b;letter-spacing:.35em;font-weight:800}
+  </style></head><body><main class="card"><img class="logo" src="/vip-network-logo.png" alt="VIP NETWORK"><div class="lock">🔒</div><h1>🛡️ অ্যাক্সেস ব্লক করা হয়েছে</h1><p>আপনার ডিভাইস/অ্যাকাউন্ট অ্যাডমিনিস্ট্রেটর কর্তৃক ব্লক করা হয়েছে।<br>অনুগ্রহ করে অ্যাডমিনিস্ট্রেটরের সাথে যোগাযোগ করুন।</p><div class="foot">VIP NETWORK</div></main></body></html>`,{status:403,headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store'}});
+}
 async function authorized(r,e){const p=adminPassword(e),c=cookies(r),t=c.VIP_ADMIN_SESSION;if(!p)return false;if(t&&await kv(e).get(ADMIN_SESSION_PREFIX+t))return true;return r.headers.get('Authorization')===`Bearer ${p}`}
 async function requireAdmin(r,e){return(await authorized(r,e))?null:json({ok:false,error:'Unauthorized'},401)}
 function parseM3U(t){const a=String(t||'').replace(/\r/g,'').split('\n'),o=[];let m=null;for(const q of a){const l=q.trim();if(l.startsWith('#EXTINF')){const c=l.indexOf(','),gm=l.match(/group-title="([^"]*)"/i),lm=l.match(/tvg-logo="([^"]*)"/i);m={name:c>=0?l.slice(c+1).trim():'Live Channel',group:gm?gm[1]:'',logo:lm?lm[1]:''};continue}if(l&&!l.startsWith('#')&&m){if(/^(https?|rtmp|rtsp|hls):\/\//i.test(l))o.push(norm({...m,url:l,status:'Active'}));m=null}}return o}
@@ -82,6 +101,7 @@ async function handle(r,e){
     if(!/^\+?[0-9]{6,20}$/.test(number))return withCors(json({ok:false,error:'সঠিক নাম্বার দিন (কমপক্ষে ৬ সংখ্যা)'},400));
     if(await deviceBlocked(e,deviceId))return withCors(json({ok:false,error:'এই ডিভাইসটি ব্লক করা হয়েছে',blocked:true},403));
     const users=await readUsers(e);let user=users.find(x=>String(x.username||'').toLowerCase()===username.toLowerCase());
+    if(user?.blocked)return withCors(json({ok:false,error:'এই অ্যাকাউন্টটি ব্লক করা হয়েছে',blocked:true},403));
     let created=false;
     if(!user){const salt=crypto.randomUUID();user={id:crypto.randomUUID(),username,numberHash:await hash(salt+number),numberSalt:salt,createdAt:new Date().toISOString(),lastLoginAt:null,lastDeviceId:null,lastDeviceName:'',number:'',activeSessionToken:null,activeDeviceId:null};users.push(user);created=true;}
     else if(user.numberHash){const ok=user.numberHash===await hash(String(user.numberSalt||'')+number);if(!ok)return withCors(json({ok:false,error:'নাম অথবা নাম্বার সঠিক নয়'},401));}
@@ -90,9 +110,9 @@ async function handle(r,e){
     const now=new Date().toISOString();user.lastLoginAt=now;user.lastDeviceId=deviceId||null;user.lastDeviceName=deviceName;user.number=number;const t=token();user.activeSessionToken=t;user.activeDeviceId=deviceId||null;await saveUsers(e,users);
     if(deviceId){const ds=await readDevices(e);let d=ds.find(x=>x.deviceId===deviceId);if(d?.blocked)return withCors(json({ok:false,error:'এই ডিভাইসটি ব্লক করা হয়েছে',blocked:true},403));if(!d){d={deviceId,name:deviceName,userAgent:r.headers.get('user-agent')||'',approved:true,blocked:false,status:'Logged in',createdAt:now,lastSeen:now,username:user.username,number:user.number||number};ds.push(d)}else{d.name=deviceName||d.name;d.username=user.username;d.number=user.number||number;d.lastSeen=now;d.status='Logged in';d.approved=true}await saveDevices(e,ds)}
     await kv(e).put(USER_SESSION_PREFIX+t,JSON.stringify({userId:user.id,username:user.username,deviceId}),{expirationTtl:USER_TTL});
-    return withCors(json({ok:true,created,username:user.username},200,{headers:{'Set-Cookie':`VIP_USER_SESSION=${encodeURIComponent(t)}; Max-Age=${USER_TTL}; Path=/; HttpOnly; Secure; SameSite=Lax`}}));
+    return withCors(json({ok:true,created,username:user.username},200,{setCookies:[`VIP_USER_SESSION=${encodeURIComponent(t)}; Max-Age=${USER_TTL}; Path=/; HttpOnly; Secure; SameSite=Lax`,`VIP_ACCESS_DEVICE=${encodeURIComponent(deviceId)}; Max-Age=${USER_TTL}; Path=/; HttpOnly; Secure; SameSite=Lax`]}));
   }
-  if(p==='/api/user/session'&&r.method==='GET'){const s=await userSession(r,e);if(!s)return withCors(json({ok:false,error:'Unauthorized'},401));if(await deviceBlocked(e,s.deviceId))return withCors(json({ok:false,error:'Blocked',blocked:true},403));return withCors(json({ok:true,loggedIn:true,username:s.username}))}
+  if(p==='/api/user/session'&&r.method==='GET'){const s=await userSession(r,e);if(!s)return withCors(json({ok:false,error:'Unauthorized'},401));if(await deviceBlocked(e,s.deviceId)||await blockedUser(e,s.userId))return withCors(json({ok:false,error:'Blocked',blocked:true},403));return withCors(json({ok:true,loggedIn:true,username:s.username}))}
   if(p==='/api/user/logout'&&r.method==='POST'){
     const t=cookies(r).VIP_USER_SESSION,s=await userSession(r,e);if(t)await kv(e).delete(USER_SESSION_PREFIX+t);
     if(s){const users=await readUsers(e),u0=users.find(x=>x.id===s.userId);if(u0&&u0.activeSessionToken===t){u0.activeSessionToken=null;u0.activeDeviceId=null;await saveUsers(e,users)}if(s.deviceId){const ds=await readDevices(e),d=ds.find(x=>x.deviceId===s.deviceId);if(d){d.status='Logged out';d.lastSeen=new Date().toISOString();await saveDevices(e,ds)}}}
@@ -107,27 +127,28 @@ async function handle(r,e){
   if(p==='/api/guest/register'&&r.method==='POST'){
     const b=await r.json().catch(()=>({}));
     const id=String(b.visitorId||b.deviceId||'').trim().slice(0,160);
+    const deviceId=String(b.deviceId||r.headers.get('X-ViP-Device-ID')||'').trim().slice(0,160);
     if(!id)return withCors(json({ok:false,error:'visitorId required'},400));
+    if(deviceId&&await deviceBlocked(e,deviceId))return withCors(json({ok:false,blocked:true,error:'এই ডিভাইসটি ব্লক করা হয়েছে'},403));
     const now=new Date().toISOString(),gs=await readGuests(e);
     let g=gs.find(x=>x.visitorId===id);
     if(g?.blocked)return withCors(json({ok:false,blocked:true,error:'এই visitor ব্লক করা হয়েছে'},403));
     const ua=String(b.userAgent||r.headers.get('user-agent')||'').slice(0,240);
     const deviceName=String(b.deviceName||'').trim().slice(0,100)||'Guest Device';
     const ip=String(r.headers.get('CF-Connecting-IP')||'').slice(0,80);
-    if(!g){g={visitorId:id,deviceName,userAgent:ua,ip,createdAt:now,lastSeen:now,status:'Online',blocked:false,category:'',channel:''};gs.push(g)}
-    else{g.deviceName=deviceName||g.deviceName;g.userAgent=ua||g.userAgent;g.ip=ip||g.ip;g.lastSeen=now;g.status='Online'}
-    // Guest Account access must never depend on KV. Registration is intentionally read-only.
-    // Visitor persistence is handled by the throttled /api/guest/ping endpoint.
-    return withCors(json({ok:true,visitor:g,tracking:'best-effort'}));
+    if(!g){g={visitorId:id,deviceId:deviceId||'',deviceName,userAgent:ua,ip,createdAt:now,lastSeen:now,status:'Online',blocked:false,category:'',channel:''};gs.push(g)}
+    else{g.deviceId=deviceId||g.deviceId||'';g.deviceName=deviceName||g.deviceName;g.userAgent=ua||g.userAgent;g.ip=ip||g.ip;g.lastSeen=now;g.status='Online'}
+    try{await saveGuests(e,gs)}catch(err){/* guest access remains available if KV is temporarily unavailable */}
+    return withCors(json({ok:true,visitor:g,tracking:'best-effort'},200,{setCookies:deviceId?[`VIP_ACCESS_DEVICE=${encodeURIComponent(deviceId)}; Max-Age=${USER_TTL}; Path=/; HttpOnly; Secure; SameSite=Lax`]:[]}));
   }
   if(p==='/api/guest/ping'&&r.method==='POST'){
-    const b=await r.json().catch(()=>({})),id=String(b.visitorId||'').trim().slice(0,160);
+    const b=await r.json().catch(()=>({})),id=String(b.visitorId||'').trim().slice(0,160),deviceId=String(b.deviceId||r.headers.get('X-ViP-Device-ID')||'').trim().slice(0,160);
     if(!id)return withCors(json({ok:false,error:'visitorId required'},400));
     const gs=await readGuests(e),g=gs.find(x=>x.visitorId===id);
-    if(g?.blocked)return withCors(json({ok:false,blocked:true,error:'এই visitor ব্লক করা হয়েছে'},403));
+    if(g?.blocked|| (deviceId&&await deviceBlocked(e,deviceId)))return withCors(json({ok:false,blocked:true,error:'এই visitor/ডিভাইসটি ব্লক করা হয়েছে'},403));
     const now=new Date().toISOString(),nowMs=Date.now();
     if(!g){
-      gs.push({visitorId:id,deviceName:String(b.deviceName||'Guest Device').slice(0,100),userAgent:String(r.headers.get('user-agent')||'').slice(0,240),ip:String(r.headers.get('CF-Connecting-IP')||'').slice(0,80),createdAt:now,lastSeen:now,status:'Online',blocked:false,category:String(b.category||'').slice(0,80),channel:String(b.channel||'').slice(0,200)});
+      gs.push({visitorId:id,deviceId,deviceName:String(b.deviceName||'Guest Device').slice(0,100),userAgent:String(r.headers.get('user-agent')||'').slice(0,240),ip:String(r.headers.get('CF-Connecting-IP')||'').slice(0,80),createdAt:now,lastSeen:now,status:'Online',blocked:false,category:String(b.category||'').slice(0,80),channel:String(b.channel||'').slice(0,200)});
       try{await saveGuests(e,gs)}catch(err){}
     }else{
       const previousMs=Date.parse(g.lastSeen||'')||0;
@@ -136,7 +157,7 @@ async function handle(r,e){
     }
     return withCors(json({ok:true}));
   }
-  if(p==='/api/device/register'&&r.method==='POST'){const b=await r.json().catch(()=>({})),id=String(b.deviceId||r.headers.get('X-ViP-Device-ID')||'');if(!id)return withCors(json({ok:false,error:'deviceId required'},400));const ds=await readDevices(e);let d=ds.find(x=>x.deviceId===id);if(d?.blocked)return withCors(json({ok:false,error:'Blocked',blocked:true},403));if(!d){d={deviceId:id,name:String(b.name||'Unknown device'),userAgent:String(b.userAgent||r.headers.get('user-agent')||'').slice(0,200),approved:false,blocked:false,createdAt:new Date().toISOString(),lastSeen:new Date().toISOString()};ds.push(d)}else d.lastSeen=new Date().toISOString();await saveDevices(e,ds);return withCors(json({ok:true,device:d,settings:await readSettings(e)}))}
+  if(p==='/api/device/register'&&r.method==='POST'){const b=await r.json().catch(()=>({})),id=String(b.deviceId||r.headers.get('X-ViP-Device-ID')||'');if(!id)return withCors(json({ok:false,error:'deviceId required'},400));const ds=await readDevices(e);let d=ds.find(x=>x.deviceId===id);if(d?.blocked)return withCors(json({ok:false,error:'Blocked',blocked:true},403));if(!d){d={deviceId:id,name:String(b.name||'Unknown device'),userAgent:String(b.userAgent||r.headers.get('user-agent')||'').slice(0,200),approved:false,blocked:false,createdAt:new Date().toISOString(),lastSeen:new Date().toISOString()};ds.push(d)}else d.lastSeen=new Date().toISOString();await saveDevices(e,ds);return withCors(json({ok:true,device:d,settings:await readSettings(e)},200,{setCookies:[`VIP_ACCESS_DEVICE=${encodeURIComponent(id)}; Max-Age=${USER_TTL}; Path=/; HttpOnly; Secure; SameSite=Lax`]}))}
   if(p==='/api/device/check'&&r.method==='GET'){const id=u.searchParams.get('deviceId')||r.headers.get('X-ViP-Device-ID')||'',d=(await readDevices(e)).find(x=>x.deviceId===id);if(d?.blocked)return withCors(json({ok:false,approved:false,blocked:true,device:d,settings:await readSettings(e)},403));return withCors(json({ok:true,approved:!!d?.approved,device:d||null,settings:await readSettings(e)}))}
 
   const g=await requireAdmin(r,e);if(g)return withCors(g);
@@ -151,7 +172,43 @@ async function handle(r,e){
   if(p==='/api/admin/users/set-number'&&r.method==='POST'){const b=await r.json().catch(()=>({})),id=String(b.userId||''),number=String(b.number||'').replace(/\s+/g,'');if(!/^\+?[0-9]{6,20}$/.test(number))return withCors(json({ok:false,error:'Invalid number'},400));const users=await readUsers(e),u0=users.find(x=>x.id===id);if(!u0)return withCors(json({ok:false,error:'User not found'},404));const salt=crypto.randomUUID();u0.numberSalt=salt;u0.numberHash=await hash(salt+number);u0.passwordHash=undefined;u0.salt=undefined;u0.numberUpdatedAt=new Date().toISOString();await saveUsers(e,users);return withCors(json({ok:true}))}
   if(p==='/api/admin/users/reset-password'&&r.method==='POST')return withCors(json({ok:false,error:'Password login has been removed. Use Set Number instead.'},410));
   if(p==='/api/admin/devices'&&r.method==='GET')return withCors(json({ok:true,devices:await readDevices(e),settings:await readSettings(e)}));
-  for(const action of ['block','unblock','approve'])if(p==='/api/admin/devices/'+action&&r.method==='POST'){const b=await r.json().catch(()=>({})),ds=await readDevices(e),d=ds.find(x=>x.deviceId===String(b.deviceId||''));if(!d)return withCors(json({ok:false,error:'Device not found'},404));if(action==='block'){d.blocked=true;d.approved=false;d.status='Blocked'}if(action==='unblock'){d.blocked=false;d.approved=false;d.status='Logged out'}if(action==='approve'){d.approved=true;d.blocked=false;d.status='Approved'}await saveDevices(e,ds);return withCors(json({ok:true,device:d}))}
+  for(const action of ['block','unblock','approve'])if(p==='/api/admin/devices/'+action&&r.method==='POST'){
+    const b=await r.json().catch(()=>({})),ds=await readDevices(e),d=ds.find(x=>x.deviceId===String(b.deviceId||''));
+    if(!d)return withCors(json({ok:false,error:'Device not found'},404));
+    if(action==='block'){
+      d.blocked=true;d.approved=false;d.status='Blocked';
+      const users=await readUsers(e);
+      const targets=users.filter(x=>String(x.activeDeviceId||'')===d.deviceId || String(x.lastDeviceId||'')===d.deviceId || (d.username&&String(x.username||'').toLowerCase()===String(d.username||'').toLowerCase()));
+      for(const u0 of targets){
+        u0.blocked=true;
+        if(u0.activeSessionToken)await kv(e).delete(USER_SESSION_PREFIX+u0.activeSessionToken);
+        u0.activeSessionToken=null;u0.activeDeviceId=null;
+      }
+      if(targets.length)await saveUsers(e,users);
+      for(const x of ds)if(targets.some(u0=>String(u0.username||'').toLowerCase()===String(x.username||'').toLowerCase())){x.blocked=true;x.approved=false;x.status='Blocked'}
+      await saveDevices(e,ds);
+      return withCors(json({ok:true,device:d,accountBlocked:targets.length>0}));
+    }
+    if(action==='unblock'){
+      d.blocked=false;d.approved=false;d.status='Logged out';
+      const users=await readUsers(e);
+      const accountNames=new Set();
+      if(d.username)accountNames.add(String(d.username).toLowerCase());
+      for(const u0 of users){
+        if((d.username&&String(u0.username||'').toLowerCase()===String(d.username||'').toLowerCase()) || String(u0.activeDeviceId||'')===d.deviceId || String(u0.lastDeviceId||'')===d.deviceId){
+          u0.blocked=false;accountNames.add(String(u0.username||'').toLowerCase());
+        }
+      }
+      for(const x of ds)if(accountNames.has(String(x.username||'').toLowerCase())){x.blocked=false;if(x.status==='Blocked')x.status='Logged out';x.approved=false}
+      await saveUsers(e,users);await saveDevices(e,ds);
+      return withCors(json({ok:true,device:d,accountUnblocked:accountNames.size>0}));
+    }
+    if(action==='approve'){
+      d.approved=true;d.blocked=false;d.status='Approved';
+      await saveDevices(e,ds);
+      return withCors(json({ok:true,device:d}));
+    }
+  }
   if(p==='/api/admin/devices'&&r.method==='DELETE'){const id=u.searchParams.get('deviceId')||'';await saveDevices(e,(await readDevices(e)).filter(x=>x.deviceId!==id));return withCors(json({ok:true}))}  if(p==='/api/admin/guests'&&r.method==='GET'){
     const now=Date.now(),gs=await readGuests(e);let changed=false;
     for(const g of gs){const age=now-Date.parse(g.lastSeen||0);const st=age<=12*60*1000?'Online':'Offline';if(g.status!==st&& !g.blocked){g.status=st;changed=true}}
@@ -160,7 +217,13 @@ async function handle(r,e){
     return withCors(json({ok:true,guests:gs}));
   }
   if(p==='/api/admin/guests/block'&&r.method==='POST'){
-    const b=await r.json().catch(()=>({})),gs=await readGuests(e),g=gs.find(x=>x.visitorId===String(b.visitorId||''));if(!g)return withCors(json({ok:false,error:'Guest not found'},404));g.blocked=true;g.status='Blocked';await saveGuests(e,gs);return withCors(json({ok:true,guest:g}));
+    const b=await r.json().catch(()=>({})),gs=await readGuests(e),g=gs.find(x=>x.visitorId===String(b.visitorId||''));
+    if(!g)return withCors(json({ok:false,error:'Guest not found'},404));
+    g.blocked=true;g.status='Blocked';
+    const ds=await readDevices(e);
+    if(g.deviceId){const d=ds.find(x=>x.deviceId===g.deviceId);if(d){d.blocked=true;d.approved=false;d.status='Blocked'}}
+    await saveGuests(e,gs);if(g.deviceId)await saveDevices(e,ds);
+    return withCors(json({ok:true,guest:g}));
   }
   if(p==='/api/admin/guests/unblock'&&r.method==='POST'){
     const b=await r.json().catch(()=>({})),gs=await readGuests(e),g=gs.find(x=>x.visitorId===String(b.visitorId||''));if(!g)return withCors(json({ok:false,error:'Guest not found'},404));g.blocked=false;g.status='Offline';await saveGuests(e,gs);return withCors(json({ok:true,guest:g}));
@@ -220,4 +283,10 @@ async function handle(r,e){
   if(p==='/api/xtream/import'&&r.method==='POST'){const b=await r.json().catch(()=>({}));try{const list=await fetchXtream(b.server,b.username,b.password,b.limit||'all'),s=await readState(e);s.channels=list;s.categories=defaultState().categories;const saved=await saveState(e,s);return withCors(json({ok:true,count:list.length,state:saved}))}catch(err){return withCors(json({ok:false,error:err.message||'Xtream import failed'},400))}}
   return withCors(json({ok:false,error:'API route not found'},404));
 }
-export default{async fetch(r,e){return new URL(r.url).pathname.startsWith('/api/')?handle(r,e):e.ASSETS.fetch(r)}};
+export default{async fetch(r,e){
+  const u=new URL(r.url);
+  if(u.pathname.startsWith('/api/'))return handle(r,e);
+  const c=cookies(r),accessId=c.VIP_ACCESS_DEVICE;
+  if(!u.pathname.startsWith('/admin')&&accessId&&await deviceBlocked(e,accessId))return blockedPage();
+  return e.ASSETS.fetch(r);
+}};
