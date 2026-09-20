@@ -113,10 +113,36 @@ async function initVisitorCounter() {
   };
 
   refreshOnline();
-  setInterval(refreshOnline, 20000);
+  setInterval(refreshOnline, 5*60*1000);
 }
 
 initVisitorCounter();
+// Login-free guest identification: a browser gets a persistent random Visitor ID.
+// This identifies the browser/device, not the real-world person.
+async function initGuestTracker(){
+  try{
+    const key='vip-guest-visitor-id';
+    let visitorId=localStorage.getItem(key);
+    if(!visitorId){visitorId=(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now());localStorage.setItem(key,visitorId)}
+    const api=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');
+    const deviceName=(navigator.userAgentData?.platform||navigator.platform||'Guest Browser')+' / '+(navigator.userAgentData?.mobile?'Mobile':'Browser');
+    const send=async()=>{
+      try{
+        const r=await fetch(api+'/api/guest/ping',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceName,category:current,channel:document.title}),cache:'no-store'});
+        if(r.status===403){
+          console.warn('Guest visitor is blocked');
+          try{localStorage.removeItem('vip-guest-visitor-id');localStorage.removeItem('vipGuestVisitorId-v1');localStorage.removeItem('vip-network-guest-session');}catch(e){}
+          return false
+        }
+      }catch(e){console.warn('Guest tracker unavailable',e)}
+      return true;
+    };
+    await fetch(api+'/api/guest/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceName}),cache:'no-store'}).catch(()=>{});
+    send(); setInterval(send,5*60*1000);
+  }catch(e){console.warn('Guest ID unavailable',e)}
+}
+initGuestTracker();
+
 
 // Premium overlay controls: click/tap the video to show, tap again to hide.
 const vipVideoBox = document.getElementById("vipVideoBox");
