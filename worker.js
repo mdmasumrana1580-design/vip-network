@@ -176,6 +176,7 @@ async function handle(r,e){
     const b=await r.json().catch(()=>({})),ds=await readDevices(e),d=ds.find(x=>x.deviceId===String(b.deviceId||''));
     if(!d)return withCors(json({ok:false,error:'Device not found'},404));
     if(action==='block'){
+      d._vipPreBlockApproved=!!d.approved;d._vipPreBlockStatus=d.status||'Offline';
       d.blocked=true;d.approved=false;d.status='Blocked';
       const users=await readUsers(e);
       const targets=users.filter(x=>String(x.activeDeviceId||'')===d.deviceId || String(x.lastDeviceId||'')===d.deviceId || (d.username&&String(x.username||'').toLowerCase()===String(d.username||'').toLowerCase()));
@@ -190,7 +191,7 @@ async function handle(r,e){
       return withCors(json({ok:true,device:d,accountBlocked:targets.length>0}));
     }
     if(action==='unblock'){
-      d.blocked=false;d.approved=false;d.status='Logged out';
+      d.blocked=false;d.approved=d._vipPreBlockApproved===true;d.status=d._vipPreBlockStatus||'Logged out';delete d._vipPreBlockApproved;delete d._vipPreBlockStatus;
       const users=await readUsers(e);
       const accountNames=new Set();
       if(d.username)accountNames.add(String(d.username).toLowerCase());
@@ -199,7 +200,7 @@ async function handle(r,e){
           u0.blocked=false;accountNames.add(String(u0.username||'').toLowerCase());
         }
       }
-      for(const x of ds)if(accountNames.has(String(x.username||'').toLowerCase())){x.blocked=false;if(x.status==='Blocked')x.status='Logged out';x.approved=false}
+      for(const x of ds)if(accountNames.has(String(x.username||'').toLowerCase())){x.blocked=false;if(x._vipPreBlockApproved!==undefined)x.approved=x._vipPreBlockApproved===true;else x.approved=!!x.approved;if(x._vipPreBlockStatus!==undefined)x.status=x._vipPreBlockStatus;else if(x.status==='Blocked')x.status='Logged out';delete x._vipPreBlockApproved;delete x._vipPreBlockStatus}
       await saveUsers(e,users);await saveDevices(e,ds);
       return withCors(json({ok:true,device:d,accountUnblocked:accountNames.size>0}));
     }
@@ -221,12 +222,36 @@ async function handle(r,e){
     if(!g)return withCors(json({ok:false,error:'Guest not found'},404));
     g.blocked=true;g.status='Blocked';
     const ds=await readDevices(e);
-    if(g.deviceId){const d=ds.find(x=>x.deviceId===g.deviceId);if(d){d.blocked=true;d.approved=false;d.status='Blocked'}}
+    if(g.deviceId){
+      const d=ds.find(x=>x.deviceId===g.deviceId);
+      if(d){
+        d._vipPreBlockApproved=!!d.approved;
+        d._vipPreBlockStatus=d.status||'Offline';
+        d.blocked=true;d.approved=false;d.status='Blocked';
+      }
+    }
     await saveGuests(e,gs);if(g.deviceId)await saveDevices(e,ds);
     return withCors(json({ok:true,guest:g}));
   }
   if(p==='/api/admin/guests/unblock'&&r.method==='POST'){
-    const b=await r.json().catch(()=>({})),gs=await readGuests(e),g=gs.find(x=>x.visitorId===String(b.visitorId||''));if(!g)return withCors(json({ok:false,error:'Guest not found'},404));g.blocked=false;g.status='Offline';await saveGuests(e,gs);return withCors(json({ok:true,guest:g}));
+    const b=await r.json().catch(()=>({})),gs=await readGuests(e),g=gs.find(x=>x.visitorId===String(b.visitorId||''));
+    if(!g)return withCors(json({ok:false,error:'Guest not found'},404));
+    g.blocked=false;
+    g.status='Offline';
+    const ds=await readDevices(e);
+    if(g.deviceId){
+      const d=ds.find(x=>x.deviceId===g.deviceId);
+      if(d){
+        d.blocked=false;
+        d.approved=d._vipPreBlockApproved===true;
+        d.status=d._vipPreBlockStatus||'Offline';
+        delete d._vipPreBlockApproved;
+        delete d._vipPreBlockStatus;
+      }
+    }
+    await saveGuests(e,gs);
+    await saveDevices(e,ds);
+    return withCors(json({ok:true,guest:g,deviceUnblocked:!!g.deviceId}));
   }
   if(p==='/api/admin/devices'&&r.method==='DELETE'){
   const id=u.searchParams.get('deviceId')||'';
