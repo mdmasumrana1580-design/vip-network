@@ -12,6 +12,16 @@
 <link rel="icon" href="assets/admin-logo.png" type="image/png">
 <link rel="apple-touch-icon" href="assets/admin-logo.png">
 <link rel="stylesheet" href="style.css">
+<style>
+.latest-login{margin-bottom:12px;padding:14px;border:1px solid #1767a6;border-radius:12px;background:linear-gradient(135deg,rgba(15,84,140,.28),rgba(5,19,34,.75))}
+.latest-title{font-size:12px;color:#62d5ff;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+.latest-name{font-size:20px;font-weight:900;margin-top:4px}
+.latest-meta,.latest-time{font-size:13px;color:#9bb6cc;margin-top:4px}
+.device-card{padding:13px;margin:9px 0;border:1px solid #103e62;border-radius:11px;background:#061525}
+.device-meta{margin-top:7px;color:#9bb6cc;font-size:13px;line-height:1.65}
+@media(max-width:650px){.latest-login{padding:11px}.latest-name{font-size:18px}.device-card{padding:11px}}
+.movie-workspace{margin-top:12px}.movie-pane{display:none}.movie-pane.active{display:block}.movie-workspace .video-box{position:relative;min-height:220px;background:#000;border-radius:10px;overflow:hidden}.movie-workspace video{width:100%;height:220px;background:#000}.movie-workspace #movieVideoPlaceholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#7fdfff;font-size:30px}.movie-workspace #movieVideoPlaceholder small{font-size:12px;color:#9bb6cc;margin-top:6px}.movie-workspace .video-box.has-video #movieVideoPlaceholder{display:none}@media(max-width:650px){.movie-workspace{display:block}.movie-workspace .preview{margin-top:12px}.movie-workspace video{height:190px}}
+</style>
 </head>
 <body>
 <div class="app">
@@ -25,6 +35,7 @@
   <button class="nav-item" data-section="channels">▣ <span>Channel Management</span></button>
   <button class="nav-item" data-section="add">＋ <span>Add Channel</span></button>
   <button class="nav-item" data-section="import">⇧ <span>Playlist / M3U Import</span></button>
+  <button class="nav-item" data-section="movies">🎬 <span>Movie & Series</span></button>
   <button class="nav-item" data-section="categories">◉ <span>Categories</span></button>
   <button class="nav-item" data-section="settings">⚙ <span>Website Settings</span></button>
   <button class="nav-item" data-section="security">♜ <span>Security</span></button>
@@ -101,19 +112,23 @@
 <div class="form-card import-pane" id="import-xtream"><label>Server URL<input id="xtServer"></label><label>Username<input id="xtUser"></label><label>Password<input id="xtPass" type="password"></label><label>Import limit<select id="xtLimit"><option value="all">All live channels</option><option value="100">First 100</option><option value="250">First 250</option></select></label><button class="primary" type="button" onclick="importXtream()">⛓ Connect & Sync</button></div>
 <div class="panel guide"><h2>Import Guide</h2><p>Playlist import করলে সব Channel backend-এ save হবে।</p></div></div></section>
 
-<section id="moviePlaylist" class="section"><div class="page-head"><div><h1>🎬 Movie &amp; Series</h1><p>Separate playlist — TV Channels-এর সাথে মিশবে না।</p></div></div>
-<div class="form-card"><label>M3U URL<input id="movieM3uUrl" type="url" placeholder="https://example.com/movies.m3u"></label><button class="primary" type="button" onclick="importMovieM3UUrl()">🎬 Import Movie URL</button>
-<label style="margin-top:10px">M3U File / Text<textarea id="movieM3uText" placeholder="#EXTM3U"></textarea></label><input type="file" id="movieM3uFile" accept=".m3u,.m3u8,text/plain"><button class="primary" type="button" onclick="importMovieM3U()">⇧ Import Movie Playlist</button>
-<div style="display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap"><b>Loaded:</b><span id="movieCount">0</span><button type="button" onclick="loadMovieList()">🔄 Refresh</button><button type="button" onclick="clearMoviePlaylist()">🗑 Clear</button></div>
-<div class="workspace split-workspace" style="margin-top:14px;grid-template-columns:minmax(0,1.5fr) minmax(280px,.8fr)">
-  <div class="panel"><div class="panel-title"><h2>🎬 Movie &amp; Series List</h2><span class="live-dot">● Ready</span></div><div id="movieList" class="table-wrap compact-list" style="max-height:520px"></div></div>
-  <div class="panel preview"><div class="panel-title"><h2>▶ Movie Preview</h2><span class="live-dot">● Ready</span></div><div class="video-box"><video id="moviePlayer" controls playsinline></video><div id="movieVideoPlaceholder">🎬<small>Select a Movie / Series</small></div></div><div class="selected-info"><b id="moviePreviewName">—</b><small id="moviePreviewCategory">MOVIE &amp; SERIES</small></div></div>
-</div></div></section>
+<section id="movies" class="section">
+  <div class="page-head"><div><h1>🎬 Movie &amp; Series</h1><p>Separate Movie/Series playlist — TV channels stay separate.</p></div><button class="primary" type="button" onclick="loadMovies()">⟳ Refresh</button></div>
+  <div class="tabs movie-tabs"><button class="tab active" data-movie-tab="url">M3U URL</button><button class="tab" data-movie-tab="file">M3U File</button></div>
+  <div class="import-grid">
+    <div class="form-card movie-pane active" id="movie-url-pane"><label>Movie / Series M3U URL<input id="movieM3uUrl" type="url" placeholder="https://example.com/movies.m3u"></label><button class="primary" type="button" onclick="importMovieM3UUrl()">☁ Import Movie &amp; Series</button></div>
+    <div class="form-card movie-pane" id="movie-file-pane"><label>M3U Playlist Text<textarea id="movieM3uText" placeholder="#EXTM3U"></textarea></label><input type="file" id="movieM3uFile" accept=".m3u,.m3u8,text/plain"><button class="primary" type="button" onclick="importMovieM3U()">⇧ Import Movie &amp; Series</button></div>
+  </div>
+  <div class="workspace split-workspace movie-workspace">
+    <div class="panel channel-panel"><div class="panel-title"><h2>🎬 Movie / Series List</h2><button class="danger-btn" type="button" onclick="clearMovies()">Clear All</button></div><div class="filters"><input id="movieSearch" placeholder="Search movie / series..."></div><div class="table-wrap compact-list"><table><thead><tr><th>#</th><th>Logo</th><th>Name</th><th>Action</th></tr></thead><tbody id="movieRows"></tbody></table></div></div>
+    <div class="panel preview"><div class="panel-title"><h2>▶ Movie Preview</h2><span class="live-dot">● Ready</span></div><div class="video-box"><video id="moviePlayer" controls playsinline></video><div id="movieVideoPlaceholder">▶<small>Select a movie / series</small></div></div><div class="selected-info"><b id="moviePName">—</b><small>MOVIE &amp; SERIES</small></div></div>
+  </div>
+</section>
 
 <section id="categories" class="section"><div class="page-head"><div><h1>Categories</h1><p>Organize your channels.</p></div></div><div class="panel"><div class="category-add"><input id="newCat" placeholder="New category"><button class="primary" onclick="addCategory()">＋ Add</button></div><div id="categoryList" class="category-list"></div></div></section>
 <section id="settings" class="section"><div class="page-head"><div><h1>Website Settings</h1></div></div><form class="form-card" id="settingsForm"><label>Website Name<input name="siteName" value="VIP NETWORK"></label><label>Subtitle<input name="subtitle" value="Live TV & Entertainment"></label><label>Logo URL<input name="logo"></label><button class="primary">💾 Save Settings</button></form></section>
 <section id="notice" class="section"><div class="page-head"><div><h1>Notice / Banner</h1></div></div><form class="form-card" id="noticeForm"><label>Banner Text<input name="text"></label><label>Type<select name="type"><option>Information</option><option>Success</option><option>Warning</option><option>Important</option></select></label><label>Enable<select name="enabled"><option>Yes</option><option>No</option></select></label><button class="primary">📢 Save Banner</button></form></section>
-<section id="devices" class="section"><div class="page-head"><div><h1>User & Device Management</h1><p>Username, device and Block / Unblock access.</p></div><div><button class="primary" onclick="loadDevices()">⟳ Refresh</button></div></div><div class="panel"><div id="deviceList" class="device-list">Loading devices...</div></div></section>
+<section id="devices" class="section"><div class="page-head"><div><h1>User & Device Management</h1><p>Username, device and Block / Unblock access.</p></div><div><button class="primary" onclick="loadDevices()">⟳ Refresh</button></div></div><div class="panel"><div id="latestLogin" class="latest-login">Loading latest login...</div><div id="deviceList" class="device-list">Loading devices...</div></div></section>
 <section id="security" class="section"><div class="page-head"><div><h1>Security</h1><p>Administrator session and access control.</p></div></div><div class="panel security-card"><h2>Admin Session</h2><p>Use Logout to securely end the current administrator session.</p><button class="primary danger" onclick="logoutWorker()">⇥ Logout Admin</button></div></section>
 <section id="activity" class="section"><div class="page-head"><div><h1>Activity Logs</h1></div><button class="primary" onclick="clearLogs()">Clear Logs</button></div><div class="panel"><div id="activityList" class="activity-list"></div></div></section>
 <section id="backup" class="section"><div class="page-head"><div><h1>Backup & Export</h1></div></div><div class="quick-grid two"><button onclick="exportData()">⇩ <b>Export JSON</b></button><button onclick="exportM3U()">⇩ <b>Export M3U</b></button><button onclick="clearAll()">⌫ <b>Clear All Channels</b></button></div></section>
