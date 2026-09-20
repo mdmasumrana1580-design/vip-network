@@ -165,7 +165,53 @@ async function handle(r,e){
   if(p==='/api/admin/guests/unblock'&&r.method==='POST'){
     const b=await r.json().catch(()=>({})),gs=await readGuests(e),g=gs.find(x=>x.visitorId===String(b.visitorId||''));if(!g)return withCors(json({ok:false,error:'Guest not found'},404));g.blocked=false;g.status='Offline';await saveGuests(e,gs);return withCors(json({ok:true,guest:g}));
   }
-  if(p==='/api/admin/guests'&&r.method==='DELETE'){const id=u.searchParams.get('visitorId')||'';await saveGuests(e,(await readGuests(e)).filter(x=>x.visitorId!==id));return withCors(json({ok:true}))}
+  if(p==='/api/admin/devices'&&r.method==='DELETE'){
+  const id=u.searchParams.get('deviceId')||'';
+
+  const devices=await readDevices(e);
+  const device=devices.find(x=>x.deviceId===id);
+
+  // Remove device record
+  await saveDevices(
+    e,
+    devices.filter(x=>x.deviceId!==id)
+  );
+
+  // Revoke user's active login session
+  const users=await readUsers(e);
+
+  const user=users.find(x =>
+    String(x.activeDeviceId||'')===id ||
+    String(x.lastDeviceId||'')===id ||
+    (
+      device?.username &&
+      String(x.username||'').toLowerCase()===
+      String(device.username||'').toLowerCase()
+    )
+  );
+
+  if(user){
+    // Delete active session from KV
+    if(user.activeSessionToken){
+      await kv(e).delete(
+        USER_SESSION_PREFIX+user.activeSessionToken
+      );
+    }
+
+    // Clear active session information
+    user.activeSessionToken=null;
+    user.activeDeviceId=null;
+    user.lastDeviceId=null;
+    user.lastDeviceName='';
+
+    await saveUsers(e,users);
+  }
+
+  return withCors(json({
+    ok:true,
+    message:'Device deleted and user session revoked'
+  }));
+}
 
   if(p==='/api/admin/settings'&&r.method==='GET')return withCors(json({ok:true,settings:await readSettings(e)}));
   if(p==='/api/admin/settings'&&r.method==='PUT'){const b=await r.json().catch(()=>({})),s={...(await readSettings(e)),...b};await kv(e).put(SETTINGS_KEY,JSON.stringify(s));return withCors(json({ok:true,settings:s}))}
