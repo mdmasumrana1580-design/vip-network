@@ -4,14 +4,37 @@ const $=id=>document.getElementById(id);
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function toast(t){const x=$('toast');if(!x)return;x.textContent=t;x.classList.add('show');setTimeout(()=>x.classList.remove('show'),2400)}
 async function api(path,opt={}){const h=new Headers(opt.headers||{});h.set('Accept','application/json');if(opt.body&&!h.has('Content-Type'))h.set('Content-Type','application/json');const r=await fetch(API+path,{...opt,headers:h,credentials:'include',cache:'no-store'});const text=await r.text();let d={};try{d=text?JSON.parse(text):{}}catch{d={raw:text}}if(!r.ok)throw new Error(d.error||('HTTP '+r.status));return d}
-function norm(c){return{name:c.name||c.title||'Unnamed',category:c.category||c.group||'OTHERS',logo:c.logo||c.tvgLogo||'',url:c.url||c.stream||'',status:c.status||'Unknown'}}
+
+function norm(c){
+  return{
+    name:c.name||c.title||'Unnamed',
+    category:c.category||c.group||'OTHER',
+    logo:c.logo||c.tvgLogo||'',
+    url:c.url||c.stream||'',
+    status:c.status||'Unknown'
+  }
+}
+
 function setBackend(ok){connected=ok;if($('backendState'))$('backendState').textContent=ok?'Connected':'Offline'}
 function showLogin(show=true){$('loginModal')?.classList.toggle('show',show)}
 function loginStatus(t,bad=false){const x=$('loginStatus');if(x){x.textContent=t;x.style.color=bad?'#ff7b8d':'#76d7ff'}}
 async function logoutWorker(){try{await api('/api/admin/logout',{method:'POST'})}catch{}setBackend(false);showLogin(true);logAction('Admin logged out')}
 function logAction(text){const a=JSON.parse(localStorage.getItem('vipActivity')||'[]');a.unshift({text,time:new Date().toLocaleString()});localStorage.setItem('vipActivity',JSON.stringify(a.slice(0,100)));renderLogs()}
 async function loginWorker(){const p=$('workerPassword').value;if(!p)return loginStatus('Enter Admin Password.',true);const b=$('loginBtn');b.disabled=true;try{await api('/api/admin/login',{method:'POST',body:JSON.stringify({password:p})});setBackend(true);showLogin(false);$('workerPassword').value='';await loadRemoteState();await loadDevices();logAction('Admin logged in');toast('Connected')}catch(e){loginStatus('Login failed: '+e.message,true)}finally{b.disabled=false}}
-async function loadRemoteState(){const d=await api('/api/admin/state');const s=d.state||d;channels=Array.isArray(s.channels)?s.channels.map(norm):[];categories=[...new Set([...(Array.isArray(s.categories)?s.categories:['ALL','SPORTS','BD','INDIA','OTHER','MOVIE & SERIES']),...channels.map(x=>x.category).filter(Boolean)])].filter(x=>x!=='OTHER');saveLocal();render();if($('syncTime'))$('syncTime').textContent=new Date().toLocaleString()}
+
+async function loadRemoteState(){
+  const d=await api('/api/admin/state');
+  const s=d.state||d;
+  channels=Array.isArray(s.channels)?s.channels.map(norm):[];
+  categories=[...new Set([
+    ...(Array.isArray(s.categories)?s.categories:['ALL','SPORTS','BD','INDIA','OTHER','MOVIE & SERIES']),
+    ...channels.map(x=>x.category).filter(Boolean)
+  ])];
+  saveLocal();
+  render();
+  if($('syncTime'))$('syncTime').textContent=new Date().toLocaleString()
+}
+
 function saveLocal(){localStorage.setItem('vipChannels',JSON.stringify(channels));localStorage.setItem('vipCategories',JSON.stringify(categories))}
 async function saveRemoteState(extra={}){try{await api('/api/admin/state',{method:'PUT',body:JSON.stringify({channels,categories,...extra})});saveLocal();return true}catch(e){toast('Save failed: '+e.message);return false}}
 function logo(c){return c.logo?`<img class="logo-cell" src="${esc(c.logo)}" onerror="this.style.display='none'">`:'<span class="logo-cell"></span>'}
@@ -19,6 +42,7 @@ function rows(list,full=false){return list.map((c,i)=>{const idx=channels.indexO
 function filter(list,sid,cid,stid){const s=($(sid)?.value||'').toLowerCase(),c=$(cid)?.value||'All Categories',st=$(stid)?.value||'All Status';return list.filter(x=>(!s||x.name.toLowerCase().includes(s))&&(c==='All Categories'||x.category===c)&&(st==='All Status'||x.status===st))}
 function fillSelect(id){const e=$(id);if(!e)return;const old=e.value;e.innerHTML='<option>All Categories</option>'+categories.map(x=>`<option>${esc(x)}</option>`).join('');if([...e.options].some(o=>o.value===old))e.value=old}
 function render(){['dashCat','managerCat'].forEach(fillSelect);const add=$('addCategory');if(add)add.innerHTML=categories.filter(x=>x!=='ALL').map(x=>`<option>${esc(x)}</option>`).join('');$('totalStat').textContent=channels.length;$('activeStat').textContent=channels.filter(x=>x.status==='Active').length;$('deadStat').textContent=channels.filter(x=>x.status==='Dead').length;$('categoryStat').textContent=categories.length;const d=filter(channels,'dashSearch','dashCat','dashStatus'),m=filter(channels,'managerSearch','managerCat','managerStatus');$('channelRows').innerHTML=rows(d);$('managerRows').innerHTML=rows(m,true);const cl=$('categoryList');if(cl)cl.innerHTML=categories.map((x,i)=>`<span>${esc(x)} <button onclick="removeCategory(${i})">×</button></span>`).join('')}
+
 let vipHls=null;
 function loadHls(){return new Promise(resolve=>{if(window.Hls)return resolve(true);const old=document.getElementById('vipHlsScript');if(old)return old.addEventListener('load',()=>resolve(!!window.Hls),{once:true});const s=document.createElement('script');s.id='vipHlsScript';s.src='https://cdn.jsdelivr.net/npm/hls.js@latest';s.onload=()=>resolve(!!window.Hls);s.onerror=()=>resolve(false);document.head.appendChild(s)})}
 async function playStream(url,targetId='player'){const v=$(targetId);if(!url)return;if(vipHls){try{vipHls.destroy()}catch{}vipHls=null}v.pause();v.removeAttribute('src');v.load();if(/\.m3u8(?:$|[?#])/i.test(url)){const ok=await loadHls();if(ok&&window.Hls&&Hls.isSupported()){vipHls=new Hls({enableWorker:true,lowLatencyMode:true});vipHls.loadSource(url);vipHls.attachMedia(v);vipHls.on(Hls.Events.MANIFEST_PARSED,()=>v.play().catch(()=>{}));return}}v.src=url;v.play().catch(()=>{})}
@@ -27,7 +51,28 @@ async function saveSelectedChannel(){const c=channels[selected];if(!c)return toa
 async function deleteSelectedChannel(){if(selected<0||!channels[selected])return;if(!confirm('Delete this channel?'))return;channels.splice(selected,1);selected=-1;if(await saveRemoteState()){render();$('pName').textContent='—';$('pCategory').textContent='—';$('player').removeAttribute('src');$('player').load();$('videoPlaceholder').style.display='grid';toast('Channel deleted')}}
 async function deleteChannel(i){selected=i;await deleteSelectedChannel()}
 function editChannel(i){preview(i);showSection('dashboard');setTimeout(()=>$('editName').focus(),150)}
-function parseM3U(text){const l=String(text||'').replace(/\r/g,'').split('\n'),out=[];let meta=null;for(const raw of l){const x=raw.trim();if(x.startsWith('#EXTINF')){const comma=x.indexOf(','),name=comma>=0?x.slice(comma+1).trim():'Channel',logo=(x.match(/tvg-logo="([^"]*)"/i)||[])[1]||'',category=(x.match(/group-title="([^"]*)"/i)||[])[1]||'OTHERS';meta={name,logo,category};continue}if(x&&!x.startsWith('#')&&meta){out.push({...meta,url:x,status:'Active'});meta=null}}return out}
+
+function parseM3U(text){
+  const l=String(text||'').replace(/\r/g,'').split('\n'),out=[];
+  let meta=null;
+  for(const raw of l){
+    const x=raw.trim();
+    if(x.startsWith('#EXTINF')){
+      const comma=x.indexOf(','),
+        name=comma>=0?x.slice(comma+1).trim():'Channel',
+        logo=(x.match(/tvg-logo="([^"]*)"/i)||[])[1]||'',
+        category=(x.match(/group-title="([^"]*)"/i)||[])[1]||'OTHER';
+      meta={name,logo,category};
+      continue
+    }
+    if(x&&!x.startsWith('#')&&meta){
+      out.push({...meta,url:x,status:'Active'});
+      meta=null
+    }
+  }
+  return out
+}
+
 async function importM3U(){const list=parseM3U($('m3uText').value);if(!list.length)return toast('No valid channels found');channels=list;categories=[...new Set([...categories,...list.map(x=>x.category)])];if(await saveRemoteState()){render();toast(list.length+' channels imported')}}
 async function importXtream(){const server=$('xtServer').value.trim(),username=$('xtUser').value.trim(),password=$('xtPass').value,limit=$('xtLimit').value;if(!server||!username||!password)return toast('Enter server, username and password');try{const d=await api('/api/xtream/import',{method:'POST',body:JSON.stringify({server,username,password,limit})});await loadRemoteState();logAction('Imported Xtream playlist');toast((d.count||0)+' channels imported')}catch(e){toast('Xtream import failed: '+e.message)}}
 async function importM3UUrl(){const url=$('m3uUrl').value.trim();if(!url)return toast('Enter M3U URL');try{const d=await api('/api/admin/import-m3u-url',{method:'POST',body:JSON.stringify({url})});await loadRemoteState();toast((d.count||0)+' channels imported')}catch(e){toast('Import failed: '+e.message)}}
@@ -38,9 +83,12 @@ function exportData(){download('vip-network-backup.json',JSON.stringify({channel
 function exportM3U(){download('vip-network-playlist.m3u','#EXTM3U\n'+channels.map(c=>`#EXTINF:-1 tvg-logo="${c.logo}" group-title="${c.category}",${c.name}\n${c.url}`).join('\n'),'audio/x-mpegurl')}
 async function clearAll(){if(!confirm('Clear all channels?'))return;channels=[];selected=-1;if(await saveRemoteState()){render();toast('All channels cleared')}}
 async function refreshData(){try{if(connected)await loadRemoteState();else render();toast('Data refreshed')}catch(e){toast(e.message)}}
-async function loadDevices(){const box=$('deviceList');if(!box)return;if(!connected){box.textContent='Please login first.';return}box.textContent='Loading users...';try{const d=await api('/api/admin/users'),users=Array.isArray(d.users)?d.users:[];const flat=[];users.forEach(u=>(u.devices||[]).forEach(dev=>flat.push({...dev,username:u.username,number:u.number||'',lastLoginAt:u.lastLoginAt||null,lastDeviceName:u.lastDeviceName||''})));flat.sort((a,b)=>{const ad=Date.parse(a.lastLoginAt||a.lastSeen||'')||0,bd=Date.parse(b.lastLoginAt||b.lastSeen||'')||0;return bd-ad;});const latest=flat[0]||null;const latestBox=$('latestLogin');if(latestBox){latestBox.innerHTML=latest?`<div class="latest-title">🟢 Latest Login</div><div class="latest-name">${esc(latest.username||'Unknown user')}</div><div class="latest-meta">📱 ${esc(latest.number||'Number not saved')} &nbsp; • &nbsp; 💻 ${esc(latest.name||latest.lastDeviceName||'Unknown device')}</div><div class="latest-time">🕒 ${esc(latest.lastLoginAt||latest.lastSeen||'—')}</div>`:'No login recorded yet.'}box.innerHTML=flat.length?flat.map((x,i)=>{const id=esc(x.deviceId||''),blocked=x.blocked||x.status==='Blocked';return `<div class="device-card"><b>🔢 ${i+1}. 👤 ${esc(x.username||'Unknown user')}</b><div class="device-meta">📱 Number: <strong>${esc(x.number||'Not saved')}</strong><br>💻 Device: ${esc(x.name||'Unknown device')}<br>🕒 Last Login: ${esc(x.lastLoginAt||x.lastSeen||'—')}<br><small>ID: ${esc(x.deviceId||'')}</small></div><div class="device-actions">${blocked?`<button onclick="unblockDevice('${id}')">Unblock</button>`:`<button onclick="blockDevice('${id}')">Block</button>`}<button onclick="deleteDevice('${id}')">Delete</button></div></div>`}).join(''):'No users/devices registered.'}catch(e){box.textContent='Could not load users: '+e.message}}async function blockDevice(id){try{await api('/api/admin/devices/block',{method:'POST',body:JSON.stringify({deviceId:id})});await loadDevices();await loadMovies()}catch(e){toast(e.message)}}
+
+async function loadDevices(){const box=$('deviceList');if(!box)return;if(!connected){box.textContent='Please login first.';return}box.textContent='Loading users...';try{const d=await api('/api/admin/users'),users=Array.isArray(d.users)?d.users:[];const flat=[];users.forEach(u=>(u.devices||[]).forEach(dev=>flat.push({...dev,username:u.username,number:u.number||'',lastLoginAt:u.lastLoginAt||null,lastDeviceName:u.lastDeviceName||''})));flat.sort((a,b)=>{const ad=Date.parse(a.lastLoginAt||a.lastSeen||'')||0,bd=Date.parse(b.lastLoginAt||b.lastSeen||'')||0;return bd-ad;});const latest=flat[0]||null;const latestBox=$('latestLogin');if(latestBox){latestBox.innerHTML=latest?`<div class="latest-title">🟢 Latest Login</div><div class="latest-name">${esc(latest.username||'Unknown user')}</div><div class="latest-meta">📱 ${esc(latest.number||'Number not saved')} &nbsp; • &nbsp; 💻 ${esc(latest.name||latest.lastDeviceName||'Unknown device')}</div><div class="latest-time">🕒 ${esc(latest.lastLoginAt||latest.lastSeen||'—')}</div>`:'No login recorded yet.'}box.innerHTML=flat.length?flat.map((x,i)=>{const id=esc(x.deviceId||''),blocked=x.blocked||x.status==='Blocked';return `<div class="device-card"><b>🔢 ${i+1}. 👤 ${esc(x.username||'Unknown user')}</b><div class="device-meta">📱 Number: <strong>${esc(x.number||'Not saved')}</strong><br>💻 Device: ${esc(x.name||'Unknown device')}<br>🕒 Last Login: ${esc(x.lastLoginAt||x.lastSeen||'—')}<br><small>ID: ${esc(x.deviceId||'')}</small></div><div class="device-actions">${blocked?`<button onclick="unblockDevice('${id}')">Unblock</button>`:`<button onclick="blockDevice('${id}')">Block</button>`}<button onclick="deleteDevice('${id}')">Delete</button></div></div>`}).join(''):'No users/devices registered.'}catch(e){box.textContent='Could not load users: '+e.message}}
+async function blockDevice(id){try{await api('/api/admin/devices/block',{method:'POST',body:JSON.stringify({deviceId:id})});await loadDevices();await loadMovies()}catch(e){toast(e.message)}}
 async function unblockDevice(id){try{await api('/api/admin/devices/unblock',{method:'POST',body:JSON.stringify({deviceId:id})});await loadDevices();await loadMovies()}catch(e){toast(e.message)}}
 async function deleteDevice(id){if(!confirm('Delete this device?'))return;try{await api('/api/admin/devices?deviceId='+encodeURIComponent(id),{method:'DELETE'});await loadDevices();await loadMovies()}catch(e){toast(e.message)}}
+
 async function loadMovies(){try{const d=await api('/api/admin/movies');movies=Array.isArray(d.channels)?d.channels:[];renderMovies()}catch(e){toast('Movie playlist: '+e.message)}}
 function renderMovies(){const box=$('movieRows');if(!box)return;const q=String($('movieSearch')?.value||'').toLowerCase();const list=movies.map((m,i)=>({...m,_i:i})).filter(m=>!q||String(m.name||'').toLowerCase().includes(q));box.innerHTML=list.length?list.map(m=>`<tr><td>${m._i+1}</td><td>${m.logo?`<img src="${esc(m.logo)}" style="width:34px;height:34px;object-fit:contain;border-radius:6px">`:'—'}</td><td>${esc(m.name)}</td><td><button type="button" onclick="previewMovie(${m._i})">▶</button></td></tr>`).join(''):'<tr><td colspan="4">No Movie / Series imported.</td></tr>'}
 function previewMovie(i){const m=movies[i];if(!m?.url)return;selectedMovie=i;const ph=$('movieVideoPlaceholder');if($('moviePName'))$('moviePName').textContent=m.name||'Movie';playStream(m.url,'moviePlayer');$('moviePlayer')?.parentElement?.classList.add('has-video');if(ph)ph.style.display='none'}
@@ -65,6 +113,7 @@ async function deleteGuest(id){if(!confirm('Delete this guest visitor?'))return;
 function showSection(id,fromHistory=false){if(!$(id))id='dashboard';document.querySelectorAll('.section').forEach(x=>x.classList.remove('active-section'));$(id).classList.add('active-section');document.querySelectorAll('[data-section]').forEach(x=>x.classList.toggle('active',x.dataset.section===id));$('sidebar').classList.remove('open');if(id==='devices'){loadDevices()}if(id==='guests'){loadGuests()}if(id==='movies')loadMovies();if(!fromHistory)history.pushState({adminSection:id},'',location.pathname+location.search+'#'+encodeURIComponent(id));window.scrollTo({top:0,behavior:'smooth'})}
 window.addEventListener('popstate',()=>showSection(decodeURIComponent(location.hash.slice(1)||'dashboard'),true));
 function applyTheme(theme){const light=theme==='light';document.body.classList.toggle('light',light);$('themeBtn').textContent=light?'☀':'☾';localStorage.setItem('vipAdminTheme',light?'light':'dark')}
+
 document.querySelectorAll('[data-section]').forEach(b=>b.addEventListener('click',()=>showSection(b.dataset.section)));
 $('menuBtn').addEventListener('click',()=>$('sidebar').classList.toggle('open'));
 $('loginBtn').addEventListener('click',loginWorker);
@@ -74,15 +123,70 @@ $('themeBtn').addEventListener('click',()=>applyTheme(document.body.classList.co
 $('m3uFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>$('m3uText').value=r.result;r.readAsText(f)});
 $('movieM3uFile')?.addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>$('movieM3uText').value=r.result;r.readAsText(f)});
 $('movieSearch')?.addEventListener('input',renderMovies);
+
 document.querySelectorAll('[data-movie-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-movie-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.movie-pane').forEach(x=>x.classList.toggle('active',x.id==='movie-'+b.dataset.movieTab+'-pane'))}));
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.import-pane').forEach(x=>x.classList.toggle('active',x.id==='import-'+b.dataset.tab))}));
 ['dashSearch','managerSearch','dashCat','managerCat','dashStatus','managerStatus'].forEach(id=>$(id)?.addEventListener('input',render));
 $('globalSearch').addEventListener('input',e=>{$('dashSearch').value=e.target.value;$('managerSearch').value=e.target.value;render()});
-$('channelForm').addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.target),c={name:f.get('name'),category:f.get('category'),logo:f.get('logo'),url:f.get('url'),status:f.get('status')};channels.push(c);if(await saveRemoteState()){e.target.reset();render();logAction('Added channel: '+c.name);toast('Channel added')}});
+
+$('channelForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const f=new FormData(e.target),
+    c={
+      name:f.get('name'),
+      category:(f.get('category')||'OTHER').toString().trim().toUpperCase(),
+      logo:f.get('logo'),
+      url:f.get('url'),
+      status:f.get('status')
+    };
+  channels.push(c);
+  if(!categories.includes(c.category))categories.push(c.category);
+  if(await saveRemoteState()){e.target.reset();render();logAction('Added channel: '+c.name);toast('Channel added')}
+});
+
 $('noticeForm').addEventListener('submit',async e=>{e.preventDefault();const x=Object.fromEntries(new FormData(e.target));await saveRemoteState({notice:{...x,enabled:x.enabled==='Yes'},headline:x.text});toast('Banner saved')});
 $('settingsForm').addEventListener('submit',async e=>{e.preventDefault();try{await api('/api/admin/settings',{method:'PUT',body:JSON.stringify(Object.fromEntries(new FormData(e.target)))});toast('Settings saved')}catch(err){toast(err.message)}});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;$('installBtn').hidden=false});
 $('installBtn').addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;$('installBtn').hidden=true});
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+
 Object.assign(window,{showSection,loginWorker,logoutWorker,refreshData,loadMovies,loadGuests,blockGuest,unblockGuest,deleteGuest,previewMovie,importMovieM3UUrl,importMovieM3U,clearMovies,preview,editChannel,deleteChannel,saveSelectedChannel,deleteSelectedChannel,importM3U,importM3UUrl,importXtream,addCategory,removeCategory,exportData,exportM3U,clearAll,loadDevices,blockDevice,unblockDevice,deleteDevice,clearLogs});
-(async function init(){const lc=JSON.parse(localStorage.getItem('vipChannels')||'null'),cat=JSON.parse(localStorage.getItem('vipCategories')||'null');if(Array.isArray(lc))channels=lc.map(norm);if(Array.isArray(cat))categories=cat;applyTheme(localStorage.getItem('vipAdminTheme')||'dark');render();renderLogs();const initial=decodeURIComponent(location.hash.slice(1)||'dashboard');history.replaceState({adminSection:initial},'',location.pathname+location.search+'#'+encodeURIComponent(initial));showSection(initial,true);try{await api('/api/admin/session');setBackend(true);showLogin(false);await loadRemoteState();await loadDevices();await loadMovies()}catch{setBackend(false);showLogin(true)}})();
+
+(async function init(){
+  const lc=JSON.parse(localStorage.getItem('vipChannels')||'null'),
+    cat=JSON.parse(localStorage.getItem('vipCategories')||'null');
+
+  if(Array.isArray(lc))channels=lc.map(norm);
+
+  if(Array.isArray(cat)){
+    categories=[...new Set([
+      'ALL',
+      'SPORTS',
+      'BD',
+      'INDIA',
+      'OTHER',
+      'MOVIE & SERIES',
+      ...cat
+    ])];
+  }
+
+  applyTheme(localStorage.getItem('vipAdminTheme')||'dark');
+  render();
+  renderLogs();
+
+  const initial=decodeURIComponent(location.hash.slice(1)||'dashboard');
+  history.replaceState({adminSection:initial},'',location.pathname+location.search+'#'+encodeURIComponent(initial));
+  showSection(initial,true);
+
+  try{
+    await api('/api/admin/session');
+    setBackend(true);
+    showLogin(false);
+    await loadRemoteState();
+    await loadDevices();
+    await loadMovies()
+  }catch{
+    setBackend(false);
+    showLogin(true)
+  }
+})();
