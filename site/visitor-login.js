@@ -37,7 +37,7 @@
         localStorage.setItem('vip-network-device-name',deviceNameValue);
         const r=await fetch(base+'/api/guest/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceName:deviceNameValue}),cache:'no-store'});
         const data=await r.json().catch(()=>({}));
-        if(r.status===403||data.blocked)throw new Error(data.error||'Guest Account blocked');
+        if(r.status===403||data.blocked){ if(typeof window.VIP_SHOW_BLOCKED_PAGE==='function') window.VIP_SHOW_BLOCKED_PAGE(); return; }
         // Guest entry must remain available even if the optional KV visitor tracker has hit its daily limit.
         // Tracking is best-effort; the site itself should not be locked out by analytics storage.
         if(!r.ok && !data.storageLimited)throw new Error(data.error||'Guest login failed');
@@ -49,7 +49,9 @@
         const name=u.value.trim(),number=n.value.replace(/\s+/g,'').trim(),deviceNameValue=dn.value.trim();
         localStorage.setItem('vip-network-device-name',deviceNameValue);
         const r=await fetch(base+'/api/user/login',{method:'POST',headers:{'content-type':'application/json','X-ViP-Device-ID':window.VIP_DEVICE_ID||''},credentials:'include',body:JSON.stringify({username:name,number,deviceId:window.VIP_DEVICE_ID||'',deviceName:deviceNameValue})});
-        const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Login failed');
+        const data=await r.json().catch(()=>({}));
+        if(r.status===403&&data.blocked){ if(typeof window.VIP_SHOW_BLOCKED_PAGE==='function') window.VIP_SHOW_BLOCKED_PAGE(); return; }
+        if(!r.ok)throw new Error(data.error||'Login failed');
         localStorage.setItem(key,'1');gate.remove();window.dispatchEvent(new CustomEvent('vip:user-login',{detail:data}));location.reload();
       }catch(err){status.textContent=err.message||'Login failed';status.style.color='#ff9ba7'}finally{btn.disabled=false}
     };

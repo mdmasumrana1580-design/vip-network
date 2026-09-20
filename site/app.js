@@ -132,6 +132,7 @@ async function initGuestTracker(){
         if(r.status===403){
           console.warn('Guest visitor is blocked');
           try{localStorage.removeItem('vip-guest-visitor-id');localStorage.removeItem('vipGuestVisitorId-v1');localStorage.removeItem('vip-network-guest-session');}catch(e){}
+          if(typeof window.VIP_SHOW_BLOCKED_PAGE==='function') window.VIP_SHOW_BLOCKED_PAGE();
           return false
         }
       }catch(e){console.warn('Guest tracker unavailable',e)}
