@@ -170,7 +170,18 @@ async function handle(r, e) {
       const activeRaw = await kv(e).get(USER_SESSION_PREFIX + user.activeSessionToken);
       if (activeRaw) {
         let active={}; try{active=JSON.parse(activeRaw)}catch{}
-        if (active.deviceId && active.deviceId !== deviceId) return withCors(json({ok:false,error:'এই অ্যাকাউন্ট অন্য একটি ডিভাইসে লগইন করা আছে। আগে Logout করুন।',alreadyLoggedIn:true},409));
+        if (active.deviceId && active.deviceId !== deviceId) {
+          // Treat the same account + same number + same device name as a
+          // re-login from the same physical device. This also recovers from
+          // a stale/localStorage device-id after browser data was refreshed.
+          const sameDeviceIdentity = String(user.number || '').trim() &&
+            String(number || '').trim() &&
+            String(user.number || '').trim() === String(number || '').trim() &&
+            String(user.lastDeviceName || '').trim().toLowerCase() === String(deviceName || '').trim().toLowerCase();
+          if (!sameDeviceIdentity) {
+            return withCors(json({ok:false,error:'এই অ্যাকাউন্ট অন্য একটি ডিভাইসে লগইন করা আছে। আগে Logout করুন।',alreadyLoggedIn:true},409));
+          }
+        }
         await kv(e).delete(USER_SESSION_PREFIX + user.activeSessionToken);
       }
     }
