@@ -3121,3 +3121,78 @@ video{
   background: transparent !important;
   box-shadow: none !important;
 }
+
+/* FINAL: Premium red/green styling ONLY for channel change buttons. */
+.landscape-channel-controls button {
+  border: 0 !important;
+  outline: none !important;
+  background: linear-gradient(135deg,#ff2638 0%,#ff4d4d 45%,#19e6a2 70%,#00b85a 100%) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  box-shadow: 0 0 10px rgba(25,230,162,.28), 0 0 8px rgba(255,38,56,.20) !important;
+}
+.landscape-channel-controls button:active,
+.landscape-channel-controls button:hover {
+  background: linear-gradient(135deg,#ff1830 0%,#ff5965 45%,#00f08a 70%,#00b85a 100%) !important;
+  color: #fff !important;
+}
+
+/* Volume + fullscreen: restore the previous normal player appearance. */
+.vip-volume-control,
+.vip-volume-control button,
+.vip-fullscreen-btn {
+  border: 0 !important;
+  outline: none !important;
+  background: transparent !important;
+  color: #f5f7f8 !important;
+  -webkit-text-fill-color: #f5f7f8 !important;
+  box-shadow: none !important;
+  text-shadow: 0 0 6px rgba(0,230,118,.65),0 0 12px rgba(0,230,118,.28) !important;
+}
+.vip-volume-control button:hover,
+.vip-volume-control button:active,
+.vip-fullscreen-btn:hover,
+.vip-fullscreen-btn:active {
+  background: transparent !important;
+  color: #00e676 !important;
+  -webkit-text-fill-color: #00e676 !important;
+  box-shadow: none !important;
+}
+.vip-volume-control input {
+  accent-color: #00d66a !important;
+}
+
+/* Keep channel buttons red/green and volume/fullscreen normal in fullscreen too. */
+#vipVideoBox:fullscreen .landscape-channel-controls button,
+#vipVideoBox:-webkit-full-screen .landscape-channel-controls button,
+#vipVideoBox.vip-fullscreen .landscape-channel-controls button,
+#vipVideoBox.is-fullscreen .landscape-channel-controls button,
+#vipVideoBox.vip-css-fullscreen .landscape-channel-controls button {
+  border: 0 !important;
+  background: linear-gradient(135deg,#ff2638 0%,#ff4d4d 45%,#19e6a2 70%,#00b85a 100%) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+#vipVideoBox:fullscreen .vip-volume-control,
+#vipVideoBox:-webkit-full-screen .vip-volume-control,
+#vipVideoBox.vip-fullscreen .vip-volume-control,
+#vipVideoBox.is-fullscreen .vip-volume-control,
+#vipVideoBox.vip-css-fullscreen .vip-volume-control,
+#vipVideoBox:fullscreen .vip-volume-control button,
+#vipVideoBox:-webkit-full-screen .vip-volume-control button,
+#vipVideoBox.vip-fullscreen .vip-volume-control button,
+#vipVideoBox.is-fullscreen .vip-volume-control button,
+#vipVideoBox.vip-css-fullscreen .vip-volume-control button,
+#vipVideoBox:fullscreen .vip-fullscreen-btn,
+#vipVideoBox:-webkit-full-screen .vip-fullscreen-btn,
+#vipVideoBox.vip-fullscreen .vip-fullscreen-btn,
+#vipVideoBox.is-fullscreen .vip-fullscreen-btn,
+#vipVideoBox.vip-css-fullscreen .vip-fullscreen-btn {
+  border: 0 !important;
+  outline: none !important;
+  background: transparent !important;
+  color: #f5f7f8 !important;
+  -webkit-text-fill-color: #f5f7f8 !important;
+  box-shadow: none !important;
+  text-shadow: 0 0 6px rgba(0,230,118,.65),0 0 12px rgba(0,230,118,.28) !important;
+}
