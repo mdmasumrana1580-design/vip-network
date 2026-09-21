@@ -1,165 +1,40 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#071423">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Admin Panel</title>
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="assets/admin-logo.png" type="image/png">
-<link rel="apple-touch-icon" href="assets/admin-logo.png">
-<link rel="stylesheet" href="style.css">
-<style>
-.latest-login{margin-bottom:12px;padding:14px;border:1px solid #1767a6;border-radius:12px;background:linear-gradient(135deg,rgba(15,84,140,.28),rgba(5,19,34,.75))}
-.latest-title{font-size:12px;color:#62d5ff;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
-.latest-name{font-size:20px;font-weight:900;margin-top:4px}
-.latest-meta,.latest-time{font-size:13px;color:#9bb6cc;margin-top:4px}
-.device-card{padding:13px;margin:9px 0;border:1px solid #103e62;border-radius:11px;background:#061525}
-.device-meta{margin-top:7px;color:#9bb6cc;font-size:13px;line-height:1.65}
-@media(max-width:650px){.latest-login{padding:11px}.latest-name{font-size:18px}.device-card{padding:11px}}
-.movie-workspace{margin-top:12px}.movie-pane{display:none}.movie-pane.active{display:block}.movie-workspace .video-box{position:relative;min-height:220px;background:#000;border-radius:10px;overflow:hidden}.movie-workspace video{width:100%;height:220px;background:#000}.movie-workspace #movieVideoPlaceholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#7fdfff;font-size:30px}.movie-workspace #movieVideoPlaceholder small{font-size:12px;color:#9bb6cc;margin-top:6px}.movie-workspace .video-box.has-video #movieVideoPlaceholder{display:none}@media(max-width:650px){.movie-workspace{display:block}.movie-workspace .preview{margin-top:12px}.movie-workspace video{height:190px}}
-</style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07130d"><meta name="color-scheme" content="dark">
+<link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="style.css">
+<title>ADMIN+TV • VIP-Network</title>
 </head>
 <body>
-<div class="app">
-<aside class="sidebar" id="sidebar">
-  <div class="brand">
-    <img class="brand-logo" src="assets/admin-logo.png" alt="Admin Panel">
-    <div><strong>VIP <span>NETWORK</span></strong><small>Admin Panel WebApp</small></div>
-  </div>
-  <button class="nav-item active" data-section="dashboard">⌂ <span>Dashboard</span></button>
-  <button class="nav-item" data-section="devices">♙ <span>User & Device Management</span></button>
-  <button class="nav-item" data-section="guests">👀 <span>Guest Account</span></button>
-  <button class="nav-item" data-section="channels">▣ <span>Channel Management</span></button>
-  <button class="nav-item" data-section="add">＋ <span>Add Channel</span></button>
-  <button class="nav-item" data-section="import">⇧ <span>Playlist / M3U Import</span></button>
-  <button class="nav-item" data-section="movies">🎬 <span>Movie & Series</span></button>
-  <button class="nav-item" data-section="categories">◉ <span>Categories</span></button>
-  <button class="nav-item" data-section="settings">⚙ <span>Website Settings</span></button>
-  <button class="nav-item" data-section="security">♜ <span>Security</span></button>
-  <button class="nav-item" data-section="notice">⚑ <span>Notice / Banner</span></button>
-  <button class="nav-item" data-section="activity">◷ <span>Activity Logs</span></button>
-  <button class="nav-item" data-section="backup">▤ <span>Backup & Export</span></button>
-  <div class="side-status"><img src="assets/admin-logo.png" alt=""><b>VIP NETWORK</b><small>Admin Panel</small><span><i></i> System Online</span></div>
-</aside>
+<div id="loginModal" class="modal show"><div class="login-card"><div class="brand-mark"><img src="https://i.postimg.cc/fWC0JfBr/FB-IMG-1788617876279.jpg" onerror="this.style.display='none'"><span>VIP</span></div><div class="eyebrow">VIP-NETWORK</div><h1>ADMIN<span>+</span>TV</h1><p class="muted">Secure control center</p><label>Worker URL<input id="workerUrl" type="url" placeholder="https://vip-network-tv.vip-network.workers.dev"></label><label>Admin Password<div class="pass"><input id="workerPassword" type="password" placeholder="Password" autocomplete="current-password"><button type="button" id="showPass">Show</button></div></label><button id="loginBtn" class="primary big">LOGIN TO PANEL</button><div id="loginStatus" class="status-msg"></div></div></div>
 
-<main class="main">
-<header class="topbar">
-  <button id="menuBtn" class="menu-btn">☰</button>
-  <div class="page-title">VIP NETWORK <small>ADMIN PANEL</small></div>
-  <div class="search"><span>⌕</span><input id="globalSearch" placeholder="Search channel..."></div>
-  <div class="top-actions">
-    <button id="installBtn" class="install-btn" hidden>⇩ Install App</button>
-    <span class="online"><i></i> Online</span>
-    <button id="themeBtn" class="theme-btn" title="Dark / Light">☾</button>
-    <button class="profile" type="button">
-      <img class="super-admin-photo" src="assets/super-admin.jpg" alt="Super Admin">
-      <span><b>Super Admin</b><small>VIP NETWORK</small></span>⌄
-    </button>
-  </div>
-</header>
+<div id="appShell" class="shell">
+<aside id="sidebar" class="sidebar"><div class="side-brand"><div class="brand-dot">VIP</div><div><b>ADMIN+TV</b><small>VIP-NETWORK</small></div><button id="menuBtn" class="icon-btn mobile-only">×</button></div>
+<nav><button class="nav-item active" data-section="dashboard">▦ <span>Dashboard</span></button><button class="nav-item" data-section="channels">▣ <span>Channels</span></button><button class="nav-item" data-section="import">↥ <span>Import Playlist</span></button><button class="nav-item" data-section="devices">♙ <span>Devices / Users</span></button><button class="nav-item" data-section="notice">▤ <span>Notice Board</span></button><button class="nav-item" data-section="settings">⚙ <span>Settings</span></button><button class="nav-item" data-section="backup">⇩ <span>Backup & Tools</span></button></nav>
+<div class="side-bottom"><div class="online"><i></i> Online</div><button id="logoutBtn" class="danger ghost">Logout</button></div></aside>
+<main class="main"><header class="topbar"><button id="openSidebar" class="icon-btn mobile-only">☰</button><div><div class="eyebrow">CONTROL CENTER</div><h2>VIP-NETWORK <span>ADMIN</span></h2></div><div class="top-actions"><input id="globalSearch" class="global-search" placeholder="Search channel..."><div class="backend">Backend: <b>Offline</b></div><button id="themeBtn" class="icon-btn">☾</button><button id="profileBtn" class="profile">A</button></div></header>
 
-<section class="content">
-<section id="dashboard" class="section active-section">
-  <div class="page-head"><div><h1>Dashboard</h1><p>VIP NETWORK TV administration overview</p></div><button class="primary" onclick="showSection('add')">＋ Add Channel</button></div>
-  <div class="stats">
-    <div class="stat"><span>▣</span><div><small>Total Channels</small><strong id="totalStat">0</strong></div></div>
-    <div class="stat green"><span>●</span><div><small>Active</small><strong id="activeStat">0</strong></div></div>
-    <div class="stat red"><span>◉</span><div><small>Dead</small><strong id="deadStat">0</strong></div></div>
-    <div class="stat yellow"><span>▤</span><div><small>Categories</small><strong id="categoryStat">0</strong></div></div>
-  </div>
-  <div class="status-bar"><b>● Backend: <span id="backendState">Checking...</span></b><small>Last Sync: <span id="syncTime">—</span></small><button onclick="refreshData()">⟳</button></div>
-  <div class="workspace split-workspace">
-    <div class="panel channel-panel">
-      <div class="panel-title"><h2>▣ Channel List</h2><button onclick="showSection('channels')">Manage</button></div>
-      <div class="filters"><input id="dashSearch" placeholder="Search..."><select id="dashCat"></select><select id="dashStatus"><option>All Status</option><option>Active</option><option>Dead</option><option>Disabled</option></select></div>
-      <div class="table-wrap compact-list">
-        <table><thead><tr><th>#</th><th>Logo</th><th>Name</th><th class="hide-small">Category</th><th class="hide-small">Status</th><th>Action</th></tr></thead>
-        <tbody id="channelRows"></tbody></table>
-      </div>
-    </div>
-    <div class="panel preview">
-      <div class="panel-title"><h2>▶ Live Preview</h2><span class="live-dot">● Ready</span></div>
-      <div class="video-box"><video id="player" controls playsinline></video><div id="videoPlaceholder">▶<small>Select a channel</small></div></div>
-      <div class="selected-info"><b id="pName">—</b><small id="pCategory">—</small></div>
-      <div class="quick-editor">
-        <label>Edit selected channel</label>
-        <input id="editName" placeholder="Channel name">
-        <input id="editCategory" placeholder="Category">
-        <input id="editLogo" placeholder="Logo URL (optional)">
-        <input id="editUrl" placeholder="Stream URL">
-        <div class="edit-actions"><button class="primary" onclick="saveSelectedChannel()">💾 Save</button><button class="danger-btn" onclick="deleteSelectedChannel()">⌫</button></div>
-      </div>
-    </div>
-  </div>
-</section>
+<section id="dashboard" class="section active-section"><div class="hero"><div><span class="pill">LIVE CONTROL</span><h3>Welcome to your control room</h3><p>Manage channels, playlists, users, notices and website settings from one mobile-friendly panel.</p></div><button id="reloadBtn" class="primary">↻ Refresh Data</button></div><div class="stats"><div class="stat"><span>Total Channels</span><strong id="totalStat">0</strong></div><div class="stat"><span>Active</span><strong id="activeStat">0</strong></div><div class="stat"><span>Dead</span><strong id="deadStat">0</strong></div><div class="stat"><span>Other</span><strong id="unknownStat">0</strong></div></div><div class="grid2"><div class="card"><div class="card-head"><h3>Channel Health</h3><span id="syncTime">—</span></div><div class="meter"><label>Active</label><div><i id="barActive"></i></div></div><div class="meter"><label>Dead</label><div><i id="barDead"></i></div></div><div class="meter"><label>Other</label><div><i id="barDisabled"></i></div></div></div><div class="card"><div class="card-head"><h3>Quick Actions</h3></div><div class="quick"><button onclick="showSection('channels')">＋ Add Channel</button><button onclick="showSection('import')">↥ Import M3U</button><button onclick="showSection('devices')">♙ Manage Devices</button><button onclick="showSection('notice')">▤ Edit Notice</button></div></div></div><div class="card"><div class="card-head"><h3>Channel Overview</h3><div class="filters"><input id="dashSearch" placeholder="Search channel"><select id="dashCat"><option>All Categories</option></select><select id="dashStatus"><option>All Status</option><option>Active</option><option>Dead</option><option>Unknown</option></select></div></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Logo</th><th>Channel</th><th>Category</th><th>Status</th><th>Actions</th></tr></thead><tbody id="channelRows"></tbody></table></div><div id="pagination" class="pagination"></div></div></section>
 
-<section id="channels" class="section">
-  <div class="page-head"><div><h1>Channel Management</h1><p>Click ▶ to preview, then edit the channel from Dashboard.</p></div><button class="primary" onclick="showSection('add')">＋ Add Channel</button></div>
-  <div class="panel"><div class="filters"><input id="managerSearch" placeholder="Search channel..."><select id="managerCat"></select><select id="managerStatus"><option>All Status</option><option>Active</option><option>Dead</option><option>Disabled</option></select></div>
-  <div class="table-wrap"><table><thead><tr><th>#</th><th>Logo</th><th>Name</th><th>Category</th><th>Status</th><th>Stream URL</th><th>Action</th></tr></thead><tbody id="managerRows"></tbody></table></div></div>
-</section>
+<section id="channels" class="section"><div class="section-title"><div><span class="pill">CHANNEL MANAGER</span><h3>Channels</h3></div></div><div class="grid2"><form id="channelForm" class="card form-card"><h3>Add Channel</h3><label>Channel Name<input name="name" id="channelName" required></label><label>Category<select name="category" id="addCategory"></select></label><label>Logo URL<input name="logo" placeholder="https://..."></label><label>Stream URL<input name="url" required placeholder="https://..."></label><label>Status<select name="status"><option>Active</option><option>Dead</option><option>Unknown</option></select></label><button class="primary" type="submit">＋ Add Channel</button></form><div class="card"><div class="card-head"><h3>Manage</h3></div><div class="filters"><input id="managerSearch" placeholder="Search"><select id="managerCat"><option>All Categories</option></select><select id="managerStatus"><option>All Status</option><option>Active</option><option>Dead</option><option>Unknown</option></select></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Logo</th><th>Channel</th><th>Category</th><th>Status</th><th>URL</th><th>Actions</th></tr></thead><tbody id="managerRows"></tbody></table></div></div></div><div class="card"><h3>Categories</h3><div id="categoryList" class="chips"></div><div class="inline-form"><input id="newCat" placeholder="New category"><button id="addCategory" class="primary" type="button" onclick="addCategory()">Add</button></div></div></section>
 
-<section id="add" class="section"><div class="page-head"><div><h1>Add Channel</h1><p>Add one channel manually.</p></div></div>
-<form class="form-card" id="channelForm"><label>Channel Name<input name="name" required></label><label>Category<select name="category" id="addCategory"></select></label><label>Logo URL<input name="logo"></label><label>Stream URL<input name="url" required></label><label>Status<select name="status"><option>Active</option><option>Dead</option><option>Disabled</option></select></label><button class="primary">＋ Save Channel</button></form></section>
+<section id="import" class="section"><div class="section-title"><div><span class="pill">PLAYLIST TOOLS</span><h3>Import Playlist</h3></div></div><div class="tabs"><button class="import-tab active" data-import-tab="url">M3U URL</button><button class="import-tab" data-import-tab="file">M3U File</button><button class="import-tab" data-import-tab="xtream">Xtream Codes</button></div><div id="import-url" class="import-pane active card"><h3>M3U URL</h3><p class="muted">Worker imports the playlist and saves it to the website.</p><input id="m3uUrl" placeholder="https://example.com/playlist.m3u"><button class="primary" onclick="importM3UUrl()">Import from URL</button></div><div id="import-file" class="import-pane card"><h3>M3U File</h3><input id="m3uFile" type="file" accept=".m3u,.m3u8,text/plain"><textarea id="m3uText" rows="12" placeholder="#EXTM3U..."></textarea><button class="primary" onclick="importM3U()">Import File Content</button></div><div id="import-xtream" class="import-pane card"><h3>Xtream Codes</h3><div class="form-grid"><label>Server<input id="xtServer" placeholder="https://server:port"></label><label>Username<input id="xtUser"></label><label>Password<input id="xtPass" type="password"></label><label>Limit<select id="xtLimit"><option value="all">All</option><option>100</option><option>500</option><option>1000</option><option>2000</option></select></label></div><button class="primary" onclick="importXtream()">Import Live Channels</button></div></section>
 
-<section id="import" class="section"><div class="page-head"><div><h1>Playlist / M3U Import</h1><p>Import M3U URL or M3U file/text.</p></div></div>
-<div class="tabs"><button class="tab active" data-tab="url">M3U URL</button><button class="tab" data-tab="file">M3U File</button><button class="tab" data-tab="xtream">Xtream Codes</button></div>
-<div class="import-grid"><div class="form-card import-pane active" id="import-url"><label>M3U Playlist URL<input id="m3uUrl" type="url" placeholder="https://example.com/playlist.m3u"></label><button class="primary" type="button" onclick="importM3UUrl()">☁ Import & Sync</button></div>
-<div class="form-card import-pane" id="import-file"><label>M3U Playlist Text<textarea id="m3uText" placeholder="#EXTM3U"></textarea></label><input type="file" id="m3uFile" accept=".m3u,.m3u8,text/plain"><button class="primary" type="button" onclick="importM3U()">⇧ Import Playlist</button></div>
-<div class="form-card import-pane" id="import-xtream"><label>Server URL<input id="xtServer"></label><label>Username<input id="xtUser"></label><label>Password<input id="xtPass" type="password"></label><label>Import limit<select id="xtLimit"><option value="all">All live channels</option><option value="100">First 100</option><option value="250">First 250</option></select></label><button class="primary" type="button" onclick="importXtream()">⛓ Connect & Sync</button></div>
-<div class="panel guide"><h2>Import Guide</h2><p>Playlist import করলে সব Channel backend-এ save হবে।</p></div></div></section>
+<section id="devices" class="section"><div class="section-title"><div><span class="pill">ACCESS CONTROL</span><h3>Devices / Users</h3></div><div class="actions"><button class="primary" onclick="approveAllDevices()">Approve All</button><button class="warning" onclick="logoutAllDevices()">Logout All</button></div></div><div class="stats two"><div class="stat"><span>Registered Devices</span><strong id="deviceConnected">0</strong></div><div class="stat"><span>Allowed Limit</span><strong id="deviceAllowed">—</strong></div></div><div class="card"><div class="notice-line">Delete removes the device record. Block prevents access until you unblock it.</div><div id="deviceList" class="device-list">Login to load devices.</div></div></section>
 
-<section id="movies" class="section">
-  <div class="page-head"><div><h1>🎬 Movie &amp; Series</h1><p>Separate Movie/Series playlist — TV channels stay separate.</p></div><button class="primary" type="button" onclick="loadMovies()">⟳ Refresh</button></div>
-  <div class="tabs movie-tabs"><button class="tab active" data-movie-tab="url">M3U URL</button><button class="tab" data-movie-tab="file">M3U File</button></div>
-  <div class="import-grid">
-    <div class="form-card movie-pane active" id="movie-url-pane"><label>Movie / Series M3U URL<input id="movieM3uUrl" type="url" placeholder="https://example.com/movies.m3u"></label><button class="primary" type="button" onclick="importMovieM3UUrl()">☁ Import Movie &amp; Series</button></div>
-    <div class="form-card movie-pane" id="movie-file-pane"><label>M3U Playlist Text<textarea id="movieM3uText" placeholder="#EXTM3U"></textarea></label><input type="file" id="movieM3uFile" accept=".m3u,.m3u8,text/plain"><button class="primary" type="button" onclick="importMovieM3U()">⇧ Import Movie &amp; Series</button></div>
-  </div>
-  <div class="workspace split-workspace movie-workspace">
-    <div class="panel channel-panel"><div class="panel-title"><h2>🎬 Movie / Series List</h2><button class="danger-btn" type="button" onclick="clearMovies()">Clear All</button></div><div class="filters"><input id="movieSearch" placeholder="Search movie / series..."></div><div class="table-wrap compact-list"><table><thead><tr><th>#</th><th>Logo</th><th>Name</th><th>Action</th></tr></thead><tbody id="movieRows"></tbody></table></div></div>
-    <div class="panel preview"><div class="panel-title"><h2>▶ Movie Preview</h2><span class="live-dot">● Ready</span></div><div class="video-box"><video id="moviePlayer" controls playsinline></video><div id="movieVideoPlaceholder">▶<small>Select a movie / series</small></div></div><div class="selected-info"><b id="moviePName">—</b><small>MOVIE &amp; SERIES</small></div></div>
-  </div>
-</section>
+<section id="notice" class="section"><div class="section-title"><div><span class="pill">PUBLIC SITE</span><h3>Notice Board</h3></div></div><form id="noticeForm" class="card form-card"><label>Notice Text<textarea name="text" rows="5" placeholder="Write notice / scrolling headline..."></textarea></label><label>Type<select name="type"><option>Information</option><option>Warning</option><option>Success</option><option>Update</option></select></label><label>Enabled<select name="enabled"><option>Yes</option><option>No</option></select></label><button class="primary">Save Notice</button></form></section>
 
-<section id="categories" class="section"><div class="page-head"><div><h1>Categories</h1><p>Organize your channels.</p></div></div><div class="panel"><div class="category-add"><input id="newCat" placeholder="New category"><button class="primary" onclick="addCategory()">＋ Add</button></div><div id="categoryList" class="category-list"></div></div></section>
-<section id="settings" class="section"><div class="page-head"><div><h1>Website Settings</h1></div></div><form class="form-card" id="settingsForm"><label>Website Name<input name="siteName" value="VIP NETWORK"></label><label>Subtitle<input name="subtitle" value="Live TV & Entertainment"></label><label>Logo URL<input name="logo"></label><button class="primary">💾 Save Settings</button></form></section>
-<section id="notice" class="section"><div class="page-head"><div><h1>Notice / Banner</h1></div></div><form class="form-card" id="noticeForm"><label>Banner Text<input name="text"></label><label>Type<select name="type"><option>Information</option><option>Success</option><option>Warning</option><option>Important</option></select></label><label>Enable<select name="enabled"><option>Yes</option><option>No</option></select></label><button class="primary">📢 Save Banner</button></form></section>
-<section id="devices" class="section"><div class="page-head"><div><h1>User & Device Management</h1><p>সর্বশেষ Login করা user উপরে, আগের Login করা user নিচে দেখাবে।</p></div><div><button class="primary" onclick="loadDevices()">⟳ Refresh</button></div></div><div class="panel"><div id="latestLogin" class="latest-login">Loading latest login...</div><div id="deviceList" class="device-list" style="margin-top:14px">Loading devices...</div></div></section>
-<section id="guests" class="section">
-  <div class="page-head">
-    <div>
-      <h1>👀 Guest Account</h1>
-      <p>Login ছাড়াই Guest Account দিয়ে আসা visitor/device এখানে দেখুন ও নিয়ন্ত্রণ করুন।</p>
-    </div>
-    <div><button class="primary" onclick="loadGuests()">⟳ Refresh Guests</button></div>
-  </div>
-  <div class="panel">
-    <div class="page-head">
-      <div>
-        <h2 style="font-size:18px;margin:0">Guest Account Visitors</h2>
-        <p style="margin:4px 0 0">Online status, device, last seen, activity, IP এবং Visitor ID দেখা যাবে।</p>
-      </div>
-    </div>
-    <div id="guestList" class="device-list">Loading guests...</div>
-  </div>
-</section>
+<section id="settings" class="section"><div class="section-title"><div><span class="pill">WEBSITE CONTROL</span><h3>Settings</h3></div></div><form id="settingsForm" class="card form-card"><div class="form-grid"><label>Website Name<input name="siteName" value="VIP-TV"></label><label>Footer Text<input name="footer" value="© 2026 MASUM.ALL RIGHT RESERVED."></label><label>Device Limit<input name="deviceLimit" type="number" min="1" value="10"></label><label>Maintenance<select name="maintenance"><option value="off">Off</option><option value="on">On</option></select></label></div><button class="primary">Save Website Settings</button></form></section>
 
-<section id="security" class="section"><div class="page-head"><div><h1>Security</h1><p>Administrator session and access control.</p></div></div><div class="panel security-card"><h2>Admin Session</h2><p>Use Logout to securely end the current administrator session.</p><button class="primary danger" onclick="logoutWorker()">⇥ Logout Admin</button></div></section>
-<section id="activity" class="section"><div class="page-head"><div><h1>Activity Logs</h1></div><button class="primary" onclick="clearLogs()">Clear Logs</button></div><div class="panel"><div id="activityList" class="activity-list"></div></div></section>
-<section id="backup" class="section"><div class="page-head"><div><h1>Backup & Export</h1></div></div><div class="quick-grid two"><button onclick="exportData()">⇩ <b>Export JSON</b></button><button onclick="exportM3U()">⇩ <b>Export M3U</b></button><button onclick="clearAll()">⌫ <b>Clear All Channels</b></button></div></section>
-</section>
-</main></div>
+<section id="backup" class="section"><div class="section-title"><div><span class="pill">TOOLS</span><h3>Backup & Player</h3></div></div><div class="grid2"><div class="card"><h3>Backup</h3><p class="muted">Keep a local JSON backup before major playlist changes.</p><button class="primary" onclick="exportData()">⇩ Export JSON</button><button class="secondary" onclick="exportM3U()">⇩ Export M3U</button><label class="file-btn">Restore JSON<input id="restoreFile" type="file" accept="application/json,.json"></label><button class="danger" onclick="clearAll()">Clear All Channels</button></div><div class="card player-card"><div class="live-dot">● Preview</div><video id="player" controls playsinline></video><div id="videoPlaceholder">Select a channel from the tables to preview it.</div><div class="player-actions"><button id="playBtn" class="primary">Play</button><button id="reloadBtn" class="secondary">Reload</button><button id="fullBtn" class="secondary">Fullscreen</button><button id="openBtn" class="secondary">Open URL</button></div><input id="testUrl" placeholder="Stream URL"><div class="preview-info"><b id="pName">—</b><span id="pCategory">—</span><span id="pStatus">—</span><small id="pUrl">—</small></div></div></div></section>
 
-<div class="modal-backdrop" id="loginModal"><div class="login-card">
-<img src="assets/admin-logo.png" alt="Admin"><h2>WELCOME</h2><h1>Admin Panel</h1><p>🛡️ Secure administrator access</p>
-<label>Password</label><div class="password-row"><span>🔒</span><input id="workerPassword" type="password" placeholder="Password"><button id="loginEye" type="button">👁</button></div>
-<label class="remember"><input id="vipRemember" type="checkbox"> Remember me</label><button id="loginBtn" type="button" class="primary login-button">⇥ LOGIN</button><div id="loginStatus"></div><small>VIP NETWORK ADMIN WEBAPP</small>
-</div></div>
-<div class="toast" id="toast"></div>
+<footer class="status-bar"><b>Backend connection: <i>Offline</i></b><span>ADMIN+TV • VIP-NETWORK</span></footer></main></div>
+<div id="toast" class="toast"></div>
+<script>window.VIP_ADMIN_WORKER_API='https://vip-network-tv.vip-network.workers.dev';</script>
 <script src="app.js"></script>
+<script>
+document.getElementById('showPass').onclick=()=>{const i=document.getElementById('workerPassword');i.type=i.type==='password'?'text':'password';document.getElementById('showPass').textContent=i.type==='password'?'Show':'Hide'};
+document.getElementById('openSidebar').onclick=()=>document.getElementById('sidebar').classList.add('open');
+</script>
 </body></html>

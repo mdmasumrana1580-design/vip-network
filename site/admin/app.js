@@ -1,192 +1,56 @@
-const API=(window.VIP_ADMIN_WORKER_API||window.location.origin).replace(/\/$/,'');
-let connected=false,channels=[],categories=['ALL','SPORTS','BD','INDIA','OTHER','MOVIE & SERIES'],selected=-1,deferredPrompt=null,movies=[],selectedMovie=-1;
-const $=id=>document.getElementById(id);
-function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
-function toast(t){const x=$('toast');if(!x)return;x.textContent=t;x.classList.add('show');setTimeout(()=>x.classList.remove('show'),2400)}
-async function api(path,opt={}){const h=new Headers(opt.headers||{});h.set('Accept','application/json');if(opt.body&&!h.has('Content-Type'))h.set('Content-Type','application/json');const r=await fetch(API+path,{...opt,headers:h,credentials:'include',cache:'no-store'});const text=await r.text();let d={};try{d=text?JSON.parse(text):{}}catch{d={raw:text}}if(!r.ok)throw new Error(d.error||('HTTP '+r.status));return d}
+/* VIP NETWORK ADMIN — updated: 5-minute secure session + history back + ADMIN+TV PWA */
+const DEFAULT_WORKER_API=(window.VIP_ADMIN_WORKER_API||window.location.origin);
+const seed=[{name:'Somoy TV',category:'News',logo:'',url:'https://example.com/somoy.m3u8',status:'Active'},{name:'Jamuna TV',category:'News',logo:'',url:'https://example.com/jamuna.m3u8',status:'Active'},{name:'ATN News',category:'News',logo:'',url:'https://example.com/atn.m3u8',status:'Active'}];
+let WORKER_API=DEFAULT_WORKER_API,connected=false,channels=[],categories=['New Style','Sports','BD','India','Other','Movie & Series'],selected=null,dashPage=1,managerPage=1;
+const CATEGORY_ORDER=['New Style','Sports','BD','India','Other','Movie & Series'];
+const CATEGORY_ALIASES={'NEW STYLE':'New Style','SPORTS':'Sports','BD':'BD','INDIA':'India','OTHER':'Other','OTHERS':'Other','MOVIE':'Movie & Series','MOVIES':'Movie & Series','MOVIE & SERIES':'Movie & Series'};
+function canonicalCategory(v){const k=String(v||'').trim().toUpperCase();return CATEGORY_ALIASES[k]||String(v||'').trim()||'Other'}
+function buildCategories(stateCats=[],list=[]){const extras=[...(Array.isArray(stateCats)?stateCats:[]),...(Array.isArray(list)?list.map(c=>c.category):[])].map(c=>canonicalCategory(c)).filter(Boolean);return [...new Set([...CATEGORY_ORDER,...extras])]}
+function categoryButton(name,active=false){const safe=esc(name);return `<button type="button" class="category-btn ${active?'active':''}" data-category="${safe}" onclick="filterCategory(${JSON.stringify(name)})">${safe}</button>`}
+function filterCategory(name){const cat=name==='All Categories'?'All Categories':canonicalCategory(name);const d=document.getElementById('dashCat'),m=document.getElementById('managerCat');if(d)d.value=cat;if(m)m.value=cat;dashPage=1;managerPage=1;showSection('dashboard');render();}
 
-function norm(c){
-  return{
-    name:c.name||c.title||'Unnamed',
-    category:c.category||c.group||'OTHER',
-    logo:c.logo||c.tvgLogo||'',
-    url:c.url||c.stream||'',
-    status:c.status||'Unknown'
-  }
-}
-
-function setBackend(ok){connected=ok;if($('backendState'))$('backendState').textContent=ok?'Connected':'Offline'}
-function showLogin(show=true){$('loginModal')?.classList.toggle('show',show)}
-function loginStatus(t,bad=false){const x=$('loginStatus');if(x){x.textContent=t;x.style.color=bad?'#ff7b8d':'#76d7ff'}}
-async function logoutWorker(){try{await api('/api/admin/logout',{method:'POST'})}catch{}setBackend(false);showLogin(true);logAction('Admin logged out')}
-function logAction(text){const a=JSON.parse(localStorage.getItem('vipActivity')||'[]');a.unshift({text,time:new Date().toLocaleString()});localStorage.setItem('vipActivity',JSON.stringify(a.slice(0,100)));renderLogs()}
-async function loginWorker(){const p=$('workerPassword').value;if(!p)return loginStatus('Enter Admin Password.',true);const b=$('loginBtn');b.disabled=true;try{await api('/api/admin/login',{method:'POST',body:JSON.stringify({password:p})});setBackend(true);showLogin(false);$('workerPassword').value='';await loadRemoteState();await loadDevices();logAction('Admin logged in');toast('Connected')}catch(e){loginStatus('Login failed: '+e.message,true)}finally{b.disabled=false}}
-
-async function loadRemoteState(){
-  const d=await api('/api/admin/state');
-  const s=d.state||d;
-  channels=Array.isArray(s.channels)?s.channels.map(norm):[];
-  categories=[...new Set([
-    ...(Array.isArray(s.categories)?s.categories:['ALL','SPORTS','BD','INDIA','OTHER','MOVIE & SERIES']),
-    ...channels.map(x=>x.category).filter(Boolean)
-  ])];
-  saveLocal();
-  render();
-  if($('syncTime'))$('syncTime').textContent=new Date().toLocaleString()
-}
-
-function saveLocal(){localStorage.setItem('vipChannels',JSON.stringify(channels));localStorage.setItem('vipCategories',JSON.stringify(categories))}
-async function saveRemoteState(extra={}){try{await api('/api/admin/state',{method:'PUT',body:JSON.stringify({channels,categories,...extra})});saveLocal();return true}catch(e){toast('Save failed: '+e.message);return false}}
-function logo(c){return c.logo?`<img class="logo-cell" src="${esc(c.logo)}" onerror="this.style.display='none'">`:'<span class="logo-cell"></span>'}
-function rows(list,full=false){return list.map((c,i)=>{const idx=channels.indexOf(c);return `<tr class="channel-row ${idx===selected?'selected-row':''}" onclick="preview(${idx})"><td>${i+1}</td><td>${logo(c)}</td><td><b>${esc(c.name)}</b></td><td class="${full?'':'hide-small'}">${esc(c.category)}</td><td class="${full?'':'hide-small'}"><span class="badge">${esc(c.status)}</span></td>${full?`<td>${esc(c.url)}</td>`:''}<td><div class="actions"><button onclick="event.stopPropagation();preview(${idx})">▶</button><button onclick="event.stopPropagation();editChannel(${idx})">✎</button><button class="del" onclick="event.stopPropagation();deleteChannel(${idx})">⌫</button></div></td></tr>`}).join('')}
-function filter(list,sid,cid,stid){const s=($(sid)?.value||'').toLowerCase(),c=$(cid)?.value||'All Categories',st=$(stid)?.value||'All Status';return list.filter(x=>(!s||x.name.toLowerCase().includes(s))&&(c==='All Categories'||x.category===c)&&(st==='All Status'||x.status===st))}
-function fillSelect(id){const e=$(id);if(!e)return;const old=e.value;e.innerHTML='<option>All Categories</option>'+categories.map(x=>`<option>${esc(x)}</option>`).join('');if([...e.options].some(o=>o.value===old))e.value=old}
-function render(){['dashCat','managerCat'].forEach(fillSelect);const add=$('addCategory');if(add)add.innerHTML=categories.filter(x=>x!=='ALL').map(x=>`<option>${esc(x)}</option>`).join('');$('totalStat').textContent=channels.length;$('activeStat').textContent=channels.filter(x=>x.status==='Active').length;$('deadStat').textContent=channels.filter(x=>x.status==='Dead').length;$('categoryStat').textContent=categories.length;const d=filter(channels,'dashSearch','dashCat','dashStatus'),m=filter(channels,'managerSearch','managerCat','managerStatus');$('channelRows').innerHTML=rows(d);$('managerRows').innerHTML=rows(m,true);const cl=$('categoryList');if(cl)cl.innerHTML=categories.map((x,i)=>`<span>${esc(x)} <button onclick="removeCategory(${i})">×</button></span>`).join('')}
-
-let vipHls=null;
-function loadHls(){return new Promise(resolve=>{if(window.Hls)return resolve(true);const old=document.getElementById('vipHlsScript');if(old)return old.addEventListener('load',()=>resolve(!!window.Hls),{once:true});const s=document.createElement('script');s.id='vipHlsScript';s.src='https://cdn.jsdelivr.net/npm/hls.js@latest';s.onload=()=>resolve(!!window.Hls);s.onerror=()=>resolve(false);document.head.appendChild(s)})}
-async function playStream(url,targetId='player'){const v=$(targetId);if(!url)return;if(vipHls){try{vipHls.destroy()}catch{}vipHls=null}v.pause();v.removeAttribute('src');v.load();if(/\.m3u8(?:$|[?#])/i.test(url)){const ok=await loadHls();if(ok&&window.Hls&&Hls.isSupported()){vipHls=new Hls({enableWorker:true,lowLatencyMode:true});vipHls.loadSource(url);vipHls.attachMedia(v);vipHls.on(Hls.Events.MANIFEST_PARSED,()=>v.play().catch(()=>{}));return}}v.src=url;v.play().catch(()=>{})}
-function preview(i){selected=i;const c=channels[i];if(!c)return;$('pName').textContent=c.name;$('pCategory').textContent=c.category;$('editName').value=c.name;$('editCategory').value=c.category;$('editLogo').value=c.logo;$('editUrl').value=c.url;playStream(c.url);$('videoPlaceholder').style.display='none';render()}
-async function saveSelectedChannel(){const c=channels[selected];if(!c)return toast('Select a channel first');const name=$('editName').value.trim(),category=($('editCategory').value.trim()||'OTHER').toUpperCase();c.name=name||c.name;c.category=category;c.logo=$('editLogo').value.trim();c.url=$('editUrl').value.trim();if(!categories.includes(category))categories.push(category);if(await saveRemoteState()){render();logAction('Edited channel: '+c.name);toast('Channel updated')}}
-async function deleteSelectedChannel(){if(selected<0||!channels[selected])return;if(!confirm('Delete this channel?'))return;channels.splice(selected,1);selected=-1;if(await saveRemoteState()){render();$('pName').textContent='—';$('pCategory').textContent='—';$('player').removeAttribute('src');$('player').load();$('videoPlaceholder').style.display='grid';toast('Channel deleted')}}
-async function deleteChannel(i){selected=i;await deleteSelectedChannel()}
-function editChannel(i){preview(i);showSection('dashboard');setTimeout(()=>$('editName').focus(),150)}
-
-function parseM3U(text){
-  const l=String(text||'').replace(/\r/g,'').split('\n'),out=[];
-  let meta=null;
-  for(const raw of l){
-    const x=raw.trim();
-    if(x.startsWith('#EXTINF')){
-      const comma=x.indexOf(','),
-        name=comma>=0?x.slice(comma+1).trim():'Channel',
-        logo=(x.match(/tvg-logo="([^"]*)"/i)||[])[1]||'',
-        category=(x.match(/group-title="([^"]*)"/i)||[])[1]||'OTHER';
-      meta={name,logo,category};
-      continue
-    }
-    if(x&&!x.startsWith('#')&&meta){
-      out.push({...meta,url:x,status:'Active'});
-      meta=null
-    }
-  }
-  return out
-}
-
-async function importM3U(){const list=parseM3U($('m3uText').value);if(!list.length)return toast('No valid channels found');channels=list;categories=[...new Set([...categories,...list.map(x=>x.category)])];if(await saveRemoteState()){render();toast(list.length+' channels imported')}}
-async function importXtream(){const server=$('xtServer').value.trim(),username=$('xtUser').value.trim(),password=$('xtPass').value,limit=$('xtLimit').value;if(!server||!username||!password)return toast('Enter server, username and password');try{const d=await api('/api/xtream/import',{method:'POST',body:JSON.stringify({server,username,password,limit})});await loadRemoteState();logAction('Imported Xtream playlist');toast((d.count||0)+' channels imported')}catch(e){toast('Xtream import failed: '+e.message)}}
-async function importM3UUrl(){const url=$('m3uUrl').value.trim();if(!url)return toast('Enter M3U URL');try{const d=await api('/api/admin/import-m3u-url',{method:'POST',body:JSON.stringify({url})});await loadRemoteState();toast((d.count||0)+' channels imported')}catch(e){toast('Import failed: '+e.message)}}
-async function addCategory(){const e=$('newCat'),n=e.value.trim().toUpperCase();if(!n)return;if(categories.includes(n))return toast('Already exists');categories.push(n);if(await saveRemoteState()){render();e.value=''}}
-async function removeCategory(i){const n=categories[i];if(['ALL','SPORTS','BD','INDIA','OTHER','MOVIE & SERIES'].includes(n))return toast('Default category cannot be deleted');if(channels.some(x=>x.category===n))return toast('Category is in use');categories.splice(i,1);if(await saveRemoteState()){render();toast('Category removed')}}
-function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-function exportData(){download('vip-network-backup.json',JSON.stringify({channels,categories},null,2),'application/json')}
-function exportM3U(){download('vip-network-playlist.m3u','#EXTM3U\n'+channels.map(c=>`#EXTINF:-1 tvg-logo="${c.logo}" group-title="${c.category}",${c.name}\n${c.url}`).join('\n'),'audio/x-mpegurl')}
-async function clearAll(){if(!confirm('Clear all channels?'))return;channels=[];selected=-1;if(await saveRemoteState()){render();toast('All channels cleared')}}
-async function refreshData(){try{if(connected)await loadRemoteState();else render();toast('Data refreshed')}catch(e){toast(e.message)}}
-
-async function loadDevices(){const box=$('deviceList');if(!box)return;if(!connected){box.textContent='Please login first.';return}box.textContent='Loading users...';try{const d=await api('/api/admin/users'),users=Array.isArray(d.users)?d.users:[];const flat=[];users.forEach(u=>(u.devices||[]).forEach(dev=>flat.push({...dev,username:u.username,number:u.number||'',lastLoginAt:u.lastLoginAt||null,lastDeviceName:u.lastDeviceName||''})));flat.sort((a,b)=>{const ad=Date.parse(a.lastLoginAt||a.lastSeen||'')||0,bd=Date.parse(b.lastLoginAt||b.lastSeen||'')||0;return bd-ad;});const latest=flat[0]||null;const latestBox=$('latestLogin');if(latestBox){latestBox.innerHTML=latest?`<div class="latest-title">🟢 Latest Login</div><div class="latest-name">${esc(latest.username||'Unknown user')}</div><div class="latest-meta">📱 ${esc(latest.number||'Number not saved')} &nbsp; • &nbsp; 💻 ${esc(latest.name||latest.lastDeviceName||'Unknown device')}</div><div class="latest-time">🕒 ${esc(latest.lastLoginAt||latest.lastSeen||'—')}</div>`:'No login recorded yet.'}box.innerHTML=flat.length?flat.map((x,i)=>{const id=esc(x.deviceId||''),blocked=x.blocked||x.status==='Blocked';return `<div class="device-card"><b>🔢 ${i+1}. 👤 ${esc(x.username||'Unknown user')}</b><div class="device-meta">📱 Number: <strong>${esc(x.number||'Not saved')}</strong><br>💻 Device: ${esc(x.name||'Unknown device')}<br>🕒 Last Login: ${esc(x.lastLoginAt||x.lastSeen||'—')}<br><small>ID: ${esc(x.deviceId||'')}</small></div><div class="device-actions">${blocked?`<button onclick="unblockDevice('${id}')">Unblock</button>`:`<button onclick="blockDevice('${id}')">Block</button>`}<button onclick="deleteDevice('${id}')">Delete</button></div></div>`}).join(''):'No users/devices registered.'}catch(e){box.textContent='Could not load users: '+e.message}}
-async function blockDevice(id){try{await api('/api/admin/devices/block',{method:'POST',body:JSON.stringify({deviceId:id})});await loadDevices();await loadMovies()}catch(e){toast(e.message)}}
-async function unblockDevice(id){try{await api('/api/admin/devices/unblock',{method:'POST',body:JSON.stringify({deviceId:id})});await loadDevices();await loadMovies()}catch(e){toast(e.message)}}
-async function deleteDevice(id){if(!confirm('Delete this device?'))return;try{await api('/api/admin/devices?deviceId='+encodeURIComponent(id),{method:'DELETE'});await loadDevices();await loadMovies()}catch(e){toast(e.message)}}
-
-async function loadMovies(){try{const d=await api('/api/admin/movies');movies=Array.isArray(d.channels)?d.channels:[];renderMovies()}catch(e){toast('Movie playlist: '+e.message)}}
-function renderMovies(){const box=$('movieRows');if(!box)return;const q=String($('movieSearch')?.value||'').toLowerCase();const list=movies.map((m,i)=>({...m,_i:i})).filter(m=>!q||String(m.name||'').toLowerCase().includes(q));box.innerHTML=list.length?list.map(m=>`<tr><td>${m._i+1}</td><td>${m.logo?`<img src="${esc(m.logo)}" style="width:34px;height:34px;object-fit:contain;border-radius:6px">`:'—'}</td><td>${esc(m.name)}</td><td><button type="button" onclick="previewMovie(${m._i})">▶</button></td></tr>`).join(''):'<tr><td colspan="4">No Movie / Series imported.</td></tr>'}
-function previewMovie(i){const m=movies[i];if(!m?.url)return;selectedMovie=i;const ph=$('movieVideoPlaceholder');if($('moviePName'))$('moviePName').textContent=m.name||'Movie';playStream(m.url,'moviePlayer');$('moviePlayer')?.parentElement?.classList.add('has-video');if(ph)ph.style.display='none'}
-async function importMovieM3UUrl(){const url=$('movieM3uUrl')?.value.trim();if(!url)return toast('Enter Movie M3U URL');try{const d=await api('/api/admin/movie/import-m3u-url',{method:'POST',body:JSON.stringify({url})});movies=d.channels||[];renderMovies();toast(`Imported ${d.count||0} Movie/Series`)}catch(e){toast(e.message)}}
-async function importMovieM3U(){const text=$('movieM3uText')?.value.trim();if(!text)return toast('Paste Movie M3U or choose a file');try{const d=await api('/api/admin/movie/import-m3u',{method:'POST',body:text,headers:{'Content-Type':'text/plain'}});movies=d.channels||[];renderMovies();toast(`Imported ${d.count||0} Movie/Series`)}catch(e){toast(e.message)}}
-async function clearMovies(){if(!confirm('Clear all Movie & Series items?'))return;try{await api('/api/admin/movies',{method:'DELETE'});movies=[];renderMovies();const v=$('moviePlayer');if(v){v.pause();v.removeAttribute('src');v.load();v.parentElement?.classList.remove('has-video')}if($('moviePName'))$('moviePName').textContent='—';toast('Movie playlist cleared')}catch(e){toast(e.message)}}
-function renderLogs(){const box=$('activityList');if(!box)return;const a=JSON.parse(localStorage.getItem('vipActivity')||'[]');box.innerHTML=a.length?a.map(x=>`<div><b>${esc(x.text)}</b><small>${esc(x.time)}</small></div>`).join(''):'No activity yet.'}
-function clearLogs(){localStorage.removeItem('vipActivity');renderLogs();toast('Activity logs cleared')}
-
-async function loadGuests(){
-  const box=$('guestList');if(!box)return;if(!connected){box.textContent='Please login first.';return}
-  box.textContent='Loading guests...';
-  try{const d=await api('/api/admin/guests'),gs=Array.isArray(d.guests)?d.guests:[];
-    gs.sort((a,b)=>String(b.lastSeen||'').localeCompare(String(a.lastSeen||'')));
-    box.innerHTML=gs.length?gs.map(g=>{const id=esc(g.visitorId||''),blocked=!!g.blocked;return `<div class="device-card"><b>${g.status==='Online'?'🟢':'⚪'} Guest Account Visitor</b><div class="device-meta">💻 Device: ${esc(g.deviceName||'Unknown')}<br>🕒 Last Seen: ${esc(g.lastSeen||'—')}<br>📺 Activity: ${esc(g.category||'—')}<br>🌐 IP: ${esc(g.ip||'Hidden')}<br><small>Visitor ID: ${id}</small></div><div class="device-actions">${blocked?`<button onclick="unblockGuest('${id}')">Unblock</button>`:`<button onclick="blockGuest('${id}')">Block</button>`}<button onclick="deleteGuest('${id}')">Delete</button></div></div>`}).join(''):'No guest visitors recorded yet.';
-  }catch(e){box.textContent='Could not load guests: '+e.message}
-}
-async function blockGuest(id){try{await api('/api/admin/guests/block',{method:'POST',body:JSON.stringify({visitorId:id})});await loadGuests()}catch(e){toast(e.message)}}
-async function unblockGuest(id){try{await api('/api/admin/guests/unblock',{method:'POST',body:JSON.stringify({visitorId:id})});await loadGuests()}catch(e){toast(e.message)}}
-async function deleteGuest(id){if(!confirm('Delete this guest visitor?'))return;try{await api('/api/admin/guests?visitorId='+encodeURIComponent(id),{method:'DELETE'});await loadGuests()}catch(e){toast(e.message)}}
-
-function showSection(id,fromHistory=false){if(!$(id))id='dashboard';document.querySelectorAll('.section').forEach(x=>x.classList.remove('active-section'));$(id).classList.add('active-section');document.querySelectorAll('[data-section]').forEach(x=>x.classList.toggle('active',x.dataset.section===id));$('sidebar').classList.remove('open');if(id==='devices'){loadDevices()}if(id==='guests'){loadGuests()}if(id==='movies')loadMovies();if(!fromHistory)history.pushState({adminSection:id},'',location.pathname+location.search+'#'+encodeURIComponent(id));window.scrollTo({top:0,behavior:'smooth'})}
-window.addEventListener('popstate',()=>showSection(decodeURIComponent(location.hash.slice(1)||'dashboard'),true));
-function applyTheme(theme){const light=theme==='light';document.body.classList.toggle('light',light);$('themeBtn').textContent=light?'☀':'☾';localStorage.setItem('vipAdminTheme',light?'light':'dark')}
-
-document.querySelectorAll('[data-section]').forEach(b=>b.addEventListener('click',()=>showSection(b.dataset.section)));
-$('menuBtn').addEventListener('click',()=>$('sidebar').classList.toggle('open'));
-$('loginBtn').addEventListener('click',loginWorker);
-$('workerPassword').addEventListener('keydown',e=>{if(e.key==='Enter')loginWorker()});
-$('loginEye').addEventListener('click',()=>{const x=$('workerPassword');x.type=x.type==='password'?'text':'password'});
-$('themeBtn').addEventListener('click',()=>applyTheme(document.body.classList.contains('light')?'dark':'light'));
-$('m3uFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>$('m3uText').value=r.result;r.readAsText(f)});
-$('movieM3uFile')?.addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>$('movieM3uText').value=r.result;r.readAsText(f)});
-$('movieSearch')?.addEventListener('input',renderMovies);
-
-document.querySelectorAll('[data-movie-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-movie-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.movie-pane').forEach(x=>x.classList.toggle('active',x.id==='movie-'+b.dataset.movieTab+'-pane'))}));
-document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.import-pane').forEach(x=>x.classList.toggle('active',x.id==='import-'+b.dataset.tab))}));
-['dashSearch','managerSearch','dashCat','managerCat','dashStatus','managerStatus'].forEach(id=>$(id)?.addEventListener('input',render));
-$('globalSearch').addEventListener('input',e=>{$('dashSearch').value=e.target.value;$('managerSearch').value=e.target.value;render()});
-
-$('channelForm').addEventListener('submit',async e=>{
-  e.preventDefault();
-  const f=new FormData(e.target),
-    c={
-      name:f.get('name'),
-      category:(f.get('category')||'OTHER').toString().trim().toUpperCase(),
-      logo:f.get('logo'),
-      url:f.get('url'),
-      status:f.get('status')
-    };
-  channels.push(c);
-  if(!categories.includes(c.category))categories.push(c.category);
-  if(await saveRemoteState()){e.target.reset();render();logAction('Added channel: '+c.name);toast('Channel added')}
-});
-
-$('noticeForm').addEventListener('submit',async e=>{e.preventDefault();const x=Object.fromEntries(new FormData(e.target));await saveRemoteState({notice:{...x,enabled:x.enabled==='Yes'},headline:x.text});toast('Banner saved')});
-$('settingsForm').addEventListener('submit',async e=>{e.preventDefault();try{await api('/api/admin/settings',{method:'PUT',body:JSON.stringify(Object.fromEntries(new FormData(e.target)))});toast('Settings saved')}catch(err){toast(err.message)}});
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;$('installBtn').hidden=false});
-$('installBtn').addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;$('installBtn').hidden=true});
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
-
-Object.assign(window,{showSection,loginWorker,logoutWorker,refreshData,loadMovies,loadGuests,blockGuest,unblockGuest,deleteGuest,previewMovie,importMovieM3UUrl,importMovieM3U,clearMovies,preview,editChannel,deleteChannel,saveSelectedChannel,deleteSelectedChannel,importM3U,importM3UUrl,importXtream,addCategory,removeCategory,exportData,exportM3U,clearAll,loadDevices,blockDevice,unblockDevice,deleteDevice,clearLogs});
-
-(async function init(){
-  const lc=JSON.parse(localStorage.getItem('vipChannels')||'null'),
-    cat=JSON.parse(localStorage.getItem('vipCategories')||'null');
-
-  if(Array.isArray(lc))channels=lc.map(norm);
-
-  if(Array.isArray(cat)){
-    categories=[...new Set([
-      'ALL',
-      'SPORTS',
-      'BD',
-      'INDIA',
-      'OTHER',
-      'MOVIE & SERIES',
-      ...cat
-    ])];
-  }
-
-  applyTheme(localStorage.getItem('vipAdminTheme')||'dark');
-  render();
-  renderLogs();
-
-  const initial=decodeURIComponent(location.hash.slice(1)||'dashboard');
-  history.replaceState({adminSection:initial},'',location.pathname+location.search+'#'+encodeURIComponent(initial));
-  showSection(initial,true);
-
-  try{
-    await api('/api/admin/session');
-    setBackend(true);
-    showLogin(false);
-    await loadRemoteState();
-    await loadDevices();
-    await loadMovies()
-  }catch{
-    setBackend(false);
-    showLogin(true)
-  }
-})();
+const PAGE_SIZE=10;
+function saveLocal(){localStorage.setItem('vipChannels',JSON.stringify(channels));localStorage.setItem('vipCategories',JSON.stringify(categories));}
+function toast(t){const x=document.getElementById('toast');if(!x)return;x.textContent=t;x.classList.add('show');setTimeout(()=>x.classList.remove('show'),2200)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function statusClass(s){return String(s||'Unknown').toLowerCase().replace(/\s*\/\s*/g,'-').replace(/\s+/g,'-')}
+function logoHTML(c){return c.logo?`<img class="logo-cell" src="${esc(c.logo)}" onerror="this.style.display='none'">`:`<div class="logo-cell" style="display:grid;place-items:center;color:#08a9ff;font-weight:800">TV</div>`}
+async function api(path,options={}){const headers=new Headers(options.headers||{});headers.set('Accept','application/json');if(options.body&&!(options.body instanceof FormData)&&!headers.has('Content-Type'))headers.set('Content-Type','application/json');const r=await fetch(WORKER_API.replace(/\/$/,'')+path,{...options,headers,credentials:'include',cache:'no-store'});const text=await r.text();let data={};try{data=text?JSON.parse(text):{}}catch{data={raw:text}}if(!r.ok)throw new Error(data?.error||data?.message||('HTTP '+r.status));return data;}
+function showLogin(show=true){document.getElementById('loginModal')?.classList.toggle('show',show)}
+function setLoginStatus(t,bad=false){const x=document.getElementById('loginStatus');if(x){x.textContent=t;x.style.color=bad?'#ff7070':''}}
+async function loginWorker(){const url=document.getElementById('workerUrl').value.trim().replace(/\/$/,''),pw=document.getElementById('workerPassword').value;if(!url||!pw)return setLoginStatus('Enter Worker URL and Admin Password.',true);WORKER_API=url;setLoginStatus('Connecting…');try{await api('/api/admin/login',{method:'POST',body:JSON.stringify({password:pw})});connected=true;showLogin(false);setBackendState(true);setLoginStatus('');const pf=document.getElementById('workerPassword');if(pf)pf.value='';await loadRemoteState();await loadDevices();toast('Connected • session valid for 30 minutes')}catch(e){connected=false;setBackendState(false);setLoginStatus('Login failed: '+e.message,true)}}
+document.getElementById('loginBtn').onclick=loginWorker;document.getElementById('workerPassword').addEventListener('keydown',e=>{if(e.key==='Enter')loginWorker()});
+async function logoutWorker(){try{await api('/api/admin/logout',{method:'POST'})}catch{}connected=false;setBackendState(false);showLogin(true);document.getElementById('workerPassword').value='';toast('Logged out')}
+function setBackendState(ok){document.querySelectorAll('.online').forEach(x=>x.innerHTML=ok?'<i></i> Online':'<i style="background:#ff5d73"></i> Offline');document.querySelectorAll('.status-bar b').forEach(x=>x.innerHTML=`Backend connection: <i style="color:${ok?'#43e59a':'#ff5d73'}">${ok?'Connected':'Offline'}</i>`)}
+function showSection(id,fromHistory=false){document.querySelectorAll('.section').forEach(x=>x.classList.remove('active-section'));const el=document.getElementById(id);if(el)el.classList.add('active-section');document.querySelectorAll('.nav-item').forEach(x=>x.classList.toggle('active',x.dataset.section===id));document.getElementById('sidebar')?.classList.remove('open');render();if(id==='devices'&&connected)loadDevices();if(!fromHistory){history.pushState({adminSection:id},'',`#${encodeURIComponent(id)}`)}}
+window.addEventListener('popstate',()=>{const id=decodeURIComponent(location.hash.slice(1)||'dashboard');showSection(document.getElementById(id)?id:'dashboard',true)});
+document.querySelectorAll('.nav-item').forEach(b=>b.addEventListener('click',()=>showSection(b.dataset.section)));document.querySelectorAll('.import-tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.import-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.import-pane').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('import-'+b.dataset.importTab)?.classList.add('active')}));document.getElementById('menuBtn')?.addEventListener('click',()=>document.getElementById('sidebar')?.classList.toggle('open'));function applyTheme(theme){const light=theme==='light';document.body.classList.toggle('light',light);document.documentElement.style.colorScheme=light?'light':'dark';const b=document.getElementById('themeBtn');if(b){b.textContent=light?'☀':'☾';b.title=light?'Switch to dark theme':'Switch to light theme';b.setAttribute('aria-pressed',String(light))}const m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',light?'#f4f7fb':'#020d19');localStorage.setItem('vipAdminTheme',light?'light':'dark')}
+function toggleTheme(){applyTheme(document.body.classList.contains('light')?'dark':'light');toast(document.body.classList.contains('light')?'Light theme enabled':'Dark theme enabled')}
+document.getElementById('themeBtn').onclick=toggleTheme;
+applyTheme(localStorage.getItem('vipAdminTheme')||'dark');document.getElementById('profileBtn')?.addEventListener('click',()=>toast(connected?'ADMIN • Connected':'ADMIN • Not connected'));
+function normalizeChannels(x){if(!Array.isArray(x))return [];return x.map(c=>({name:c.name||c.title||'Unnamed',category:c.category||c.group||c.groupTitle||'Other',logo:c.logo||c.tvgLogo||'',url:c.url||c.stream||c.streamUrl||'',status:c.status||'Unknown',...c})).filter(c=>c.url||c.name)}
+function extractState(data){const s=data?.state&&typeof data.state==='object'?data.state:data;const list=s?.channels||s?.playlist?.channels||data?.channels||data?.playlist||[];return{channels:normalizeChannels(list),notice:s?.notice||data?.notice||{},headline:s?.headline||data?.headline||''}}
+async function loadRemoteState(){if(!connected)return;try{const data=await api('/api/admin/state');const s=extractState(data);channels=s.channels;if(!channels.length){const p=await api('/api/admin/playlist');channels=normalizeChannels(p?.channels||p?.playlist||p)}categories=buildCategories(data?.state?.categories||data?.categories,channels);saveLocal();render();fillNotice(s.notice,s.headline);document.getElementById('syncTime').textContent=new Date().toLocaleString()}catch(e){if(String(e.message).includes('Unauthorized')){connected=false;showLogin(true);setLoginStatus('Session expired. Please login again.',true)}toast('Could not load Worker state: '+e.message);setBackendState(false)}}
+async function saveRemoteState(extra={}){if(!connected){saveLocal();return true}try{await api('/api/admin/state',{method:'PUT',body:JSON.stringify({channels,categories,...extra})});saveLocal();document.getElementById('syncTime').textContent=new Date().toLocaleString();return true}catch(e){toast('Worker save failed: '+e.message);return false}}
+function filtered(list,searchId,catId,statusId){let s=(document.getElementById(searchId)?.value||'').toLowerCase(),cat=document.getElementById(catId)?.value||'All Categories',st=document.getElementById(statusId)?.value||'All Status';return list.filter(c=>(!s||String(c.name).toLowerCase().includes(s))&&(cat==='All Categories'||canonicalCategory(c.category)===canonicalCategory(cat))&&(st==='All Status'||c.status===st))}
+function rows(list,full=false){return list.map((c,i)=>{const idx=channels.indexOf(c);return `<tr><td>${i+1}</td><td>${logoHTML(c)}</td><td><b>${esc(c.name)}</b></td><td>${esc(c.category)}</td><td><span class="badge ${statusClass(c.status)}">● ${esc(c.status)}</span></td>${full?`<td title="${esc(c.url)}">${esc(c.url).slice(0,42)}${String(c.url).length>42?'…':''}</td>`:''}<td><div class="actions"><button onclick="preview(${idx})">▶</button><button onclick="editChannel(${idx})">✎</button><button class="del" onclick="deleteChannel(${idx})">▣</button></div></td></tr>`}).join('')}
+function renderPagination(total,page,setter){const pages=Math.max(1,Math.ceil(total/PAGE_SIZE));page=Math.min(page,pages);let out=`<button ${page<=1?'disabled':''} onclick="${setter}(${page-1})">«</button>`;for(let p=1;p<=pages;p++)out+=`<button class="${p===page?'active':''}" onclick="${setter}(${p})">${p}</button>`;return out+`<button ${page>=pages?'disabled':''} onclick="${setter}(${page+1})">»</button>`}
+function setDashPage(p){dashPage=Math.max(1,p);render()}function setManagerPage(p){managerPage=Math.max(1,p);render()}
+function render(){const total=channels.length;document.getElementById('totalStat').textContent=total;document.getElementById('activeStat').textContent=channels.filter(c=>c.status==='Active').length;document.getElementById('deadStat').textContent=channels.filter(c=>c.status==='Dead').length;document.getElementById('unknownStat').textContent=channels.filter(c=>c.status!=='Active'&&c.status!=='Dead').length;const opts='<option>All Categories</option>'+categories.map(c=>`<option>${esc(c)}</option>`).join('');['dashCat','managerCat'].forEach(id=>{const el=document.getElementById(id);if(el){const old=el.value;el.innerHTML=opts;if([...el.options].some(o=>o.value===old))el.value=old}});const ac=document.getElementById('addCategory');if(ac)ac.innerHTML=categories.map(c=>`<option>${esc(c)}</option>`).join('');const d=filtered(channels,'dashSearch','dashCat','dashStatus'),m=filtered(channels,'managerSearch','managerCat','managerStatus');dashPage=Math.min(dashPage,Math.max(1,Math.ceil(d.length/PAGE_SIZE)));managerPage=Math.min(managerPage,Math.max(1,Math.ceil(m.length/PAGE_SIZE)));document.getElementById('channelRows').innerHTML=rows(d.slice((dashPage-1)*PAGE_SIZE,dashPage*PAGE_SIZE));document.getElementById('managerRows').innerHTML=rows(m.slice((managerPage-1)*PAGE_SIZE,managerPage*PAGE_SIZE),true);document.getElementById('pagination').innerHTML=d.length?renderPagination(d.length,dashPage,'setDashPage'):'<span>No channels found</span>';const catBox=document.getElementById('categoryList');if(catBox){const extras=categories.filter(c=>!CATEGORY_ORDER.includes(c));catBox.innerHTML=[categoryButton('All Categories',false),...CATEGORY_ORDER.map(c=>categoryButton(c,false)),...extras.map(c=>categoryButton(c,false))].join('');catBox.querySelectorAll('.category-btn').forEach(b=>{b.style.cursor='pointer';b.style.border='1px solid #0b4d76';b.style.background='#06243a';b.style.color='#d9efff';b.style.borderRadius='20px';b.style.padding='9px 12px';b.style.fontSize='12px';b.style.fontFamily='inherit';b.style.transition='.2s';b.onmouseenter=()=>b.style.borderColor='#0aa8ff';b.onmouseleave=()=>b.style.borderColor='#0b4d76';});}const base=Math.max(total,1);document.getElementById('barActive').style.width=(channels.filter(c=>c.status==='Active').length/base*100)+'%';document.getElementById('barDead').style.width=(channels.filter(c=>c.status==='Dead').length/base*100)+'%';document.getElementById('barDisabled').style.width=(channels.filter(c=>c.status!=='Active'&&c.status!=='Dead').length/base*100)+'%';if(document.getElementById('syncTime')&&!document.getElementById('syncTime').textContent)document.getElementById('syncTime').textContent=new Date().toLocaleString()}
+['dashSearch','dashCat','dashStatus','managerSearch','managerCat','managerStatus'].forEach(id=>document.getElementById(id)?.addEventListener('input',()=>{dashPage=1;managerPage=1;render()}));async function refreshData(){if(connected)await loadRemoteState();else render();toast(connected?'Worker data refreshed':'Local data refreshed')}
+function preview(i){selected=i;const c=channels[i];if(!c)return;document.getElementById('pName').textContent=c.name;document.getElementById('pCategory').textContent=c.category;document.getElementById('pUrl').textContent=c.url;document.getElementById('pStatus').textContent=c.status;document.getElementById('testUrl').value=c.url;const v=document.getElementById('player');v.src=c.url;document.getElementById('videoPlaceholder').style.display='none';document.querySelector('.live-dot').textContent='● '+c.name;toast(c.name+' selected')}
+document.getElementById('playBtn').onclick=()=>{if(selected!==null)document.getElementById('player').play().catch(()=>toast('Browser blocked playback; check stream URL'))};document.getElementById('reloadBtn').onclick=()=>{const v=document.getElementById('player');v.load();toast('Player reloaded')};document.getElementById('fullBtn').onclick=()=>document.getElementById('player').requestFullscreen?.();document.getElementById('openBtn').onclick=()=>{if(selected!==null)window.open(channels[selected].url,'_blank')};
+async function deleteChannel(i){if(!channels[i]||!confirm('Delete '+channels[i].name+'?'))return;channels.splice(i,1);if(await saveRemoteState()){render();toast('Channel deleted')}}async function editChannel(i){const c=channels[i];if(!c)return;const name=prompt('Channel name:',c.name);if(name===null)return;const url=prompt('Stream URL:',c.url);if(url===null)return;const cat=prompt('Category:',c.category)||c.category;c.name=name.trim()||c.name;c.url=url.trim();c.category=cat;if(!categories.includes(cat))categories.push(cat);if(await saveRemoteState()){render();toast('Channel updated')}}
+document.getElementById('channelForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),c={name:f.get('name'),category:f.get('category'),logo:f.get('logo'),url:f.get('url'),status:f.get('status')};channels.push(c);if(!categories.includes(c.category))categories.push(c.category);if(await saveRemoteState()){e.target.reset();render();showSection('channels');toast('Channel added successfully')}};
+function parseM3U(text){const lines=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),out=[];for(let i=0;i<lines.length;i++){if(lines[i].startsWith('#EXTINF')){const info=lines[i],url=lines[i+1]||'';if(!url.startsWith('#')){const comma=info.indexOf(','),name=comma>=0?info.slice(comma+1).trim():'Unknown',logo=(info.match(/tvg-logo="([^"]*)"/i)||[])[1]||'',cat=(info.match(/group-title="([^"]*)"/i)||[])[1]||'Other';out.push({name,category:cat,logo,url,status:'Active'});i++}}}return out}
+async function addImported(list,replace=false){if(!list.length)return toast('No valid channels found');if(replace)channels=list;else channels.push(...list);list.forEach(c=>{if(c.category&&!categories.includes(c.category))categories.push(c.category)});if(await saveRemoteState()){render();showSection('channels');toast(list.length+' channels imported')}}async function importM3U(){await addImported(parseM3U(document.getElementById('m3uText').value),true);if(document.getElementById('m3uText'))document.getElementById('m3uText').value=''}
+async function importM3UUrl(){const u=document.getElementById('m3uUrl').value.trim();if(!u)return toast('Enter an M3U URL');if(connected){try{toast('Worker is importing M3U…');const data=await api('/api/admin/import-m3u-url',{method:'POST',body:JSON.stringify({url:u})});await loadRemoteState();toast(data?.count?data.count+' channels imported':'M3U imported');document.getElementById('m3uUrl').value=''}catch(e){toast('Worker M3U import failed: '+e.message)}}else{try{toast('Loading M3U URL…');const r=await fetch(u,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);await addImported(parseM3U(await r.text()),true)}catch(e){toast('Could not load URL. Check URL/CORS.')}}}
+async function importXtream(){const server=document.getElementById('xtServer').value.trim().replace(/\/$/,''),user=document.getElementById('xtUser').value.trim(),pass=document.getElementById('xtPass').value,lim=document.getElementById('xtLimit').value;if(!server||!user||!pass)return toast('Enter server, username and password');if(connected){try{toast('Worker is importing Xtream…');const data=await api('/api/xtream/import',{method:'POST',body:JSON.stringify({server,username:user,password:pass,limit:lim})});await loadRemoteState();toast(data?.count?data.count+' channels imported':'Xtream imported')}catch(e){toast('Xtream import failed: '+e.message)}}else{try{const apiurl=server+'/player_api.php?username='+encodeURIComponent(user)+'&password='+encodeURIComponent(pass)+'&action=get_live_streams',r=await fetch(apiurl,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const data=await r.json(),items=lim==='all'?data:data.slice(0,Number(lim)),base=server+'/live/'+encodeURIComponent(user)+'/'+encodeURIComponent(pass)+'/';await addImported(items.map(x=>({name:x.name||('Channel '+x.stream_id),category:x.category_name||'Other',logo:x.stream_icon||'',url:base+encodeURIComponent(String(x.stream_id))+'.m3u8',status:'Active'})),true)}catch(e){toast('Xtream import failed. Check credentials/server/CORS.')}}}
+document.getElementById('m3uFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>document.getElementById('m3uText').value=r.result;r.readAsText(f)};async function addCategory(){const raw=document.getElementById('newCat').value.trim();if(!raw)return;const n=canonicalCategory(raw);if(n.toLowerCase()==='all')return toast('ALL is a filter only');if(categories.includes(n))return toast('Category already exists');categories.push(n);if(await saveRemoteState()){render();document.getElementById('newCat').value='';toast('Category added')}}async function removeCategory(i){const n=categories[i];if(CATEGORY_ORDER.includes(n))return toast('Built-in category cannot be removed');if(channels.some(c=>canonicalCategory(c.category)===n))return toast('Category is in use');categories.splice(i,1);saveLocal();render();toast('Category removed')}
+function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}function exportData(){download('vip-network-backup.json',JSON.stringify({channels,categories,exported:new Date().toISOString()},null,2),'application/json');toast('JSON backup exported')}function exportM3U(){const t='#EXTM3U\n'+channels.map(c=>`#EXTINF:-1 tvg-logo="${c.logo||''}" group-title="${c.category}",${c.name}\n${c.url}`).join('\n');download('vip-network-playlist.m3u',t,'audio/x-mpegurl');toast('M3U exported')}
+document.getElementById('restoreFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{const x=JSON.parse(r.result);if(Array.isArray(x.channels)){channels=x.channels;categories=x.categories||categories;if(await saveRemoteState()){render();toast('Backup restored')}}}catch{toast('Invalid JSON backup')}};r.readAsText(f)};async function clearAll(){if(!confirm('Clear all channels?'))return;channels=[];if(await saveRemoteState()){render();toast('All channels cleared')}}function testStream(){const u=document.getElementById('testUrl').value.trim();if(!u)return toast('Enter a stream URL');const v=document.getElementById('player');v.src=u;document.getElementById('videoPlaceholder').style.display='none';v.play().catch(()=>toast('URL loaded. Browser may not support this stream format.'))}
+document.getElementById('globalSearch').oninput=e=>{const q=e.target.value.trim();if(q){showSection('channels');document.getElementById('managerSearch').value=q;render()}};function fillNotice(notice={},headline=''){const f=document.getElementById('noticeForm');if(!f)return;f.elements.text.value=notice.text||headline||'';f.elements.type.value=notice.type||'Information';f.elements.enabled.value=(notice.enabled===false||notice.enabled==='No')?'No':'Yes'}
+document.getElementById('noticeForm').onsubmit=async e=>{e.preventDefault();const x=Object.fromEntries(new FormData(e.target)),notice={...x,enabled:x.enabled==='Yes'};if(connected){try{await saveRemoteState({notice,headline:x.text});toast('Banner saved to VIP NETWORK')}catch(e){toast('Banner save failed: '+e.message)}}else{localStorage.setItem('vipNotice',JSON.stringify(notice));toast('Banner saved locally')}};document.getElementById('settingsForm').onsubmit=async e=>{e.preventDefault();const settings=Object.fromEntries(new FormData(e.target));if(connected){try{await api('/api/admin/settings',{method:'PUT',body:JSON.stringify(settings)});toast('Website settings saved to Worker')}catch(e){toast('Settings save failed: '+e.message)}}else{localStorage.setItem('vipSettings',JSON.stringify(settings));toast('Website settings saved locally')}};
+async function loadDevices(){if(!connected)return;const box=document.getElementById('deviceList');box.innerHTML='<div>Loading devices…</div>';try{const d=await api('/api/admin/devices'),list=Array.isArray(d)?d:(d.devices||d.data||[]);document.getElementById('deviceConnected').textContent=list.length;const limit=d?.settings?.deviceLimit??d?.settings?.maxDevices??d?.deviceLimit??'—';document.getElementById('deviceAllowed').textContent=limit;box.innerHTML=list.length?list.map(x=>{const id=esc(x.deviceId||x.id||'');const blocked=x.status==='Blocked'||x.blocked===true;return `<div><div><b>${esc(x.userName||x.name||x.deviceName||x.deviceId||'Device')}</b><br><small>${esc(x.name||x.deviceName||'')} • ${esc(x.number||x.phone||'')} • ${esc(x.lastLogin||x.lastSeen||'')}</small></div><b class="badge ${blocked?'dead':'active'}">${esc(x.status||'Online')}</b><div class="actions">${blocked?`<button onclick="unblockDevice('${id}')">Unblock</button>`:`<button onclick="approveDevice('${id}')">✓</button><button onclick="blockDevice('${id}')">Block</button>`}<button class="del" onclick="deleteDevice('${id}')">Delete</button></div></div>`}).join(''):'<div>No devices registered.</div>'}catch(e){box.innerHTML='<div>Could not load devices: '+esc(e.message)+'</div>'}}
+async function approveDevice(id){if(!id)return;try{await api('/api/admin/devices/approve',{method:'POST',body:JSON.stringify({deviceId:id})});await loadDevices();toast('Device approved')}catch(e){toast(e.message)}}async function blockDevice(id){if(!id)return;if(!confirm('Block this device?'))return;try{await api('/api/admin/devices/block',{method:'POST',body:JSON.stringify({deviceId:id})});await loadDevices();toast('Device blocked')}catch(e){toast(e.message)}}async function unblockDevice(id){if(!id)return;try{await api('/api/admin/devices/unblock',{method:'POST',body:JSON.stringify({deviceId:id})});await loadDevices();toast('Device unblocked')}catch(e){toast(e.message)}}async function approveAllDevices(){try{await api('/api/admin/devices/approve-all',{method:'POST',body:'{}'});await loadDevices();toast('All devices approved')}catch(e){toast(e.message)}}async function logoutAllDevices(){if(!confirm('Log out all devices?'))return;try{await api('/api/admin/devices/logout-all',{method:'POST',body:'{}'});await loadDevices();toast('All devices logged out')}catch(e){toast(e.message)}}async function deleteDevice(id){if(!id||!confirm('Delete this device?'))return;try{await api('/api/admin/devices?deviceId='+encodeURIComponent(id),{method:'DELETE'});await loadDevices();toast('Device deleted')}catch(e){toast(e.message)}}
+(async function init(){setBackendState(false);render();const input=document.getElementById('workerUrl');if(input)input.value=DEFAULT_WORKER_API;const local=JSON.parse(localStorage.getItem('vipChannels')||'null');if(Array.isArray(local))channels=local;const savedCats=JSON.parse(localStorage.getItem('vipCategories')||'null');categories=buildCategories(savedCats,channels);render();if(location.hash){showSection(decodeURIComponent(location.hash.slice(1)),true)}else showSection('dashboard',true);try{await api('/api/admin/session');connected=true;showLogin(false);setBackendState(true);await loadRemoteState();await loadDevices()}catch{showLogin(true)}})();
