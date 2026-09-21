@@ -23,8 +23,28 @@ window.addEventListener('appinstalled', () => {
   if (button) button.hidden = true;
 });
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
+const lockPortrait = async () => {
+  try {
+    const standalone = window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if (standalone && screen.orientation?.lock) await screen.orientation.lock('portrait');
+  } catch (_) {}
+};
+
+const hideVipSplash = () => {
+  const splash = document.getElementById('vipSplash');
+  if (!splash) return;
+  splash.classList.add('vip-splash-hide');
+  window.setTimeout(() => splash.remove(), 450);
+};
+
+window.addEventListener('load', () => {
+  lockPortrait();
+  window.setTimeout(hideVipSplash, 1600);
+
+  if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
-  });
-}
+  }
+}, { once: true });
+
+// Failsafe: never leave the splash blocking the app indefinitely.
+window.setTimeout(hideVipSplash, 4500);

@@ -1,4 +1,4 @@
-const CACHE = 'vip-tv-pwa-v3';
+const CACHE = 'vip-tv-pwa-v4';
 const CORE = [
   '/',
   '/index.html',
@@ -12,7 +12,8 @@ const CORE = [
   '/vip-network-logo.png',
   '/vip-tv-logo-192.png',
   '/vip-tv-logo-512.png',
-  '/messenger-icon.webp'
+  '/messenger-icon.webp',
+  '/vip-splash.png'
 ];
 
 self.addEventListener('install', event => {
