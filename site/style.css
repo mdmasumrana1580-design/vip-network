@@ -3288,3 +3288,41 @@ video{
   #vipVideoBox:fullscreen .landscape-channel-controls,
   #vipVideoBox:-webkit-full-screen .landscape-channel-controls{bottom:72px !important;}
 }
+
+
+/* VIP NETWORK — FINAL ICONS
+   Channel controls use the requested ◀️ ▶️ icons.
+   Fullscreen toggle uses the requested 💠 icon. */
+.landscape-channel-controls button{
+  font-size:0 !important;
+  line-height:1 !important;
+}
+.landscape-channel-controls button::before{
+  display:block !important;
+  font-family:Arial,sans-serif !important;
+  font-size:30px !important;
+  line-height:1 !important;
+  font-weight:900 !important;
+}
+.landscape-channel-controls button:first-child::before{content:'◀️' !important;}
+.landscape-channel-controls button:last-child::before{content:'▶️' !important;}
+.landscape-channel-controls button svg,
+.landscape-channel-controls button i{display:none !important;}
+
+/* Screen enlarge/minimize control */
+.vip-fullscreen-btn{
+  font-size:0 !important;
+}
+.vip-fullscreen-btn::before{
+  content:'💠' !important;
+  display:block !important;
+  font-size:26px !important;
+  line-height:1 !important;
+  font-family:Arial,sans-serif !important;
+}
+.vip-fullscreen-btn svg,
+.vip-fullscreen-btn i{display:none !important;}
+@media(max-width:700px){
+  .landscape-channel-controls button::before{font-size:28px !important;}
+  .vip-fullscreen-btn::before{font-size:24px !important;}
+}
