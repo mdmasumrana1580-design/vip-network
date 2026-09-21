@@ -2806,3 +2806,7 @@ body.vip-player-fullscreen{overflow:hidden!important;background:#000!important;}
 }
 
 
+
+
+/* VIP NETWORK: hide the 1px bottom system/edge divider without changing layout */
+html::after, body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:2px;background:#000!important;z-index:2147483647;pointer-events:none}
