@@ -19,3 +19,11 @@ th,td{padding:5px 4px;font-size:9px}.logo-cell{width:27px;height:27px}.actions b
 }
 @media(max-width:380px){.brand b{font-size:18px}.brand img{width:38px;height:38px}.iconbtn,.logout{padding:8px}.stats small{font-size:7px}.stats strong{font-size:13px}.dashboard-grid{grid-template-rows:29% 35% 36%}.center-col{grid-template-rows:1fr 68px}.player-actions button{font-size:9px;padding:4px}}
 
+
+
+/* Logo URL + file picker */
+.logo-input-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.logo-input-row input[type=text],.logo-input-row input:not([type]){min-width:0}
+.file-btn{display:inline-flex!important;align-items:center;justify-content:center;min-height:44px;padding:0 14px;border:1px solid rgba(0,255,140,.35);border-radius:12px;background:rgba(0,255,140,.10);color:#fff;cursor:pointer;white-space:nowrap;font-weight:700}
+.file-btn:hover{background:rgba(0,255,140,.18)}
+@media(max-width:480px){.logo-input-row{grid-template-columns:minmax(0,1fr) 76px}.file-btn{padding:0 8px;font-size:12px;min-height:42px}.logo-input-row #editLogo{font-size:12px}}
