@@ -12,8 +12,7 @@ const CORE = [
   '/vip-network-logo.png',
   '/vip-tv-logo-192.png',
   '/vip-tv-logo-512.png',
-  '/messenger-icon.webp',
-  '/vip-splash.png'
+  '/messenger-icon.webp'
 ];
 
 self.addEventListener('install', event => {
