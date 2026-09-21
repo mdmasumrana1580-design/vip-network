@@ -1,6 +1,6 @@
 {
-  "name": "ViP-TV",
-  "short_name": "ViP-TV",
+  "name": "ViP-tv",
+  "short_name": "ViP-tv",
   "description": "ViP-TV Live TV Web App",
   "start_url": "/",
   "scope": "/",
