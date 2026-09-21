@@ -3069,3 +3069,55 @@ video{
   .vip-volume-control input { width:70px !important; }
   .vip-fullscreen-btn { width:40px !important; height:40px !important; min-width:40px !important; flex-basis:40px !important; font-size:23px !important; }
 }
+
+/* Final VIP premium controls correction: no outer borders; same red/green look in fullscreen. */
+.landscape-channel-controls button,
+.vip-fullscreen-btn,
+.vip-volume-control,
+.vip-volume-control button {
+  border: 0 !important;
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.landscape-channel-controls button,
+.vip-fullscreen-btn,
+.vip-volume-control button {
+  background: linear-gradient(135deg,#ff2638 0%,#ff4d4d 35%,#19e6a2 68%,#00b85a 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(25,230,162,.28), 0 0 8px rgba(255,38,56,.20) !important;
+}
+
+/* Keep the exact same premium colors after entering browser fullscreen. */
+#vipVideoBox:fullscreen .landscape-channel-controls button,
+#vipVideoBox:-webkit-full-screen .landscape-channel-controls button,
+#vipVideoBox.vip-fullscreen .landscape-channel-controls button,
+#vipVideoBox.is-fullscreen .landscape-channel-controls button,
+#vipVideoBox.vip-css-fullscreen .landscape-channel-controls button,
+#vipVideoBox:fullscreen .vip-fullscreen-btn,
+#vipVideoBox:-webkit-full-screen .vip-fullscreen-btn,
+#vipVideoBox.vip-fullscreen .vip-fullscreen-btn,
+#vipVideoBox.is-fullscreen .vip-fullscreen-btn,
+#vipVideoBox.vip-css-fullscreen .vip-fullscreen-btn,
+#vipVideoBox:fullscreen .vip-volume-control button,
+#vipVideoBox:-webkit-full-screen .vip-volume-control button,
+#vipVideoBox.vip-fullscreen .vip-volume-control button,
+#vipVideoBox.is-fullscreen .vip-volume-control button,
+#vipVideoBox.vip-css-fullscreen .vip-volume-control button {
+  border: 0 !important;
+  outline: none !important;
+  background: linear-gradient(135deg,#ff2638 0%,#ff4d4d 35%,#19e6a2 68%,#00b85a 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(25,230,162,.30), 0 0 8px rgba(255,38,56,.22) !important;
+}
+
+#vipVideoBox:fullscreen .vip-volume-control,
+#vipVideoBox:-webkit-full-screen .vip-volume-control,
+#vipVideoBox.vip-fullscreen .vip-volume-control,
+#vipVideoBox.is-fullscreen .vip-volume-control,
+#vipVideoBox.vip-css-fullscreen .vip-volume-control {
+  border: 0 !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
