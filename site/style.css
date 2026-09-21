@@ -2908,3 +2908,49 @@ html:has(#vipVideoBox:-webkit-full-screen){
   transform:none !important;
   left:0 !important; right:0 !important; top:0 !important; bottom:0 !important;
 }
+
+/* VIP CONTROL COLORS + REMOVE FULL-PLAYER BLUE TAP/FOCUS EFFECT */
+html,body,#vipVideoBox,.video-box,video{
+  -webkit-tap-highlight-color:transparent !important;
+  tap-highlight-color:transparent !important;
+}
+#vipVideoBox:focus,
+#vipVideoBox:focus-visible,
+.video-box:focus,
+.video-box:focus-visible,
+video:focus,
+video:focus-visible{
+  outline:none !important;
+  box-shadow:none !important;
+}
+video{
+  -webkit-user-select:none !important;
+  user-select:none !important;
+}
+
+/* Clean white + VIP green player controls */
+.vip-volume-control button,
+.vip-fullscreen-btn,
+.landscape-channel-controls button{
+  color:#f5f7f8 !important;
+  text-shadow:0 0 6px rgba(0,230,118,.65),0 0 12px rgba(0,230,118,.28) !important;
+}
+.vip-volume-control input{
+  accent-color:#00d66a !important;
+}
+.landscape-channel-controls button:active,
+.vip-bottom-controls button:active,
+.vip-fullscreen-btn:active{
+  color:#00e676 !important;
+  transform:scale(.92) !important;
+}
+.vip-fullscreen-btn:hover,
+.vip-volume-control button:hover,
+.landscape-channel-controls button:hover{
+  color:#00e676 !important;
+}
+
+/* Prevent any accidental blue selection/touch layer over the player */
+#vipVideoBox *{
+  -webkit-tap-highlight-color:transparent !important;
+}
