@@ -3331,3 +3331,27 @@ video{
   #vipFullscreen::after,
   #vipFullscreenLauncher::after { font-size: 22px !important; }
 }
+
+/* FINAL CLEANUP: remove the old red/green channel-button styling. */
+.landscape-channel-controls button,
+#vipVideoBox:fullscreen .landscape-channel-controls button,
+#vipVideoBox:-webkit-full-screen .landscape-channel-controls button,
+#vipVideoBox.vip-fullscreen .landscape-channel-controls button,
+#vipVideoBox.is-fullscreen .landscape-channel-controls button,
+#vipVideoBox.vip-css-fullscreen .landscape-channel-controls button {
+  background: rgba(0,0,0,.42) !important;
+  background-image: none !important;
+  border: 0 !important;
+  outline: none !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,.45) !important;
+  text-shadow: 0 1px 4px rgba(0,0,0,.8) !important;
+}
+.landscape-channel-controls button:hover,
+.landscape-channel-controls button:active {
+  background: rgba(255,255,255,.16) !important;
+  background-image: none !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
