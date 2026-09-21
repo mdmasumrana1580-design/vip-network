@@ -1,15 +1,8 @@
-VIP-Network Block/Unblock v3
-Replace ONLY:
-1. root worker.js
-2. site/device-guard.js
-3. site/visitor-login.js
-4. site/app.js
+VIP-Network explicit login fix
+Replace:
+1. worker.js
+2. site/visitor-login.js
+3. site/device-guard.js
 
-This version:
-- preserves pre-block device approval/status and restores them on unblock
-- revokes active login session when a device is blocked
-- links guest records to the persistent device ID
-- blocking a guest also blocks its linked device
-- unblocking a guest restores the linked device's previous state
-- blocked guest/device IDs are not deleted client-side
-Do NOT replace site/admin/worker.js for this fix.
+Important: after deployment, the first visit on this browser requires a fresh Login or Guest Account. Old/stale VIP_USER_SESSION cookies are cleared when no v2 login marker exists. After a successful login, refresh keeps the user logged in until logout/session expiry/block/delete.
+Do not replace wrangler.toml or Cloudflare secrets.
