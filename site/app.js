@@ -154,6 +154,12 @@ const vipFullscreen = document.getElementById("vipFullscreen");
 const vipFullscreenLauncher = document.getElementById("vipFullscreenLauncher");
 let vipControlsTimer = null;
 
+// Mobile player controls: larger channel arrows + gesture brightness/volume.
+const prevChannelBtn = document.getElementById("prevChannel");
+const nextChannelBtn = document.getElementById("nextChannel");
+if (prevChannelBtn) prevChannelBtn.textContent = "◀";
+if (nextChannelBtn) nextChannelBtn.textContent = "▶";
+
 function showVipControls() {
   if (!vipVideoBox) return;
   vipVideoBox.classList.add("vip-controls-visible");
@@ -171,6 +177,81 @@ function toggleVipControls() {
     showVipControls();
   }
 }
+
+// TV-app style touch gestures: left side = brightness, right side = volume.
+(function initVipTouchGestures(){
+  if (!vipVideoBox || !video) return;
+  let startX=0, startY=0, startVol=1, startBright=1, gesture=null, moved=false, suppressClick=false;
+  let bright=1;
+  const overlay=document.createElement("div");
+  overlay.className="vip-gesture-overlay";
+  overlay.innerHTML='<div class="vip-gesture-indicator vip-brightness-indicator"><span class="vip-gesture-icon">☀</span><span class="vip-gesture-value">100%</span><span class="vip-gesture-meter"><i></i></span></div><div class="vip-gesture-indicator vip-volume-indicator"><span class="vip-gesture-icon">🔊</span><span class="vip-gesture-value">100%</span><span class="vip-gesture-meter"><i></i></span></div>';
+  vipVideoBox.appendChild(overlay);
+  const bi=overlay.querySelector('.vip-brightness-indicator');
+  const vi=overlay.querySelector('.vip-volume-indicator');
+  const bv=bi.querySelector('.vip-gesture-value'), vv=vi.querySelector('.vip-gesture-value');
+  const bm=bi.querySelector('i'), vm=vi.querySelector('i');
+  function setBrightness(v){
+    bright=Math.max(0.35,Math.min(1.6,v));
+    video.style.setProperty('--vip-video-brightness', String(bright));
+    const pct=Math.round((bright-0.35)/(1.6-0.35)*100);
+    bv.textContent=pct+'%'; bm.style.height=pct+'%';
+  }
+  function setVolume(v){
+    const n=Math.max(0,Math.min(1,v));
+    video.volume=n; video.muted=n===0;
+    if(vipVolume) vipVolume.value=String(n);
+    if(vipMute) vipMute.textContent=video.muted?'🔇':'🔊';
+    vv.textContent=Math.round(n*100)+'%'; vm.style.height=Math.round(n*100)+'%';
+  }
+  function showIndicator(which){
+    overlay.classList.add('is-visible');
+    bi.classList.toggle('is-active',which==='brightness');
+    vi.classList.toggle('is-active',which==='volume');
+    if (vipControlsTimer) clearTimeout(vipControlsTimer);
+    if (which==='brightness') { bv.textContent=Math.round((bright-0.35)/(1.6-0.35)*100)+'%'; }
+    else { vv.textContent=Math.round(video.volume*100)+'%'; }
+    clearTimeout(overlay._timer);
+    overlay._timer=setTimeout(()=>overlay.classList.remove('is-visible'),900);
+  }
+  vipVideoBox.addEventListener('touchstart',function(e){
+    if(!e.touches || e.touches.length!==1) return;
+    const t=e.touches[0], r=vipVideoBox.getBoundingClientRect();
+    startX=t.clientX-r.left; startY=t.clientY-r.top;
+    startVol=video.volume; startBright=bright; gesture=null; moved=false;
+  },{passive:true});
+  vipVideoBox.addEventListener('touchmove',function(e){
+    if(!e.touches || e.touches.length!==1) return;
+    const t=e.touches[0], r=vipVideoBox.getBoundingClientRect();
+    const dx=t.clientX-r.left-startX, dy=t.clientY-r.top-startY;
+    if(Math.abs(dy)<12 && !gesture) return;
+    if(!gesture){
+      if(Math.abs(dy)<Math.abs(dx)*1.15) return;
+      gesture=startX < r.width*0.36 ? 'brightness' : (startX > r.width*0.64 ? 'volume' : null);
+      if(!gesture) return;
+      moved=true; suppressClick=true;
+    }
+    if(!gesture) return;
+    e.preventDefault();
+    const delta=(-dy)/Math.max(120,r.height)*1.15;
+    if(gesture==='volume') { setVolume(startVol+delta); showIndicator('volume'); }
+    else { setBrightness(startBright+delta*1.1); showIndicator('brightness'); }
+  },{passive:false});
+  vipVideoBox.addEventListener('touchend',function(){
+    if(gesture){
+      clearTimeout(overlay._timer); overlay._timer=setTimeout(()=>overlay.classList.remove('is-visible'),900);
+      setTimeout(()=>{suppressClick=false;},80);
+    }
+    gesture=null; moved=false;
+  },{passive:true});
+  vipVideoBox.addEventListener('click',function(e){
+    if(suppressClick){ e.preventDefault(); e.stopPropagation(); suppressClick=false; }
+  },true);
+  video.addEventListener('loadedmetadata',function(){
+    setBrightness(bright);
+    if(vipVolume){ const n=Number(vipVolume.value||video.volume||1); vv.textContent=Math.round(n*100)+'%'; vm.style.height=Math.round(n*100)+'%'; }
+  });
+})();
 
 if (vipVideoBox) {
   vipVideoBox.addEventListener("click", function(e) {
@@ -398,6 +479,7 @@ function play(c, clickedCard, retryOriginal) {
 
 async function requestNativeFullscreen() {
   if (!videoBox) return;
+  pushVipFullscreenHistory();
   try {
     if (videoBox.requestFullscreen) {
       await videoBox.requestFullscreen({navigationUI:"hide"});
@@ -438,6 +520,10 @@ function isNativeFullscreen() {
 async function toggleNativeFullscreen() {
   if (isNativeFullscreen()) {
     await exitNativeFullscreen();
+    if (vipFullscreenHistoryActive) {
+      vipFullscreenHistoryActive=false;
+      try { history.back(); } catch(e) {}
+    }
   } else {
     await requestNativeFullscreen();
   }
@@ -457,6 +543,7 @@ function setFullscreenButtonState() {
       video.style.height = isFs ? "100dvh" : "";
       video.style.objectFit = isFs ? "fill" : "";
       video.style.objectPosition = isFs ? "center center" : "";
+      video.style.setProperty("--vip-video-brightness", video.style.getPropertyValue("--vip-video-brightness") || "1");
       video.style.position = isFs ? "absolute" : "";
       video.style.inset = isFs ? "0" : "";
       video.style.maxWidth = isFs ? "none" : "";
@@ -494,6 +581,29 @@ document.getElementById("nextChannel").addEventListener("click", function(e) {
   e.preventDefault(); e.stopPropagation(); changeChannel(1); showVipControls();
 });
 
+let vipFullscreenHistoryActive = false;
+function pushVipFullscreenHistory(){
+  if(vipFullscreenHistoryActive) return;
+  vipFullscreenHistoryActive = true;
+  try { history.pushState({vipFullscreen:true}, "", location.href); } catch(e) {}
+}
+function consumeVipFullscreenHistory(){
+  if(!vipFullscreenHistoryActive) return false;
+  vipFullscreenHistoryActive=false;
+  return true;
+}
+window.addEventListener("popstate", function(){
+  if (isNativeFullscreen()) {
+    consumeVipFullscreenHistory();
+    exitNativeFullscreen();
+    return;
+  }
+  // Android back while the player is open returns to the page home instead of leaving the app.
+  if (section && !section.hidden) {
+    closePlayer();
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+});
 window.addEventListener("orientationchange", syncFullscreenState);
 document.addEventListener("fullscreenchange", function(){ if(!document.fullscreenElement){ try{screen.orientation?.unlock?.()}catch(e){} } syncFullscreenState(); });
 document.addEventListener("webkitfullscreenchange", function(){ syncFullscreenState(); });
