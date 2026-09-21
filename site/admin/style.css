@@ -27,3 +27,43 @@ th,td{padding:5px 4px;font-size:9px}.logo-cell{width:27px;height:27px}.actions b
 .file-btn{display:inline-flex!important;align-items:center;justify-content:center;min-height:44px;padding:0 14px;border:1px solid rgba(0,255,140,.35);border-radius:12px;background:rgba(0,255,140,.10);color:#fff;cursor:pointer;white-space:nowrap;font-weight:700}
 .file-btn:hover{background:rgba(0,255,140,.18)}
 @media(max-width:480px){.logo-input-row{grid-template-columns:minmax(0,1fr) 76px}.file-btn{padding:0 8px;font-size:12px;min-height:42px}.logo-input-row #editLogo{font-size:12px}}
+
+
+/* ===== Requested desktop/tablet dashboard layout =====
+   Left: smaller player + edit below. Right: channel list. */
+@media(min-width:751px){
+  .topbar{position:relative;justify-content:center}
+  .brand{position:absolute;left:50%;transform:translateX(-50%);min-width:0;z-index:2}
+  .welcome{display:none}
+  .session{margin-left:auto}
+  .mobilemenu{display:block;position:absolute;left:14px;top:18px;z-index:17;background:#061a16;color:#fff;border:1px solid #0a5b4d;padding:9px 11px;border-radius:9px}
+  .dashboard-grid{grid-template-columns:minmax(330px,.78fr) minmax(430px,1.22fr);grid-template-rows:minmax(0,56%) minmax(0,44%);grid-template-areas:"left right" "edit right";gap:10px}
+  .dashboard-grid>.channel-panel{grid-area:right}
+  .dashboard-grid>.center-col{display:contents}
+  .dashboard-grid>.player-panel{grid-area:left;min-height:0}
+  .dashboard-grid>.info-panel{display:none}
+  .dashboard-grid>.edit-panel{grid-area:edit;min-height:0}
+  .edit-panel form{height:calc(100% - 43px)}
+}
+
+/* ===== Mobile header: menu at top-left, logo/name centered ===== */
+@media(max-width:750px){
+  .topbar{position:relative;justify-content:center;padding-left:48px;padding-right:8px}
+  .brand{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-width:0;flex:none;width:max-content;z-index:2}
+  .brand img{width:40px;height:40px}
+  .brand b{font-size:19px}
+  .brand small{font-size:8px}
+  .mobilemenu{left:8px;top:12px}
+  .iconbtn{margin-left:auto}
+  .logout{flex:0 0 auto}
+  .dashboard-grid{grid-template-columns:1fr;grid-template-rows:34% 31% 35%;grid-template-areas:"right" "left" "edit";gap:7px}
+  .dashboard-grid>.channel-panel{grid-area:right}
+  .dashboard-grid>.center-col{display:contents}
+  .dashboard-grid>.player-panel{grid-area:left}
+  .dashboard-grid>.info-panel{display:none}
+  .dashboard-grid>.edit-panel{grid-area:edit}
+}
+
+/* Login: password only */
+#loginModal .login-card{padding-top:22px}
+#loginModal .login-card input{margin-top:10px}
