@@ -154,7 +154,7 @@ const vipFullscreen = document.getElementById("vipFullscreen");
 const vipFullscreenLauncher = document.getElementById("vipFullscreenLauncher");
 let vipControlsTimer = null;
 
-// Mobile player controls: larger channel arrows + gesture brightness/volume.
+// Mobile player controls: larger channel arrows.
 const prevChannelBtn = document.getElementById("prevChannel");
 const nextChannelBtn = document.getElementById("nextChannel");
 if (prevChannelBtn) prevChannelBtn.textContent = "◀";
@@ -175,305 +175,6 @@ function toggleVipControls() {
     if (vipControlsTimer) clearTimeout(vipControlsTimer);
   } else {
     showVipControls();
-  }
-}
-
-// TV-app style touch gestures: left side = brightness, right side = volume.
-(function initVipTouchGestures(){
-  if (!vipVideoBox || !video) return;
-  let startX=0, startY=0, startVol=1, startBright=1, gesture=null, moved=false, suppressClick=false;
-  let bright=1;
-  const overlay=document.createElement("div");
-  overlay.className="vip-gesture-overlay";
-  overlay.innerHTML='<div class="vip-gesture-indicator vip-brightness-indicator"><span class="vip-gesture-icon">☀</span><span class="vip-gesture-value">100%</span><span class="vip-gesture-meter"><i></i></span></div><div class="vip-gesture-indicator vip-volume-indicator"><span class="vip-gesture-icon">🔊</span><span class="vip-gesture-value">100%</span><span class="vip-gesture-meter"><i></i></span></div>';
-  vipVideoBox.appendChild(overlay);
-  const bi=overlay.querySelector('.vip-brightness-indicator');
-  const vi=overlay.querySelector('.vip-volume-indicator');
-  const bv=bi.querySelector('.vip-gesture-value'), vv=vi.querySelector('.vip-gesture-value');
-  const bm=bi.querySelector('i'), vm=vi.querySelector('i');
-  function setBrightness(v){
-    bright=Math.max(0.35,Math.min(1.6,v));
-    video.style.setProperty('--vip-video-brightness', String(bright));
-    const pct=Math.round((bright-0.35)/(1.6-0.35)*100);
-    bv.textContent=pct+'%'; bm.style.height=pct+'%';
-  }
-  function setVolume(v){
-    const n=Math.max(0,Math.min(1,v));
-    video.volume=n; video.muted=n===0;
-    if(vipVolume) vipVolume.value=String(n);
-    if(vipMute) vipMute.textContent=video.muted?'🔇':'🔊';
-    vv.textContent=Math.round(n*100)+'%'; vm.style.height=Math.round(n*100)+'%';
-  }
-  function showIndicator(which){
-    overlay.classList.add('is-visible');
-    bi.classList.toggle('is-active',which==='brightness');
-    vi.classList.toggle('is-active',which==='volume');
-    if (vipControlsTimer) clearTimeout(vipControlsTimer);
-    if (which==='brightness') { bv.textContent=Math.round((bright-0.35)/(1.6-0.35)*100)+'%'; }
-    else { vv.textContent=Math.round(video.volume*100)+'%'; }
-    clearTimeout(overlay._timer);
-    overlay._timer=setTimeout(()=>overlay.classList.remove('is-visible'),900);
-  }
-  vipVideoBox.addEventListener('touchstart',function(e){
-    if(!e.touches || e.touches.length!==1) return;
-    const t=e.touches[0], r=vipVideoBox.getBoundingClientRect();
-    startX=t.clientX-r.left; startY=t.clientY-r.top;
-    startVol=video.volume; startBright=bright; gesture=null; moved=false;
-  },{passive:true});
-  vipVideoBox.addEventListener('touchmove',function(e){
-    if(!e.touches || e.touches.length!==1) return;
-    const t=e.touches[0], r=vipVideoBox.getBoundingClientRect();
-    const dx=t.clientX-r.left-startX, dy=t.clientY-r.top-startY;
-    if(Math.abs(dy)<12 && !gesture) return;
-    if(!gesture){
-      if(Math.abs(dy)<Math.abs(dx)*1.15) return;
-      gesture=startX < r.width*0.36 ? 'brightness' : (startX > r.width*0.64 ? 'volume' : null);
-      if(!gesture) return;
-      moved=true; suppressClick=true;
-    }
-    if(!gesture) return;
-    e.preventDefault();
-    const delta=(-dy)/Math.max(120,r.height)*1.15;
-    if(gesture==='volume') { setVolume(startVol+delta); showIndicator('volume'); }
-    else { setBrightness(startBright+delta*1.1); showIndicator('brightness'); }
-  },{passive:false});
-  vipVideoBox.addEventListener('touchend',function(){
-    if(gesture){
-      clearTimeout(overlay._timer); overlay._timer=setTimeout(()=>overlay.classList.remove('is-visible'),900);
-      setTimeout(()=>{suppressClick=false;},80);
-    }
-    gesture=null; moved=false;
-  },{passive:true});
-  vipVideoBox.addEventListener('click',function(e){
-    if(suppressClick){ e.preventDefault(); e.stopPropagation(); suppressClick=false; }
-  },true);
-  video.addEventListener('loadedmetadata',function(){
-    setBrightness(bright);
-    if(vipVolume){ const n=Number(vipVolume.value||video.volume||1); vv.textContent=Math.round(n*100)+'%'; vm.style.height=Math.round(n*100)+'%'; }
-  });
-})();
-
-if (vipVideoBox) {
-  vipVideoBox.addEventListener("click", function(e) {
-    if (e.target.closest("button,input,.plyr__controls,.landscape-channel-controls,.vip-bottom-controls")) return;
-    toggleVipControls();
-  });
-}
-
-if (vipMute) vipMute.addEventListener("click", function(e){
-  e.preventDefault(); e.stopPropagation();
-  video.muted = !video.muted;
-  vipMute.textContent = video.muted || video.volume === 0 ? "🔇" : "🔊";
-  showVipControls();
-});
-if (vipVolume) vipVolume.addEventListener("input", function(e){
-  e.stopPropagation();
-  video.volume = Number(vipVolume.value);
-  video.muted = video.volume === 0;
-  vipMute.textContent = video.muted ? "🔇" : "🔊";
-  showVipControls();
-});
-if (vipFullscreenLauncher) vipFullscreenLauncher.addEventListener("click", function(e){
-  e.preventDefault(); e.stopPropagation();
-  toggleNativeFullscreen();
-  showVipControls();
-});
-if (vipFullscreen) vipFullscreen.addEventListener("click", function(e){
-  e.preventDefault(); e.stopPropagation();
-  toggleNativeFullscreen();
-  showVipControls();
-});
-
-video.addEventListener("volumechange", function(){
-  if (vipVolume) vipVolume.value = String(video.volume);
-  if (vipMute) vipMute.textContent = video.muted || video.volume === 0 ? "🔇" : "🔊";
-});
-
-
-function esc(value) {
-  return String(value || "").replace(/[&<>"']/g, function (m) {
-    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m];
-  });
-}
-
-function catFor(name, group) {
-  const text = ((name || "") + " " + (group || "")).toLowerCase();
-    if (/movie|movies|film|series|web\s*series|ott|cinema|flix/.test(text)) return "MOVIE & SERIES";
-  if (/sport|cricket|football|fifa|espn|bein|wwe|golf|nfl|nba|ten\s*cricket|ptv\s*sports/.test(text)) return "SPORTS";
-  if (/bangladesh|\bbd\b|bangla|somoy|jamuna|ekattor|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi\s*tv|btv|duronto|deepto|nagorik|mohona|asian\s*tv|desh\s*tv|bijoy\s*tv|mytv|satv|ekushey/.test(text)) return "BD";
-  if (/india|indian|sony|zee|star|colors|set\b|sab\b|aaj\s*tak|ndtv|republic|news18|times\s*now|india\s*tv|dd\s*(national|sports)|sun\s*tv|asianet|vijay|jaya|starplus|star\s*gold|sony\s*(max|pix|wah|yay|pal)|&pictures|b4u|movies\s*now|mnx|hbo\s*india/.test(text)) return "INDIA";
-  return "OTHER";
-}
-function parseM3U(text) {
-  const lines = String(text || "").replace(/\r/g, "").split("\n");
-  const out = [];
-  let meta = null;
-
-  for (const raw of lines) {
-    const line = raw.trim();
-    if (!line) continue;
-
-    if (line.startsWith("#EXTINF")) {
-      const comma = line.indexOf(",");
-      const name = comma >= 0 ? line.slice(comma + 1).trim() : "Live Channel";
-      const groupMatch = line.match(/group-title="([^"]*)"/i);
-      const logoMatch = line.match(/tvg-logo="([^"]*)"/i);
-
-      meta = {
-        name: name || "Live Channel",
-        group: groupMatch ? groupMatch[1] : "",
-        logo: logoMatch ? logoMatch[1] : ""
-      };
-      continue;
-    }
-
-    if (line.startsWith("#")) continue;
-
-    if (meta) {
-      if (/^(https?|rtmp|rtsp|hls):\/\//i.test(line)) {
-        out.push({
-          name: meta.name,
-          cat: catFor(meta.name, meta.group),
-          url: line,
-          logo: meta.logo
-        });
-      }
-      meta = null;
-    }
-  }
-
-  return out;
-}
-
-function render() {
-  const q = "";
-
-  grid.innerHTML = "";
-
-  const list = channels.filter(function (c) {
-    const categoryOk = current === "ALL" || c.cat === current;
-    const searchOk = c.name.toLowerCase().includes(q);
-    return categoryOk && searchOk;
-  });
-  visibleChannels = list;
-
-  empty.hidden = list.length > 0;
-  if (!list.length) {
-    empty.textContent = channels.length ? "No channels found" : "Loading channels...";
-  }
-
-  list.forEach(function (c) {
-    const el = document.createElement("article");
-    el.className = "card";
-
-    const icon = c.logo
-      ? '<img src="' + esc(c.logo) + '" alt="" loading="lazy">'
-      : "<span>TV</span>";
-
-    el.innerHTML =
-      '<div class="circle">' + icon + '</div>' +
-      '<div class="label">' + esc(c.name) + '</div>';
-
-    el.addEventListener("click", function () {
-      play(c, el);
-    });
-
-    grid.appendChild(el);
-  });
-}
-
-function play(c, clickedCard, retryOriginal) {
-  currentChannelIndex = visibleChannels.indexOf(c);
-  if (welcomeVideo) welcomeVideo.classList.add("welcome-hidden");
-  if (videoBox) videoBox.classList.remove("welcome-active");
-  const liveBadge = document.getElementById("liveBadge");
-  if (liveBadge) liveBadge.style.display = "flex";
-
-  section.hidden = false;
-  document.getElementById("playerTitle").textContent = c.name;
-  document.getElementById("note").style.display = "none";
-
-  if (hls) {
-    try { hls.destroy(); } catch (e) {}
-    hls = null;
-  }
-
-  video.pause();
-  video.removeAttribute("src");
-  video.load();
-  video.autoplay = true;
-  video.playsInline = true;
-  video.muted = false;
-  video.volume = 1;
-
-  const originalUrl = c.url;
-  let fallbackUsed = !retryOriginal && c._usingFallback === true;
-  const sourceUrl = fallbackUsed ? STREAM_FALLBACK_URL : originalUrl;
-
-  function showPlaybackError() {
-    const note = document.getElementById("note");
-    note.textContent = "ভিডিও চালু করা যাচ্ছে না।";
-    note.style.display = "block";
-  }
-
-  function switchToFallback() {
-    if (fallbackUsed) {
-      showPlaybackError();
-      return;
-    }
-    fallbackUsed = true;
-    c._usingFallback = true;
-    if (hls) {
-      try { hls.destroy(); } catch (e) {}
-      hls = null;
-    }
-    video.pause();
-    video.removeAttribute("src");
-    video.load();
-    video.src = STREAM_FALLBACK_URL;
-    video.addEventListener("loadedmetadata", startPlayback, {once:true});
-    video.addEventListener("canplay", startPlayback, {once:true});
-    startPlayback();
-  }
-
-  function startPlayback() {
-    const p = video.play();
-    if (p && p.catch) p.catch(function () {
-      if (!fallbackUsed) switchToFallback();
-      else showPlaybackError();
-    });
-  }
-
-  if (/\.m3u8(\?|$)/i.test(sourceUrl) && window.Hls && Hls.isSupported()) {
-    hls = new Hls({ enableWorker:true, lowLatencyMode:true, backBufferLength:30 });
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MEDIA_ATTACHED, function () {
-      if (hls) hls.loadSource(sourceUrl);
-    });
-    hls.on(Hls.Events.MANIFEST_PARSED, function () {
-      video.muted = false;
-      video.volume = 1;
-      startPlayback();
-    });
-    hls.on(Hls.Events.ERROR, function (_event, data) {
-      if (!data || !data.fatal || !hls) return;
-      if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-        try { hls.recoverMediaError(); } catch (e) {}
-      } else {
-        try { hls.destroy(); } catch (e) {}
-        hls = null;
-        switchToFallback();
-      }
-    });
-  } else {
-    video.src = sourceUrl;
-    video.addEventListener("loadedmetadata", startPlayback, {once:true});
-    video.addEventListener("canplay", startPlayback, {once:true});
-    video.addEventListener("error", function () {
-      if (!fallbackUsed) switchToFallback();
-      else showPlaybackError();
-    }, {once:true});
-    startPlayback();
   }
 }
 
@@ -543,7 +244,6 @@ function setFullscreenButtonState() {
       video.style.height = isFs ? "100dvh" : "";
       video.style.objectFit = isFs ? "fill" : "";
       video.style.objectPosition = isFs ? "center center" : "";
-      video.style.setProperty("--vip-video-brightness", video.style.getPropertyValue("--vip-video-brightness") || "1");
       video.style.position = isFs ? "absolute" : "";
       video.style.inset = isFs ? "0" : "";
       video.style.maxWidth = isFs ? "none" : "";
@@ -581,6 +281,18 @@ document.getElementById("nextChannel").addEventListener("click", function(e) {
   e.preventDefault(); e.stopPropagation(); changeChannel(1); showVipControls();
 });
 
+let vipPlayerHistoryActive = false;
+function pushVipPlayerHistory(){
+  if(vipPlayerHistoryActive) return;
+  vipPlayerHistoryActive = true;
+  try { history.pushState({vipPlayer:true}, "", location.href); } catch(e) {}
+}
+function consumeVipPlayerHistory(){
+  if(!vipPlayerHistoryActive) return false;
+  vipPlayerHistoryActive=false;
+  return true;
+}
+
 let vipFullscreenHistoryActive = false;
 function pushVipFullscreenHistory(){
   if(vipFullscreenHistoryActive) return;
@@ -598,9 +310,9 @@ window.addEventListener("popstate", function(){
     exitNativeFullscreen();
     return;
   }
-  // Android back while the player is open returns to the page home instead of leaving the app.
-  if (section && !section.hidden) {
-    closePlayer();
+  if (vipPlayerHistoryActive) {
+    consumeVipPlayerHistory();
+    closePlayer(true);
     window.scrollTo({top:0,behavior:"smooth"});
   }
 });
@@ -609,8 +321,12 @@ document.addEventListener("fullscreenchange", function(){ if(!document.fullscree
 document.addEventListener("webkitfullscreenchange", function(){ syncFullscreenState(); });
 syncFullscreenState();
 
-function closePlayer() {
-  section.hidden = false;
+function closePlayer(fromBack) {
+  if (!fromBack && vipPlayerHistoryActive) {
+    try { history.back(); return; } catch(e) {}
+    vipPlayerHistoryActive=false;
+  }
+  section.hidden = true;
 
   if (hls) {
     hls.destroy();
