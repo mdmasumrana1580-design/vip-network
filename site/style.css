@@ -3211,28 +3211,28 @@ video{
   bottom:82px !important;
 }
 
-/* Fullscreen button = red in normal + fullscreen */
+/* Fullscreen button — requested 💠 icon, no red color */
 .vip-fullscreen-btn,
 #vipFullscreen,
 #vipFullscreenLauncher{
-  color:#ff3045 !important;
-  -webkit-text-fill-color:#ff3045 !important;
+  color:inherit !important;
+  -webkit-text-fill-color:currentColor !important;
   background:transparent !important;
   border:0 !important;
   box-shadow:none !important;
-  text-shadow:0 0 8px rgba(255,48,69,.65) !important;
+  text-shadow:none !important;
 }
 #vipVideoBox:fullscreen .vip-fullscreen-btn,
 #vipVideoBox:-webkit-full-screen .vip-fullscreen-btn,
 #vipVideoBox.vip-fullscreen .vip-fullscreen-btn,
 #vipVideoBox.is-fullscreen .vip-fullscreen-btn,
 #vipVideoBox.vip-css-fullscreen .vip-fullscreen-btn{
-  color:#ff3045 !important;
-  -webkit-text-fill-color:#ff3045 !important;
+  color:inherit !important;
+  -webkit-text-fill-color:currentColor !important;
   background:transparent !important;
   border:0 !important;
   box-shadow:none !important;
-  text-shadow:0 0 8px rgba(255,48,69,.65) !important;
+  text-shadow:none !important;
 }
 
 /* Volume controls = blue in normal + fullscreen */
