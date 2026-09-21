@@ -67,3 +67,6 @@ th,td{padding:5px 4px;font-size:9px}.logo-cell{width:27px;height:27px}.actions b
 /* Login: password only */
 #loginModal .login-card{padding-top:22px}
 #loginModal .login-card input{margin-top:10px}
+
+/* Requested menu cleanup: these options are intentionally not shown in the 3-line menu. */
+.catbox{display:none!important}
