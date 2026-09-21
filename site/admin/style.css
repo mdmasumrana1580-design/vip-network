@@ -2,3 +2,7 @@
 
 .device-list{height:calc(100% - 55px);overflow-y:auto;overflow-x:hidden;padding:0 10px 10px}.device-card{padding:13px 10px 15px;border-bottom:1px solid #123b35}.device-top{display:flex;align-items:center;gap:8px;margin-bottom:7px}.device-top b{font-size:16px;color:#eefcff}.device-top em{font-style:normal;color:#d8e6e8;margin-left:2px}.device-status{font-size:11px;padding:3px 7px;border-radius:8px}.device-status.logged{background:#063d27;color:#54f0a2}.device-status.blocked{background:#64131a;color:#ff9ba1}.device-meta{font-size:12px;line-height:1.55;color:#d4e4e6}.device-meta b{color:#a9c3c6}.device-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}.device-actions button{border:0;border-radius:8px;padding:9px;color:#fff;font-weight:700;background:#9d0f19}.device-actions .unblock{background:#00a94f}.device-actions .del{background:#9d0f19}
 @media(max-width:750px){.device-list{height:calc(100% - 55px);padding:0 8px 10px}.device-card{padding:12px 8px 14px}.device-top b{font-size:15px}.device-meta{font-size:11px}.device-actions button{padding:9px 6px}}
+
+
+/* VIP-TV Admin: hide the 1px bottom system/edge divider without changing layout */
+html::after, body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:2px;background:#000!important;z-index:2147483647;pointer-events:none}
