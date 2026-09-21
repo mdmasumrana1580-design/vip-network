@@ -86,6 +86,23 @@ function token() { return crypto.randomUUID(); }
 function clientIP(r) { return String(r.headers.get('CF-Connecting-IP') || r.headers.get('X-Forwarded-For') || r.headers.get('X-Real-IP') || '').split(',')[0].trim().slice(0, 80) || '—'; }
 function bangladeshTime(iso) { try { return new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Dhaka',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date(iso)); } catch { return iso; } }
 
+function bangladeshDailyWindow(iso) {
+  try {
+    const d = new Date(iso);
+    const parts = new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Dhaka',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d);
+    const o = Object.fromEntries(parts.filter(x=>x.type!=='literal').map(x=>[x.type,x.value]));
+    let day = `${o.year}-${o.month}-${o.day}`;
+    const hour = Number(o.hour);
+    // A new User-login window begins at 06:00 Bangladesh time.
+    if (hour < 6) {
+      const prev = new Date(d.getTime()-24*60*60*1000);
+      const p = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Dhaka',year:'numeric',month:'2-digit',day:'2-digit'}).format(prev);
+      day = p;
+    }
+    return day;
+  } catch { return ''; }
+}
+
 async function deviceBlocked(e, id) {
   if (!id) return false;
   const d = (await readDevices(e)).find(x => x.deviceId === id);
@@ -187,7 +204,7 @@ async function handle(r, e) {
     }
 
     const now = new Date().toISOString();
-    user.lastLoginAt=now; user.lastDeviceId=deviceId; user.lastDeviceName=deviceName; user.number=number || user.number || ''; user.ip=ip || user.ip || '—'; user.lastLoginBD=bangladeshTime(now);
+    user.lastLoginAt=now; user.lastDeviceId=deviceId; user.lastDeviceName=deviceName; user.number=number || user.number || ''; user.ip=ip || user.ip || '—'; user.lastLoginBD=bangladeshTime(now); user.dailyWindowBD=bangladeshDailyWindow(now);
     const t=token(); user.activeSessionToken=t; await saveUsers(e,users);
 
     const ds=await readDevices(e);
@@ -207,7 +224,13 @@ async function handle(r, e) {
   if (p === '/api/user/session' && r.method === 'GET') {
     const s = await userSession(r, e);
     if (!s) return withCors(json({ ok: false, error: 'Unauthorized' }, 401));
-    if (s.deviceId) { const d = (await readDevices(e)).find(x => x.deviceId === s.deviceId); if (!d) return withCors(json({ ok: false, error: 'Account removed', reason: 'removed' }, 401)); }
+    // Legacy Guest sessions are never treated as User sessions.
+    // Current Guest mode is client-only and does not call this endpoint.
+    if (s.guest) return withCors(json({ ok: true, guest: true, username: 'Guest' }));
+    if (s.deviceId) {
+      const d = (await readDevices(e)).find(x => x.deviceId === s.deviceId);
+      if (!d) return withCors(json({ ok: false, error: 'Account removed', reason: 'removed' }, 401));
+    }
     if (await deviceBlocked(e, s.deviceId)) return withCors(json({ ok: false, error: 'Blocked', blocked: true }, 403));
     return withCors(json({ ok: true, username: s.username }));
   }
@@ -299,14 +322,15 @@ async function handle(r, e) {
 
   if (p === '/api/admin/users' && r.method === 'GET') {
     const users = await readUsers(e), ds = await readDevices(e);
-    const safe = users.map(u => ({
-      id: u.id, username: u.username, createdAt: u.createdAt || null,
+    const isGuestDevice = d => !!d?.guest || String(d?.username || d?.userName || '').trim().toLowerCase() === 'guest';
+    const safe = users.filter(u => String(u?.username || '').trim().toLowerCase() !== 'guest').map(u => ({
+      id: u.id, username: u.username, number: u.number || '', createdAt: u.createdAt || null,
       lastLoginAt: u.lastLoginAt || null, lastDeviceId: u.lastDeviceId || null,
       lastDeviceName: u.lastDeviceName || '',
-      devices: ds.filter(d => d.username === u.username).map(d => ({ deviceId: d.deviceId, name: d.name, status: d.status || '', blocked: !!d.blocked, lastSeen: d.lastSeen || null }))
+      devices: ds.filter(d => !isGuestDevice(d) && d.username === u.username).map(d => ({ deviceId: d.deviceId, name: d.name, status: d.status || '', blocked: !!d.blocked, lastSeen: d.lastSeen || null }))
     }));
     safe.sort((a, b) => String(b.lastLoginAt || '').localeCompare(String(a.lastLoginAt || '')));
-    return withCors(json({ ok: true, users: safe }));
+    const latestUser = safe[0] || null; return withCors(json({ ok: true, users: safe, latest: latestUser }));
   }
 
   if (p === '/api/admin/users/reset-password' && r.method === 'POST') {
@@ -321,7 +345,11 @@ async function handle(r, e) {
     return withCors(json({ ok: true }));
   }
 
-  if (p === '/api/admin/devices' && r.method === 'GET') return withCors(json({ ok: true, devices: await readDevices(e), settings: await readSettings(e) }));
+  if (p === '/api/admin/devices' && r.method === 'GET') {
+    const ds = await readDevices(e);
+    const devices = ds.filter(d => !d?.guest && String(d?.username || d?.userName || '').trim().toLowerCase() !== 'guest');
+    return withCors(json({ ok: true, devices, settings: await readSettings(e) }));
+  }
   for (const action of ['block', 'unblock', 'approve']) {
     if (p === '/api/admin/devices/' + action && r.method === 'POST') {
       const b = await r.json().catch(() => ({})), ds = await readDevices(e), d = ds.find(x => x.deviceId === String(b.deviceId || ''));
