@@ -3211,28 +3211,28 @@ video{
   bottom:82px !important;
 }
 
-/* Fullscreen button — requested 💠 icon, no red color */
+/* Fullscreen button = red in normal + fullscreen */
 .vip-fullscreen-btn,
 #vipFullscreen,
 #vipFullscreenLauncher{
-  color:inherit !important;
-  -webkit-text-fill-color:currentColor !important;
+  color:#ff3045 !important;
+  -webkit-text-fill-color:#ff3045 !important;
   background:transparent !important;
   border:0 !important;
   box-shadow:none !important;
-  text-shadow:none !important;
+  text-shadow:0 0 8px rgba(255,48,69,.65) !important;
 }
 #vipVideoBox:fullscreen .vip-fullscreen-btn,
 #vipVideoBox:-webkit-full-screen .vip-fullscreen-btn,
 #vipVideoBox.vip-fullscreen .vip-fullscreen-btn,
 #vipVideoBox.is-fullscreen .vip-fullscreen-btn,
 #vipVideoBox.vip-css-fullscreen .vip-fullscreen-btn{
-  color:inherit !important;
-  -webkit-text-fill-color:currentColor !important;
+  color:#ff3045 !important;
+  -webkit-text-fill-color:#ff3045 !important;
   background:transparent !important;
   border:0 !important;
   box-shadow:none !important;
-  text-shadow:none !important;
+  text-shadow:0 0 8px rgba(255,48,69,.65) !important;
 }
 
 /* Volume controls = blue in normal + fullscreen */
@@ -3290,39 +3290,44 @@ video{
 }
 
 
-/* VIP NETWORK — FINAL ICONS
-   Channel controls use the requested ◀️ ▶️ icons.
-   Fullscreen toggle uses the requested 💠 icon. */
-.landscape-channel-controls button{
-  font-size:0 !important;
-  line-height:1 !important;
+/* FINAL ICON CLEANUP: keep only the new fullscreen diamond icon in normal and fullscreen modes. */
+.vip-fullscreen-btn,
+#vipFullscreen,
+#vipFullscreenLauncher,
+#vipVideoBox:fullscreen .vip-fullscreen-btn,
+#vipVideoBox:-webkit-full-screen .vip-fullscreen-btn,
+#vipVideoBox.vip-fullscreen .vip-fullscreen-btn,
+#vipVideoBox.is-fullscreen .vip-fullscreen-btn,
+#vipVideoBox.vip-css-fullscreen .vip-fullscreen-btn {
+  font-size: 0 !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
 }
-.landscape-channel-controls button::before{
-  display:block !important;
-  font-family:Arial,sans-serif !important;
-  font-size:30px !important;
-  line-height:1 !important;
-  font-weight:900 !important;
+.vip-fullscreen-btn::after,
+#vipFullscreen::after,
+#vipFullscreenLauncher::after {
+  content: "💠" !important;
+  font-size: 24px !important;
+  line-height: 1 !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  text-shadow: 0 0 8px rgba(255,255,255,.35) !important;
 }
-.landscape-channel-controls button:first-child::before{content:'◀️' !important;}
-.landscape-channel-controls button:last-child::before{content:'▶️' !important;}
-.landscape-channel-controls button svg,
-.landscape-channel-controls button i{display:none !important;}
-
-/* Screen enlarge/minimize control */
-.vip-fullscreen-btn{
-  font-size:0 !important;
+#vipVideoBox:fullscreen .vip-fullscreen-btn::after,
+#vipVideoBox:-webkit-full-screen .vip-fullscreen-btn::after,
+#vipVideoBox.vip-fullscreen .vip-fullscreen-btn::after,
+#vipVideoBox.is-fullscreen .vip-fullscreen-btn::after,
+#vipVideoBox.vip-css-fullscreen .vip-fullscreen-btn::after {
+  content: "💠" !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
 }
-.vip-fullscreen-btn::before{
-  content:'💠' !important;
-  display:block !important;
-  font-size:26px !important;
-  line-height:1 !important;
-  font-family:Arial,sans-serif !important;
-}
-.vip-fullscreen-btn svg,
-.vip-fullscreen-btn i{display:none !important;}
-@media(max-width:700px){
-  .landscape-channel-controls button::before{font-size:28px !important;}
-  .vip-fullscreen-btn::before{font-size:24px !important;}
+@media (max-width:600px){
+  .vip-fullscreen-btn::after,
+  #vipFullscreen::after,
+  #vipFullscreenLauncher::after { font-size: 22px !important; }
 }
