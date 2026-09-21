@@ -2810,3 +2810,37 @@ body.vip-player-fullscreen{overflow:hidden!important;background:#000!important;}
 
 /* VIP NETWORK: hide the 1px bottom system/edge divider without changing layout */
 html::after, body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:2px;background:#000!important;z-index:2147483647;pointer-events:none}
+
+/* VIP fullscreen final fix: fill the entire fullscreen viewport and crop only the excess aspect ratio. */
+html:has(#vipVideoBox:fullscreen),
+html:has(#vipVideoBox:-webkit-full-screen){
+  background:#000!important;
+}
+#vipVideoBox:fullscreen,
+#vipVideoBox:-webkit-full-screen,
+#vipVideoBox.vip-fullscreen,
+#vipVideoBox.is-fullscreen,
+#vipVideoBox.vip-css-fullscreen{
+  display:block!important;
+  overflow:hidden!important;
+}
+#vipVideoBox:fullscreen > video#video,
+#vipVideoBox:-webkit-full-screen > video#video,
+#vipVideoBox.vip-fullscreen > video#video,
+#vipVideoBox.is-fullscreen > video#video,
+#vipVideoBox.vip-css-fullscreen > video#video{
+  display:block!important;
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:100%!important;
+  min-height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  margin:0!important;
+  padding:0!important;
+  transform:none!important;
+}

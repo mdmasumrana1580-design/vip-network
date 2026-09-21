@@ -452,6 +452,12 @@ function setFullscreenButtonState() {
     videoBox.classList.toggle("vip-fullscreen", isFs);
     videoBox.classList.toggle("is-fullscreen", isFs);
     videoBox.classList.toggle("vip-css-fullscreen", isFs);
+    if (video) {
+      video.style.width = isFs ? "100%" : "";
+      video.style.height = isFs ? "100%" : "";
+      video.style.objectFit = isFs ? "cover" : "";
+      video.style.objectPosition = isFs ? "center center" : "";
+    }
   }
   document.body.classList.toggle("vip-player-fullscreen", isFs);
   const controls = document.getElementById("landscapeChannelControls");
