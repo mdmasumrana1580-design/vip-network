@@ -44,8 +44,15 @@
     // version must also have created AUTH_KEY. This prevents old/stale
     // sessions from silently opening the website after a refresh.
     const marked=localStorage.getItem(AUTH_KEY)==='1';
-    if(marked && await serverSession()) return;
-    if(!marked){ await clearStaleServerSession(); }
+    const isGuest=localStorage.getItem(GUEST_KEY)==='1';
+    const isUser=localStorage.getItem(USER_KEY)==='1';
+
+    // Guest is local-only: never call Worker/KV for Guest session validation.
+    if(isGuest) return;
+
+    // User sessions are server-validated and survive refresh.
+    if(marked && isUser && await serverSession()) return;
+    if(!marked || !isUser){ await clearStaleServerSession(); }
     localStorage.removeItem(USER_KEY); localStorage.removeItem(GUEST_KEY);
 
     const gate=makeGate(), form=gate.querySelector('#vipVisitorLogin'), status=gate.querySelector('#vipGateStatus');
@@ -53,21 +60,26 @@
     const u=gate.querySelector('#vipUserName'), n=gate.querySelector('#vipUserNumber'), dn=gate.querySelector('#vipDeviceName');
     dn.value=deviceName();
 
-    guestBtn.onclick=async()=>{
-      guestBtn.disabled=true; btn.disabled=true; status.textContent='Guest Account চালু হচ্ছে...'; status.style.color='#9de5ff';
+    guestBtn.onclick=()=>{
+      // FINAL GUEST MODE: Guest is completely client-side.
+      // No Worker/KV/API request is made, no device is registered, and no
+      // admin Users/Devices record is created. This also keeps Guest usable
+      // when the Worker is unavailable or its request quota is exhausted.
       try{
         let visitorId=localStorage.getItem('vip-guest-visitor-id');
         if(!visitorId)visitorId=(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now());
         localStorage.setItem('vip-guest-visitor-id',visitorId);
-        const dnValue=deviceName()||((/Mobi|Android/i.test(navigator.userAgent))?'Mobile Guest':'Guest Device');
-        localStorage.setItem('vip-network-device-name',dnValue);
-        const r=await fetch(base+'/api/guest/register',{method:'POST',headers:{'content-type':'application/json'},credentials:'include',body:JSON.stringify({visitorId,deviceId:window.VIP_DEVICE_ID||'',deviceName:dnValue}),cache:'no-store'});
-        const data=await r.json().catch(()=>({}));
-        if(r.status===403||data.blocked){ if(typeof window.VIP_SHOW_BLOCKED_PAGE==='function')window.VIP_SHOW_BLOCKED_PAGE(); return; }
-        if(!r.ok)throw new Error(data.error||'Guest login failed');
-        localStorage.setItem(AUTH_KEY,'1'); localStorage.setItem(GUEST_KEY,'1'); localStorage.removeItem(USER_KEY);
-        gate.remove(); window.dispatchEvent(new CustomEvent('vip:guest-login',{detail:data})); location.reload();
-      }catch(err){status.textContent=err.message||'Guest login failed';status.style.color='#ff9ba7';guestBtn.disabled=false;btn.disabled=false}
+        localStorage.setItem(AUTH_KEY,'1');
+        localStorage.setItem(GUEST_KEY,'1');
+        localStorage.removeItem(USER_KEY);
+        status.textContent='Guest Account চালু হচ্ছে...'; status.style.color='#9de5ff';
+        gate.remove();
+        window.dispatchEvent(new CustomEvent('vip:guest-login',{detail:{ok:true,guest:true,visitorId}}));
+        location.reload();
+      }catch(err){
+        status.textContent=err.message||'Guest login failed';
+        status.style.color='#ff9ba7';
+      }
     };
 
     form.onsubmit=async e=>{
