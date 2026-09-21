@@ -512,13 +512,25 @@ document.getElementById("nextChannel").addEventListener("click", function(e) {
 });
 
 window.addEventListener("popstate", function(){
+  // Android back: leave fullscreen/player view in one press, keep the
+  // currently playing channel alive, and return to the home/player area.
   if (isNativeFullscreen()) {
     exitNativeFullscreen();
+    setTimeout(function(){
+      try {
+        const home = document.querySelector('.header') || document.getElementById('playerSection');
+        if (home) home.scrollIntoView({behavior:'smooth', block:'start'});
+      } catch(e) {}
+    }, 80);
     return;
   }
   if (vipPlayerHistoryActive) {
     vipPlayerHistoryActive = false;
-    restoreWelcomeAfterBack();
+    // Do not destroy the current stream. Keep the same channel playing.
+    try {
+      const home = document.querySelector('.header') || document.getElementById('playerSection');
+      if (home) home.scrollIntoView({behavior:'smooth', block:'start'});
+    } catch(e) {}
   }
 });
 
