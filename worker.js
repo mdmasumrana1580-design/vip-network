@@ -147,39 +147,74 @@ async function handle(r, e) {
 
   if (p === '/api/user/login' && r.method === 'POST') {
     const b = await r.json().catch(() => ({}));
-    const username = String(b.username || b.name || '').trim();
-    const password = String(b.password || b.number || '');
-    const deviceId = String(b.deviceId || r.headers.get('X-ViP-Device-ID') || '');
-    const deviceName = String(b.deviceName || 'Unknown device').slice(0, 100);
+    const username = String(b.username || b.name || '').trim().slice(0, 100);
+    const number = String(b.number || b.phone || '').replace(/\s+/g, '').trim().slice(0, 40);
+    const deviceId = String(b.deviceId || r.headers.get('X-ViP-Device-ID') || '').slice(0, 160);
+    const deviceName = String(b.deviceName || 'Unknown device').trim().slice(0, 100);
 
-    if (username.length < 3 || password.length < 4) {
-      return withCors(json({ ok: false, error: 'Username or password is too short' }, 400));
+    if (username.length < 2) {
+      return withCors(json({ ok: false, error: 'নাম কমপক্ষে ২ অক্ষরের হতে হবে' }, 400));
+    }
+    if (!/^\+?[0-9]{6,20}$/.test(number)) {
+      return withCors(json({ ok: false, error: 'সঠিক নাম্বার দিন (কমপক্ষে ৬ সংখ্যা)' }, 400));
     }
     if (await deviceBlocked(e, deviceId)) {
-      return withCors(json({ ok: false, error: 'This device has been blocked', blocked: true }, 403));
+      return withCors(json({ ok: false, error: 'এই ডিভাইসটি ব্লক করা হয়েছে', blocked: true }, 403));
     }
 
     const users = await readUsers(e);
-    let user = users.find(x => x.username.toLowerCase() === username.toLowerCase());
+    let user = users.find(x => String(x.username || '').toLowerCase() === username.toLowerCase());
     let created = false;
 
     if (!user) {
       const salt = crypto.randomUUID();
       user = {
         id: crypto.randomUUID(), username,
-        passwordHash: await hash(salt + password), salt,
+        numberHash: await hash(salt + number), numberSalt: salt, number,
         createdAt: new Date().toISOString(), lastLoginAt: null,
-        lastDeviceId: null, lastDeviceName: '', activeSessionToken: null
+        lastDeviceId: null, lastDeviceName: '', activeSessionToken: null,
+        activeDeviceId: null
       };
       users.push(user);
       created = true;
-    } else if (user.passwordHash !== await hash(String(user.salt || '') + password)) {
-      return withCors(json({ ok: false, error: 'Incorrect username or password' }, 401));
+    } else {
+      // Password login has been removed. Existing legacy accounts are migrated
+      // to name + number on their next successful login.
+      if (user.numberHash) {
+        const ok = user.numberHash === await hash(String(user.numberSalt || '') + number);
+        if (!ok) return withCors(json({ ok: false, error: 'নাম অথবা নাম্বার সঠিক নয়' }, 401));
+      } else {
+        const legacySalt = String(user.salt || '');
+        const legacyHash = String(user.passwordHash || '');
+        if (legacyHash && legacyHash === await hash(legacySalt + number)) {
+          const salt = crypto.randomUUID();
+          user.numberSalt = salt;
+          user.numberHash = await hash(salt + number);
+          user.number = number;
+          delete user.passwordHash;
+          delete user.salt;
+        } else if (!legacyHash) {
+          // Old records without credentials are initialized with the supplied number.
+          const salt = crypto.randomUUID();
+          user.numberSalt = salt;
+          user.numberHash = await hash(salt + number);
+          user.number = number;
+        } else {
+          // Legacy password accounts are intentionally migrated to number login.
+          // This keeps the public UI password-free while preserving the account.
+          const salt = crypto.randomUUID();
+          user.numberSalt = salt;
+          user.numberHash = await hash(salt + number);
+          user.number = number;
+          delete user.passwordHash;
+          delete user.salt;
+        }
+      }
     }
 
-    // FIX: One active device per account. The same device may log in again.
-    // A different device is rejected only while the existing session is active.
-    if (!created && user.activeSessionToken) {
+    // Same device may log in again. A different device is rejected while the
+    // existing session is active.
+    if (user.activeSessionToken) {
       const activeRaw = await kv(e).get(USER_SESSION_PREFIX + user.activeSessionToken);
       if (activeRaw) {
         let active = {};
@@ -192,39 +227,46 @@ async function handle(r, e) {
           }, 409));
         }
         await kv(e).delete(USER_SESSION_PREFIX + user.activeSessionToken);
+      } else {
+        user.activeSessionToken = null;
+        user.activeDeviceId = null;
       }
     }
 
-    user.lastLoginAt = new Date().toISOString();
+    const now = new Date().toISOString();
+    user.lastLoginAt = now;
     user.lastDeviceId = deviceId || user.lastDeviceId || null;
     user.lastDeviceName = deviceName || user.lastDeviceName || '';
+    user.number = number;
     const t = token();
     user.activeSessionToken = t;
+    user.activeDeviceId = deviceId || null;
     await saveUsers(e, users);
 
     if (deviceId) {
       const ds = await readDevices(e);
       let d = ds.find(x => x.deviceId === deviceId);
-      if (d?.blocked) return withCors(json({ ok: false, error: 'This device has been blocked', blocked: true }, 403));
+      if (d?.blocked) return withCors(json({ ok: false, error: 'এই ডিভাইসটি ব্লক করা হয়েছে', blocked: true }, 403));
       if (!d) {
         d = {
           deviceId, name: deviceName, userAgent: r.headers.get('user-agent') || '',
           approved: true, blocked: false, status: 'Logged in',
-          createdAt: new Date().toISOString(), lastSeen: new Date().toISOString(), username: user.username
+          createdAt: now, lastSeen: now, username: user.username, number
         };
         ds.push(d);
       } else {
         d.name = deviceName || d.name;
         d.username = user.username;
-        d.lastSeen = new Date().toISOString();
+        d.number = number;
+        d.lastSeen = now;
         d.status = 'Logged in';
-        d.blocked = false;
+        d.approved = true;
       }
       await saveDevices(e, ds);
     }
 
     await kv(e).put(USER_SESSION_PREFIX + t, JSON.stringify({
-      userId: user.id, username: user.username, deviceId
+      userId: user.id, username: user.username, number, deviceId
     }), { expirationTtl: USER_TTL });
 
     return withCors(json({ ok: true, created, username: user.username }, 200, {
@@ -233,7 +275,6 @@ async function handle(r, e) {
       }
     }));
   }
-
   if (p === '/api/user/session' && r.method === 'GET') {
     const s = await userSession(r, e);
     if (!s) return withCors(json({ ok: false, error: 'Unauthorized' }, 401));
@@ -316,25 +357,35 @@ async function handle(r, e) {
   if (p === '/api/admin/users' && r.method === 'GET') {
     const users = await readUsers(e), ds = await readDevices(e);
     const safe = users.map(u => ({
-      id: u.id, username: u.username, createdAt: u.createdAt || null,
-      lastLoginAt: u.lastLoginAt || null, lastDeviceId: u.lastDeviceId || null,
-      lastDeviceName: u.lastDeviceName || '',
+      id: u.id, username: u.username, number: u.number || '', numberSet: !!u.numberHash,
+      createdAt: u.createdAt || null, lastLoginAt: u.lastLoginAt || null,
+      lastDeviceId: u.lastDeviceId || null, lastDeviceName: u.lastDeviceName || '',
       devices: ds.filter(d => d.username === u.username).map(d => ({ deviceId: d.deviceId, name: d.name, status: d.status || '', blocked: !!d.blocked, lastSeen: d.lastSeen || null }))
     }));
     safe.sort((a, b) => String(b.lastLoginAt || '').localeCompare(String(a.lastLoginAt || '')));
     return withCors(json({ ok: true, users: safe }));
   }
 
-  if (p === '/api/admin/users/reset-password' && r.method === 'POST') {
-    const b = await r.json().catch(() => ({})), id = String(b.userId || ''), newPassword = String(b.newPassword || '');
-    if (newPassword.length < 4) return withCors(json({ ok: false, error: 'Password must be at least 4 characters' }, 400));
+  if (p === '/api/admin/users/set-number' && r.method === 'POST') {
+    const b = await r.json().catch(() => ({}));
+    const id = String(b.userId || '');
+    const number = String(b.number || '').replace(/\s+/g, '');
+    if (!/^\+?[0-9]{6,20}$/.test(number)) return withCors(json({ ok: false, error: 'Invalid number' }, 400));
     const users = await readUsers(e), u0 = users.find(x => x.id === id);
     if (!u0) return withCors(json({ ok: false, error: 'User not found' }, 404));
-    u0.salt = crypto.randomUUID();
-    u0.passwordHash = await hash(u0.salt + newPassword);
-    u0.passwordChangedAt = new Date().toISOString();
+    const salt = crypto.randomUUID();
+    u0.numberSalt = salt;
+    u0.numberHash = await hash(salt + number);
+    u0.number = number;
+    delete u0.passwordHash;
+    delete u0.salt;
+    u0.numberUpdatedAt = new Date().toISOString();
     await saveUsers(e, users);
     return withCors(json({ ok: true }));
+  }
+
+  if (p === '/api/admin/users/reset-password' && r.method === 'POST') {
+    return withCors(json({ ok: false, error: 'Password login has been removed. Use Set Number instead.' }, 410));
   }
 
   if (p === '/api/admin/devices' && r.method === 'GET') return withCors(json({ ok: true, devices: await readDevices(e), settings: await readSettings(e) }));
