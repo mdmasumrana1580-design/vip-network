@@ -453,10 +453,14 @@ function setFullscreenButtonState() {
     videoBox.classList.toggle("is-fullscreen", isFs);
     videoBox.classList.toggle("vip-css-fullscreen", isFs);
     if (video) {
-      video.style.width = isFs ? "100%" : "";
-      video.style.height = isFs ? "100%" : "";
-      video.style.objectFit = isFs ? "cover" : "";
+      video.style.width = isFs ? "100vw" : "";
+      video.style.height = isFs ? "100dvh" : "";
+      video.style.objectFit = isFs ? "fill" : "";
       video.style.objectPosition = isFs ? "center center" : "";
+      video.style.position = isFs ? "absolute" : "";
+      video.style.inset = isFs ? "0" : "";
+      video.style.maxWidth = isFs ? "none" : "";
+      video.style.maxHeight = isFs ? "none" : "";
     }
   }
   document.body.classList.toggle("vip-player-fullscreen", isFs);

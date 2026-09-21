@@ -2844,3 +2844,67 @@ html:has(#vipVideoBox:-webkit-full-screen){
   padding:0!important;
   transform:none!important;
 }
+
+/* VIP NETWORK: HARD FULLSCREEN FIX — video must occupy the complete screen. */
+#vipVideoBox:fullscreen,
+#vipVideoBox:-webkit-full-screen,
+#vipVideoBox.vip-fullscreen,
+#vipVideoBox.is-fullscreen,
+#vipVideoBox.vip-css-fullscreen{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  min-width:100vw!important;
+  min-height:100dvh!important;
+  max-width:none!important;
+  max-height:none!important;
+  aspect-ratio:auto!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  overflow:hidden!important;
+  background:#000!important;
+  z-index:2147483646!important;
+}
+#vipVideoBox:fullscreen > video#video,
+#vipVideoBox:-webkit-full-screen > video#video,
+#vipVideoBox.vip-fullscreen > video#video,
+#vipVideoBox.is-fullscreen > video#video,
+#vipVideoBox.vip-css-fullscreen > video#video{
+  position:absolute!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  min-width:100vw!important;
+  min-height:100dvh!important;
+  max-width:none!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  transform:none!important;
+  object-fit:fill!important;
+  object-position:center center!important;
+  display:block!important;
+}
+
+
+/* VIP NETWORK — TELEVIZO-STYLE FILL SCREEN: no crop, no bars. */
+#vipVideoBox:fullscreen > video#video,
+#vipVideoBox:-webkit-full-screen > video#video,
+#vipVideoBox.vip-fullscreen > video#video,
+#vipVideoBox.is-fullscreen > video#video,
+#vipVideoBox.vip-css-fullscreen > video#video{
+  width:100% !important;
+  height:100% !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  max-width:none !important;
+  max-height:none !important;
+  object-fit:fill !important;
+  object-position:center center !important;
+  transform:none !important;
+  left:0 !important; right:0 !important; top:0 !important; bottom:0 !important;
+}
