@@ -3196,3 +3196,95 @@ video{
   box-shadow: none !important;
   text-shadow: 0 0 6px rgba(0,230,118,.65),0 0 12px rgba(0,230,118,.28) !important;
 }
+
+/* VIP NETWORK — FINAL CONTROL COLORS / POSITION */
+/* Channel change arrows: move a little higher */
+.landscape-channel-controls{
+  bottom:70px !important;
+  transform:none !important;
+}
+.video-box.vip-fullscreen .landscape-channel-controls,
+.video-box.is-fullscreen .landscape-channel-controls,
+.video-box.vip-css-fullscreen .landscape-channel-controls,
+#vipVideoBox:fullscreen .landscape-channel-controls,
+#vipVideoBox:-webkit-full-screen .landscape-channel-controls{
+  bottom:82px !important;
+}
+
+/* Fullscreen button = red in normal + fullscreen */
+.vip-fullscreen-btn,
+#vipFullscreen,
+#vipFullscreenLauncher{
+  color:#ff3045 !important;
+  -webkit-text-fill-color:#ff3045 !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  text-shadow:0 0 8px rgba(255,48,69,.65) !important;
+}
+#vipVideoBox:fullscreen .vip-fullscreen-btn,
+#vipVideoBox:-webkit-full-screen .vip-fullscreen-btn,
+#vipVideoBox.vip-fullscreen .vip-fullscreen-btn,
+#vipVideoBox.is-fullscreen .vip-fullscreen-btn,
+#vipVideoBox.vip-css-fullscreen .vip-fullscreen-btn{
+  color:#ff3045 !important;
+  -webkit-text-fill-color:#ff3045 !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  text-shadow:0 0 8px rgba(255,48,69,.65) !important;
+}
+
+/* Volume controls = blue in normal + fullscreen */
+.vip-volume-control,
+.vip-volume-control button{
+  color:#2196ff !important;
+  -webkit-text-fill-color:#2196ff !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  text-shadow:0 0 8px rgba(33,150,255,.60) !important;
+}
+.vip-volume-control input{
+  accent-color:#2196ff !important;
+}
+.vip-volume-control button:hover,
+.vip-volume-control button:active{
+  color:#55b4ff !important;
+  -webkit-text-fill-color:#55b4ff !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+#vipVideoBox:fullscreen .vip-volume-control,
+#vipVideoBox:-webkit-full-screen .vip-volume-control,
+#vipVideoBox.vip-fullscreen .vip-volume-control,
+#vipVideoBox.is-fullscreen .vip-volume-control,
+#vipVideoBox.vip-css-fullscreen .vip-volume-control,
+#vipVideoBox:fullscreen .vip-volume-control button,
+#vipVideoBox:-webkit-full-screen .vip-volume-control button,
+#vipVideoBox.vip-fullscreen .vip-volume-control button,
+#vipVideoBox.is-fullscreen .vip-volume-control button,
+#vipVideoBox.vip-css-fullscreen .vip-volume-control button{
+  color:#2196ff !important;
+  -webkit-text-fill-color:#2196ff !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  text-shadow:0 0 8px rgba(33,150,255,.60) !important;
+}
+#vipVideoBox:fullscreen .vip-volume-control input,
+#vipVideoBox:-webkit-full-screen .vip-volume-control input,
+#vipVideoBox.vip-fullscreen .vip-volume-control input,
+#vipVideoBox.is-fullscreen .vip-volume-control input,
+#vipVideoBox.vip-css-fullscreen .vip-volume-control input{
+  accent-color:#2196ff !important;
+}
+
+@media (max-width:600px){
+  .landscape-channel-controls{bottom:62px !important;}
+  .video-box.vip-fullscreen .landscape-channel-controls,
+  .video-box.is-fullscreen .landscape-channel-controls,
+  .video-box.vip-css-fullscreen .landscape-channel-controls,
+  #vipVideoBox:fullscreen .landscape-channel-controls,
+  #vipVideoBox:-webkit-full-screen .landscape-channel-controls{bottom:72px !important;}
+}
