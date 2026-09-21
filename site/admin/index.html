@@ -48,6 +48,15 @@
 <section id="logs" class="section"><div class="simple-panel"><h1>Logs</h1><p>Admin activity and system logs will appear here.</p></div></section>
 </main></div>
 <div id="loginModal" class="modal show"><div class="login-card"><img src="https://i.postimg.cc/8Cz84Dh1/file-000000002db882119d2d71c9e1944207.png"><h2>VIP-TV Admin Panel</h2><input id="workerUrl" placeholder="Worker URL"><input id="workerPassword" type="password" placeholder="Admin Password"><button id="loginBtn" class="save big">Login</button><p id="loginStatus"></p></div></div>
+
+<!-- compatibility elements used by the existing admin logic -->
+<div id="adminCompat" hidden>
+  <input id="globalSearch">
+  <div id="barActive"></div><div id="barDead"></div><div id="barDisabled"></div>
+  <form id="channelForm">
+    <input name="name"><input name="category"><input name="logo"><input name="url"><input name="status">
+  </form>
+</div>
 <div id="toast" class="toast"></div>
 <script src="app.js"></script><script src="ui-patch.js"></script>
 </body></html>
