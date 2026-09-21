@@ -149,128 +149,56 @@ async function handle(r, e) {
 
   if (p === '/api/user/login' && r.method === 'POST') {
     const b = await r.json().catch(() => ({}));
-    const username = String(b.username || b.name || '').trim().slice(0, 100);
-    const number = String(b.number || b.phone || '').trim().slice(0, 30);
-    const deviceId = String(b.deviceId || r.headers.get('X-ViP-Device-ID') || '').trim().slice(0, 160);
-    const deviceName = String(b.deviceName || 'Mobile Device').trim().slice(0, 100);
+    const username = String(b.username || b.name || '').trim().slice(0,100);
+    const number = String(b.number || b.phone || '').trim().slice(0,30);
+    const deviceId = String(b.deviceId || r.headers.get('X-ViP-Device-ID') || '').slice(0,160);
+    const deviceName = String(b.deviceName || '').trim().slice(0,100) || 'Mobile Device';
     const ip = clientIP(r);
-
-    if (!username || !number || !deviceId || !deviceName) {
-      return withCors(json({ ok:false, error:'Name, number and device name are required' }, 400));
-    }
-    if (await deviceBlocked(e, deviceId)) {
-      return withCors(json({ ok:false, error:'This device has been blocked', blocked:true, reason:'blocked' }, 403));
-    }
+    if (username.length < 1 || !deviceId) return withCors(json({ ok:false, error:'Name and device information are required' },400));
+    if (await deviceBlocked(e, deviceId)) return withCors(json({ ok:false,error:'This device has been blocked',blocked:true },403));
 
     const users = await readUsers(e);
     let user = users.find(x => String(x.username || '').toLowerCase() === username.toLowerCase());
-    const created = !user;
-    const now = new Date().toISOString();
-
+    let created = false;
     if (!user) {
-      user = {
-        id: token(), username,
-        createdAt: now, lastLoginAt: now, lastLoginBD: bangladeshTime(now),
-        lastDeviceId: deviceId, lastDeviceName: deviceName,
-        number, ip, activeSessionToken: null
-      };
-      users.push(user);
-    } else if (user.activeSessionToken) {
+      user = { id:crypto.randomUUID(), username, createdAt:new Date().toISOString(), lastLoginAt:null, lastDeviceId:null, lastDeviceName:'', number:'', ip:'', activeSessionToken:null };
+      users.push(user); created = true;
+    }
+
+    // One active device per account. Same device can log in again; another active device is rejected.
+    if (user.activeSessionToken) {
       const activeRaw = await kv(e).get(USER_SESSION_PREFIX + user.activeSessionToken);
       if (activeRaw) {
-        let active = {};
-        try { active = JSON.parse(activeRaw); } catch {}
-        if (active.deviceId && active.deviceId !== deviceId) {
-          return withCors(json({ ok:false, error:'এই অ্যাকাউন্ট অন্য একটি ডিভাইসে লগইন করা আছে। আগে Logout করুন।', alreadyLoggedIn:true }, 409));
-        }
+        let active={}; try{active=JSON.parse(activeRaw)}catch{}
+        if (active.deviceId && active.deviceId !== deviceId) return withCors(json({ok:false,error:'এই অ্যাকাউন্ট অন্য একটি ডিভাইসে লগইন করা আছে। আগে Logout করুন।',alreadyLoggedIn:true},409));
+        await kv(e).delete(USER_SESSION_PREFIX + user.activeSessionToken);
       }
-      await kv(e).delete(USER_SESSION_PREFIX + user.activeSessionToken);
     }
-
-    user.lastLoginAt = now;
-    user.lastLoginBD = bangladeshTime(now);
-    user.lastDeviceId = deviceId;
-    user.lastDeviceName = deviceName;
-    user.number = number;
-    user.ip = ip;
-
-    const t = token();
-    user.activeSessionToken = t;
-    await saveUsers(e, users);
-
-    const ds = await readDevices(e);
-    let d = ds.find(x => x.deviceId === deviceId);
-    if (d?.blocked) return withCors(json({ ok:false, error:'This device has been blocked', blocked:true, reason:'blocked' }, 403));
-    if (!d) {
-      d = {
-        deviceId, name:deviceName, deviceName,
-        userName:username, username, number, ip, userId:user.id,
-        userAgent:String(b.userAgent || r.headers.get('user-agent') || '').slice(0,200),
-        approved:true, blocked:false, status:'Logged in',
-        createdAt:now, lastSeen:now, lastLoginAt:now, lastLoginBD:bangladeshTime(now),
-        activeSessionToken:t
-      };
-      ds.push(d);
-    } else {
-      d.name = deviceName; d.deviceName = deviceName;
-      d.userName = username; d.username = username; d.number = number;
-      d.ip = ip; d.userId = user.id; d.approved = true; d.blocked = false;
-      d.status = 'Logged in'; d.lastSeen = now; d.lastLoginAt = now;
-      d.lastLoginBD = bangladeshTime(now); d.activeSessionToken = t;
-    }
-    await saveDevices(e, ds);
-    await kv(e).put(USER_SESSION_PREFIX + t, JSON.stringify({ userId:user.id, username, number, deviceId, deviceName }), { expirationTtl:USER_TTL });
-
-    return withCors(json({ ok:true, created, user:{ name:username, number, deviceName, ip, lastLoginBD:user.lastLoginBD } }, 200, {
-      headers:{ 'Set-Cookie':`VIP_USER_SESSION=${encodeURIComponent(t)}; Max-Age=${USER_TTL}; Path=/; HttpOnly; Secure; SameSite=Lax` }
-    }));
-  }
-
-  // Guest Account: auto-login without a password and with a real server-side session.
-  if ((p === '/api/user/guest' || p === '/api/guest/register') && r.method === 'POST') {
-    const b = await r.json().catch(() => ({}));
-    const deviceId = String(b.deviceId || b.visitorId || r.headers.get('X-ViP-Device-ID') || '').trim().slice(0,160);
-    const deviceName = String(b.deviceName || 'Guest Device').trim().slice(0,100);
-    const ip = clientIP(r);
-    if (!deviceId) return withCors(json({ ok:false, error:'deviceId required' }, 400));
-    if (await deviceBlocked(e, deviceId)) return withCors(json({ ok:false, error:'This device has been blocked', blocked:true, reason:'blocked' },403));
 
     const now = new Date().toISOString();
-    const ds = await readDevices(e);
-    let d = ds.find(x => x.deviceId === deviceId);
-    if (d?.activeSessionToken) await kv(e).delete(USER_SESSION_PREFIX + d.activeSessionToken);
-    const t = token();
+    user.lastLoginAt=now; user.lastDeviceId=deviceId; user.lastDeviceName=deviceName; user.number=number || user.number || ''; user.ip=ip || user.ip || '—'; user.lastLoginBD=bangladeshTime(now);
+    const t=token(); user.activeSessionToken=t; await saveUsers(e,users);
+
+    const ds=await readDevices(e);
+    let d=ds.find(x=>x.deviceId===deviceId);
+    if (d?.blocked) return withCors(json({ok:false,error:'This device has been blocked',blocked:true},403));
     if (!d) {
-      d = {
-        deviceId, name:deviceName, deviceName,
-        userName:'Guest', username:'Guest', number:'', ip,
-        userAgent:String(b.userAgent || r.headers.get('user-agent') || '').slice(0,200),
-        approved:true, blocked:false, status:'Logged in',
-        createdAt:now, lastSeen:now, lastLoginAt:now, lastLoginBD:bangladeshTime(now),
-        activeSessionToken:t
-      };
+      d={deviceId,name:deviceName,deviceName,userName:username,username,number,ip,userId:user.id,userAgent:r.headers.get('user-agent')||'',approved:true,blocked:false,status:'Logged in',createdAt:now,lastSeen:now,lastLoginAt:now,lastLoginBD:bangladeshTime(now)};
       ds.push(d);
     } else {
-      d.name = deviceName; d.deviceName = deviceName;
-      d.userName = 'Guest'; d.username = 'Guest'; d.number = '';
-      d.ip = ip; d.approved = true; d.blocked = false; d.status = 'Logged in';
-      d.lastSeen = now; d.lastLoginAt = now; d.lastLoginBD = bangladeshTime(now);
-      d.activeSessionToken = t;
+      d.deviceName=deviceName; d.name=deviceName; d.userName=username; d.username=username; d.number=number || d.number || ''; d.ip=ip || d.ip || '—'; d.userId=user.id; d.approved=true; d.blocked=false; d.status='Logged in'; d.lastSeen=now; d.lastLoginAt=now; d.lastLoginBD=bangladeshTime(now);
     }
-    await saveDevices(e, ds);
-    await kv(e).put(USER_SESSION_PREFIX + t, JSON.stringify({ username:'Guest', deviceId, deviceName, guest:true }), { expirationTtl:USER_TTL });
-    return withCors(json({ ok:true, autoLogin:true, guest:true, user:{name:'Guest', number:'', deviceName, ip, lastLoginBD:d.lastLoginBD} },200,{
-      headers:{ 'Set-Cookie':`VIP_USER_SESSION=${encodeURIComponent(t)}; Max-Age=${USER_TTL}; Path=/; HttpOnly; Secure; SameSite=Lax` }
-    }));
+    await saveDevices(e,ds);
+    await kv(e).put(USER_SESSION_PREFIX+t,JSON.stringify({userId:user.id,username:user.username,deviceId}),{expirationTtl:USER_TTL});
+    return withCors(json({ok:true,created,username:user.username,user:{name:username,number,deviceName}},200,{headers:{'Set-Cookie':`VIP_USER_SESSION=${encodeURIComponent(t)}; Max-Age=${USER_TTL}; Path=/; HttpOnly; Secure; SameSite=Lax`}}));
   }
 
   if (p === '/api/user/session' && r.method === 'GET') {
     const s = await userSession(r, e);
     if (!s) return withCors(json({ ok: false, error: 'Unauthorized' }, 401));
-    let d = null;
-    if (s.deviceId) { d = (await readDevices(e)).find(x => x.deviceId === s.deviceId); if (!d) return withCors(json({ ok:false, loggedIn:false, error:'Account removed', reason:'removed' },401)); }
-    if (await deviceBlocked(e, s.deviceId)) return withCors(json({ ok:false, loggedIn:false, error:'Blocked', blocked:true, reason:'blocked' },403));
-    return withCors(json({ ok:true, loggedIn:true, username:s.username || d?.username || 'Guest', user:{ name:d?.userName || s.username || 'Guest', number:d?.number || s.number || '', deviceName:d?.deviceName || s.deviceName || d?.name || '', ip:d?.ip || '—', lastLoginBD:d?.lastLoginBD || '' } }));
+    if (s.deviceId) { const d = (await readDevices(e)).find(x => x.deviceId === s.deviceId); if (!d) return withCors(json({ ok: false, error: 'Account removed', reason: 'removed' }, 401)); }
+    if (await deviceBlocked(e, s.deviceId)) return withCors(json({ ok: false, error: 'Blocked', blocked: true }, 403));
+    return withCors(json({ ok: true, username: s.username }));
   }
 
   if (p === '/api/user/logout' && r.method === 'POST') {
@@ -281,10 +209,6 @@ async function handle(r, e) {
         try {
           const s = JSON.parse(raw), users = await readUsers(e), u0 = users.find(x => x.id === s.userId);
           if (u0 && u0.activeSessionToken === t) { u0.activeSessionToken = null; await saveUsers(e, users); }
-          const ds = await readDevices(e);
-          let changed = false;
-          for (const d of ds) { if (d.activeSessionToken === t) { delete d.activeSessionToken; d.status = 'Logged out'; changed = true; } }
-          if (changed) await saveDevices(e, ds);
         } catch {}
       }
       await kv(e).delete(USER_SESSION_PREFIX + t);
@@ -317,22 +241,16 @@ async function handle(r, e) {
   }
 
   if (p === '/api/device/register' && r.method === 'POST') {
-    const b = await r.json().catch(() => ({})), id = String(b.deviceId || r.headers.get('X-ViP-Device-ID') || '');
-    if (!id) return withCors(json({ ok: false, error: 'deviceId required' }, 400));
-    const ds = await readDevices(e);
-    let d = ds.find(x => x.deviceId === id);
-    if (d?.blocked) return withCors(json({ ok: false, error: 'Blocked', blocked: true }, 403));
-    const now = new Date().toISOString(), number = String(b.number || b.phone || '').trim().slice(0,30), ip = clientIP(r);
-    const deviceName = String(b.deviceName || b.name || 'Mobile Device').slice(0,100);
-    const userName = String(b.userName || b.username || b.name || 'Guest').trim().slice(0,100);
-    if (!d) {
-      d = { deviceId:id, name:deviceName, deviceName, userName, username:userName, number, ip, userAgent:String(b.userAgent || r.headers.get('user-agent') || '').slice(0,200), approved:true, blocked:false, status:'Logged in', createdAt:now, lastSeen:now, lastLoginAt:now, lastLoginBD:bangladeshTime(now) };
-      ds.push(d);
-    } else {
-      d.name = deviceName || d.name; d.deviceName = deviceName || d.deviceName || d.name; d.userName = userName || d.userName || 'Guest'; d.username = d.userName; d.number = number || d.number || ''; d.ip = ip || d.ip || '—'; d.approved = true; d.blocked = false; d.status = 'Logged in'; d.lastSeen = now; d.lastLoginAt = now; d.lastLoginBD = bangladeshTime(now);
-    }
-    await saveDevices(e, ds);
-    return withCors(json({ ok: true, autoLogin: true, device: d, settings: await readSettings(e) }));
+    const b=await r.json().catch(()=>({})), id=String(b.deviceId||r.headers.get('X-ViP-Device-ID')||'');
+    if(!id)return withCors(json({ok:false,error:'deviceId required'},400));
+    const ds=await readDevices(e); let d=ds.find(x=>x.deviceId===id);
+    if(d?.blocked)return withCors(json({ok:false,error:'Blocked',blocked:true},403));
+    const now=new Date().toISOString(), number=String(b.number||b.phone||'').trim().slice(0,30), ip=clientIP(r);
+    const deviceName=String(b.deviceName||b.name||'Mobile Device').slice(0,100);
+    const explicitUserName=String(b.userName||b.username||'').trim().slice(0,100);
+    if(!d){ d={deviceId:id,name:deviceName,deviceName,userName:explicitUserName||'Guest',username:explicitUserName||'Guest',number,ip,userAgent:String(b.userAgent||r.headers.get('user-agent')||'').slice(0,200),approved:true,blocked:false,status:'Logged in',createdAt:now,lastSeen:now,lastLoginAt:now,lastLoginBD:bangladeshTime(now)}; ds.push(d); }
+    else { d.name=deviceName||d.name; d.deviceName=deviceName||d.deviceName||d.name; if(explicitUserName){d.userName=explicitUserName;d.username=explicitUserName;} d.number=number||d.number||''; d.ip=ip||d.ip||'—'; d.approved=true; d.blocked=false; d.status='Logged in'; d.lastSeen=now; d.lastLoginAt=now; d.lastLoginBD=bangladeshTime(now); }
+    await saveDevices(e,ds); return withCors(json({ok:true,autoLogin:true,device:d,settings:await readSettings(e)}));
   }
 
   if (p === '/api/guest/register' && r.method === 'POST') {
@@ -343,7 +261,10 @@ async function handle(r, e) {
     const now=new Date().toISOString(), ip=clientIP(r), deviceName=String(b.deviceName||'Guest Device').slice(0,100);
     if(!d){ d={deviceId:id,name:deviceName,deviceName,userName:'Guest',username:'Guest',number:'',ip,userAgent:r.headers.get('user-agent')||'',approved:true,blocked:false,status:'Logged in',createdAt:now,lastSeen:now,lastLoginAt:now,lastLoginBD:bangladeshTime(now)}; ds.push(d); }
     else { d.name=deviceName; d.deviceName=deviceName; d.userName=d.userName||'Guest'; d.username=d.userName; d.ip=ip; d.approved=true; d.status='Logged in'; d.lastSeen=now; d.lastLoginAt=now; d.lastLoginBD=bangladeshTime(now); }
-    await saveDevices(e,ds); return withCors(json({ok:true,autoLogin:true,guest:true,device:d}));
+    await saveDevices(e,ds);
+    const t=token();
+    await kv(e).put(USER_SESSION_PREFIX+t,JSON.stringify({userId:null,username:d.userName||'Guest',deviceId:id,guest:true}),{expirationTtl:USER_TTL});
+    return withCors(json({ok:true,autoLogin:true,guest:true,device:d},200,{headers:{'Set-Cookie':`VIP_USER_SESSION=${encodeURIComponent(t)}; Max-Age=${USER_TTL}; Path=/; HttpOnly; Secure; SameSite=Lax`}}));
   }
 
   if (p === '/api/device/check' && r.method === 'GET') {
