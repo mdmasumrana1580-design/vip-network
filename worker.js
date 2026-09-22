@@ -281,6 +281,10 @@ async function handle(r, e) {
     const s = await readState(e);
     return withCors(json({ channels: s.channels || [] }));
   }
+  if (r.method === 'GET' && p === '/api/movie-playlist') {
+    const s = await readState(e);
+    return withCors(json({ channels: s.movieSeries || [] }));
+  }
 
   if (p === '/api/device/register' && r.method === 'POST') {
     const b=await r.json().catch(()=>({})), id=String(b.deviceId||r.headers.get('X-ViP-Device-ID')||'');
