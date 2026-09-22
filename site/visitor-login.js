@@ -47,7 +47,7 @@
         const data=await r.json().catch(()=>({}));
         if(r.status===403||data.blocked){if(typeof window.VIP_SHOW_BLOCKED_PAGE==='function')window.VIP_SHOW_BLOCKED_PAGE();return;}
         if(!r.ok&&!data.storageLimited)throw new Error(data.error||'Guest login failed');
-        localStorage.setItem(guestKey,'1');gate.remove();window.dispatchEvent(new CustomEvent('vip:guest-login',{detail:data}));location.reload();
+        localStorage.setItem(guestKey,'1');gate.remove();window.dispatchEvent(new CustomEvent('vip:guest-login',{detail:data}));
       }catch(err){status.textContent=err.message||'Guest login failed';status.style.color='#ff9ba7';guestBtn.disabled=false;btn.disabled=false}
     };
     form.onsubmit=async e=>{e.preventDefault();btn.disabled=true;guestBtn.disabled=true;status.textContent='Connecting...';status.style.color='#9de5ff';
@@ -75,7 +75,7 @@
           throw new Error('আগামীকাল সকাল ৬টার পর লগইন করতে পারবেন ধন্যবাদ।');
         }
         if(!r.ok)throw new Error(data.error||'Login failed');
-        localStorage.setItem(key,'1');gate.remove();window.dispatchEvent(new CustomEvent('vip:user-login',{detail:data}));location.reload();
+        localStorage.setItem(key,'1');gate.remove();window.dispatchEvent(new CustomEvent('vip:user-login',{detail:data}));
       }catch(err){status.textContent=err.message||'Login failed';status.style.color='#ff9ba7'}finally{btn.disabled=false;guestBtn.disabled=false}
     };
   }
