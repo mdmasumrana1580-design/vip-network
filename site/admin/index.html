@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#071423">
 <title>VIP NETWORK — Admin Panel</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="luxury-ui.css">
+<link rel="stylesheet" href="category-fix.css">
 </head>
 <body>
 <div class="app">
@@ -39,7 +41,7 @@
       <button id="menuBtn" class="menu-btn">☰</button>
       <div class="page-title">VIP NETWORK <small>ADMIN PANEL</small></div>
       <div class="search"><span>⌕</span><input id="globalSearch" placeholder="Search channel..."></div>
-      <div class="top-actions"><span class="online"><i></i> Online</span><button id="themeBtn" title="Theme">☾</button><button class="profile" id="profileBtn"><span class="avatar">A</span><span>Admin<small>Super Admin</small></span>⌄</button></div>
+      <div class="top-actions"><span class="online"><i></i> Online</span><button id="themeBtn" title="Theme">☾</button></div>
     </header>
 
     <section class="content">
@@ -99,7 +101,7 @@
 
       <section id="notice" class="section"><div class="page-head"><div><h1>Notice / Banner</h1><p>Manage public website announcements.</p></div></div><form class="form-card" id="noticeForm"><label>Banner Text<input name="text"></label><label>Type<select name="type"><option>Information</option><option>Success</option><option>Warning</option><option>Important</option></select></label><label>Enable<select name="enabled"><option>Yes</option><option>No</option></select></label><button class="primary">📢 Save Banner</button></form></section>
 
-      <section id="devices" class="section"><div class="page-head"><div><h1>User & Device Management</h1><p>View devices and Block / Unblock access.</p></div><button class="primary" onclick="loadDevices()">⟳ Refresh</button></div><div class="panel"><div id="deviceList" class="device-list">Loading devices...</div></div></section>
+      <section id="devices" class="section"><div class="page-head"><div><h1>User & Device Management</h1><p>View Name, Number, Device Name, Last Login and control access.</p></div><button class="primary" onclick="loadDevices()">⟳ Refresh</button></div><div id="latestLoginBox" class="latest-login-box" hidden></div><div class="panel"><div id="deviceList" class="device-list">Loading devices...</div></div></section>
 
       <section id="security" class="section"><div class="page-head"><div><h1>Security</h1><p>Administrator session and access control.</p></div></div><div class="panel security-card"><h2>Admin Session</h2><p>Use Logout to securely end the current administrator session.</p><button class="primary danger" onclick="logoutWorker()">⇥ Logout Admin</button></div></section>
 
@@ -113,4 +115,5 @@
 <div class="modal-backdrop" id="loginModal"><div class="login-card"><img src="https://i.postimg.cc/fWC0JfBr/FB-IMG-1788617876279.jpg" alt="Admin"><h2>WELCOME</h2><h1>Admin Panel</h1><p>🛡️ Secure administrator access</p><label>Password</label><div class="password-row"><span>🔒</span><input id="workerPassword" type="password" placeholder="Password"><button id="loginEye" type="button">👁</button></div><label class="remember"><input id="vipRemember" type="checkbox"> Remember me</label><button id="loginBtn" type="button" class="primary login-button">⇥ LOGIN</button><div id="loginStatus"></div><small>VIP NETWORK ADMIN PANEL</small></div></div>
 <div class="toast" id="toast"></div>
 <script src="app.js"></script>
+<script src="device-users-fix.js"></script>
 </body></html>
