@@ -1,8 +1,6 @@
 /* VIP-Network.TV visitor login: Name + Number + Device Name. */
 (function(){
   const base=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');
-  const key='vip-network-user-session';
-  const guestKey='vip-network-guest-session';
   // Generate and persist a device ID because the current site did not define VIP_DEVICE_ID.
   function getDeviceId(){
     let id=window.VIP_DEVICE_ID || localStorage.getItem('vip-network-device-id');
@@ -32,7 +30,6 @@
   async function checkSession(){try{const r=await fetch(base+'/api/user/session',{credentials:'include',cache:'no-store'});return r.ok}catch(e){return false}}
   async function init(){
     if(await checkSession())return;
-    if(localStorage.getItem(guestKey)==='1')return;
     const gate=makeGate(),form=gate.querySelector('#vipVisitorLogin'),status=gate.querySelector('#vipGateStatus'),btn=gate.querySelector('.vip-login-btn'),guestBtn=gate.querySelector('#vipGuestLogin'),u=gate.querySelector('#vipUserName'),n=gate.querySelector('#vipUserNumber'),dn=gate.querySelector('#vipDeviceName');
     dn.value=deviceName();
     guestBtn.onclick=async()=>{
@@ -47,7 +44,10 @@
         const data=await r.json().catch(()=>({}));
         if(r.status===403||data.blocked){if(typeof window.VIP_SHOW_BLOCKED_PAGE==='function')window.VIP_SHOW_BLOCKED_PAGE();return;}
         if(!r.ok&&!data.storageLimited)throw new Error(data.error||'Guest login failed');
-        localStorage.setItem(guestKey,'1');gate.remove();window.dispatchEvent(new CustomEvent('vip:guest-login',{detail:data}));location.reload();
+        // Guest access is intentionally temporary. Do not persist a local
+        // login flag that can bypass the real login gate after a refresh.
+        gate.remove();
+        window.dispatchEvent(new CustomEvent('vip:guest-login',{detail:data}));
       }catch(err){status.textContent=err.message||'Guest login failed';status.style.color='#ff9ba7';guestBtn.disabled=false;btn.disabled=false}
     };
     form.onsubmit=async e=>{e.preventDefault();btn.disabled=true;guestBtn.disabled=true;status.textContent='Connecting...';status.style.color='#9de5ff';
@@ -75,33 +75,34 @@
           throw new Error('আগামীকাল সকাল ৬টার পর লগইন করতে পারবেন ধন্যবাদ।');
         }
         if(!r.ok)throw new Error(data.error||'Login failed');
-        localStorage.setItem(key,'1');
+        // Do not store a client-only login flag. Access must always be
+        // backed by the server-side VIP_USER_SESSION cookie.
 
 // Do not reload immediately after login. The login request has already
 // authenticated the user; verify the session first, then let the app
 // transition to the TV interface without a browser refresh.
-try {
-  const verify = await fetch('/api/user/session', {
-    credentials: 'include',
-    cache: 'no-store'
-  });
+for (let attempt = 0; attempt < 3; attempt++) {
+  try {
+    const verify = await fetch(base + '/api/user/session', {
+      credentials: 'include',
+      cache: 'no-store'
+    });
+    if (verify.ok) {
+      let session = null;
+      try { session = await verify.json(); } catch (_) {}
+      gate.remove();
+      window.dispatchEvent(new CustomEvent('vip:user-login', {
+        detail: session || data
+      }));
+      return;
+    }
+  } catch (_) {}
+  await new Promise(resolve => setTimeout(resolve, 250));
+}
 
-  if (verify.ok) {
-    let session = null;
-    try { session = await verify.json(); } catch (_) {}
-
-    gate.remove();
-    window.dispatchEvent(new CustomEvent('vip:user-login', {
-      detail: session || data
-    }));
-    return;
-  }
-} catch (_) {}
-
-// If session verification is temporarily unavailable, still transition
-// locally instead of forcing a reload (which caused the original bug).
-gate.remove();
-window.dispatchEvent(new CustomEvent('vip:user-login',{detail:data}));
+// Never unlock the site from a local flag alone. If the server session
+// cannot be verified, keep the login gate visible.
+throw new Error('Login session verify করা যায়নি। আবার Login করুন।');
       }catch(err){status.textContent=err.message||'Login failed';status.style.color='#ff9ba7'}finally{btn.disabled=false;guestBtn.disabled=false}
     };
   }
