@@ -216,11 +216,24 @@ function esc(value) {
 }
 
 function catFor(name, group) {
-  const text = ((name || "") + " " + (group || "")).toLowerCase();
-    if (/movie|movies|film|series|web\s*series|ott|cinema|flix/.test(text)) return "MOVIE & SERIES";
+  const n = String(name || "").trim().toLowerCase();
+  const g = String(group || "").trim().toLowerCase();
+
+  // Explicit playlist/group category always wins over name-based detection.
+  // This prevents live Indian channels such as Zee Cinema/Jalsha Movies/B4U Movie
+  // from being moved into MOVIE & SERIES just because their channel name contains
+  // words like "movie" or "cinema".
+  if (/^movie\s*&?\s*series$|^movies?\s*(and|&)\s*series$|^movie|^series$/.test(g)) return "MOVIE & SERIES";
+  if (/india|indian/.test(g)) return "INDIA";
+  if (/sport|cricket|football|fifa|espn|bein|wwe|golf|nfl|nba/.test(g)) return "SPORTS";
+  if (/bangladesh|\bbd\b|bangla/.test(g)) return "BD";
+  if (/^other(s)?$/.test(g)) return "OTHER";
+
+  const text = n + " " + g;
   if (/sport|cricket|football|fifa|espn|bein|wwe|golf|nfl|nba|ten\s*cricket|ptv\s*sports/.test(text)) return "SPORTS";
   if (/bangladesh|\bbd\b|bangla|somoy|jamuna|ekattor|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi\s*tv|btv|duronto|deepto|nagorik|mohona|asian\s*tv|desh\s*tv|bijoy\s*tv|mytv|satv|ekushey/.test(text)) return "BD";
   if (/india|indian|sony|zee|star|colors|set\b|sab\b|aaj\s*tak|ndtv|republic|news18|times\s*now|india\s*tv|dd\s*(national|sports)|sun\s*tv|asianet|vijay|jaya|starplus|star\s*gold|sony\s*(max|pix|wah|yay|pal)|&pictures|b4u|movies\s*now|mnx|hbo\s*india/.test(text)) return "INDIA";
+  if (/movie|movies|film|series|web\s*series|ott|cinema|flix/.test(n)) return "MOVIE & SERIES";
   return "OTHER";
 }
 function parseM3U(text) {
@@ -590,10 +603,13 @@ async function fetchMoviePlaylistFromWorker(){const apiBase=(window.VIP_WORKER_A
 async function fetchPlaylistFromWorker() {
   const apiBase = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/, "");
   if (!apiBase) return [];
-  const r = await fetch(apiBase + "/api/playlist", {cache:"no-store"});
-  if (!r.ok) throw new Error("Worker playlist load failed: " + r.status);
+  // Read the dedicated TV list from the Worker state.
+  // Do not use /api/playlist here because that endpoint may also contain
+  // the separate Movie & Series list. TV and Movie playlists must stay isolated.
+  const r = await fetch(apiBase + "/api/state", {cache:"no-store"});
+  if (!r.ok) throw new Error("Worker state load failed: " + r.status);
   const data = await r.json();
-  const list = Array.isArray(data?.channels) ? data.channels : [];
+  const list = Array.isArray(data?.tvChannels) ? data.tvChannels : [];
   return list.map(function(c){
     return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||""};
   }).filter(function(c){return c.url;});
