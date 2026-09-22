@@ -47,7 +47,7 @@
         const data=await r.json().catch(()=>({}));
         if(r.status===403||data.blocked){if(typeof window.VIP_SHOW_BLOCKED_PAGE==='function')window.VIP_SHOW_BLOCKED_PAGE();return;}
         if(!r.ok&&!data.storageLimited)throw new Error(data.error||'Guest login failed');
-        localStorage.setItem(guestKey,'1');gate.remove();window.dispatchEvent(new CustomEvent('vip:guest-login',{detail:data}));
+        localStorage.setItem(guestKey,'1');gate.remove();window.dispatchEvent(new CustomEvent('vip:guest-login',{detail:data}));location.reload();
       }catch(err){status.textContent=err.message||'Guest login failed';status.style.color='#ff9ba7';guestBtn.disabled=false;btn.disabled=false}
     };
     form.onsubmit=async e=>{e.preventDefault();btn.disabled=true;guestBtn.disabled=true;status.textContent='Connecting...';status.style.color='#9de5ff';
@@ -75,7 +75,33 @@
           throw new Error('আগামীকাল সকাল ৬টার পর লগইন করতে পারবেন ধন্যবাদ।');
         }
         if(!r.ok)throw new Error(data.error||'Login failed');
-        localStorage.setItem(key,'1');gate.remove();window.dispatchEvent(new CustomEvent('vip:user-login',{detail:data}));
+        localStorage.setItem(key,'1');
+
+// Do not reload immediately after login. The login request has already
+// authenticated the user; verify the session first, then let the app
+// transition to the TV interface without a browser refresh.
+try {
+  const verify = await fetch('/api/user/session', {
+    credentials: 'include',
+    cache: 'no-store'
+  });
+
+  if (verify.ok) {
+    let session = null;
+    try { session = await verify.json(); } catch (_) {}
+
+    gate.remove();
+    window.dispatchEvent(new CustomEvent('vip:user-login', {
+      detail: session || data
+    }));
+    return;
+  }
+} catch (_) {}
+
+// If session verification is temporarily unavailable, still transition
+// locally instead of forcing a reload (which caused the original bug).
+gate.remove();
+window.dispatchEvent(new CustomEvent('vip:user-login',{detail:data}));
       }catch(err){status.textContent=err.message||'Login failed';status.style.color='#ff9ba7'}finally{btn.disabled=false;guestBtn.disabled=false}
     };
   }
