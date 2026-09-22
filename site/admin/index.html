@@ -59,16 +59,28 @@
           <button onclick="showSection('devices')">♙ <b>Devices</b></button>
           <button onclick="showSection('notice')">⚑ <b>Notice</b></button>
         </div>
-        <div class="workspace">
+        <div class="workspace tv-workspace">
           <div class="panel channel-panel">
-            <div class="panel-title"><h2>▣ Recent Channels</h2><button onclick="showSection('channels')">View All</button></div>
+            <div class="panel-title"><h2>▣ Channel List</h2><button onclick="showSection('channels')">View All</button></div>
             <div class="filters"><input id="dashSearch" placeholder="Search channel..."><select id="dashCat"></select><select id="dashStatus"><option>All Status</option><option>Active</option><option>Dead</option><option>Disabled</option></select></div>
-            <div class="table-wrap"><table><thead><tr><th>#</th><th>Logo</th><th>Name</th><th>Category</th><th>Status</th><th>Action</th></tr></thead><tbody id="channelRows"></tbody></table></div>
+            <div class="table-wrap channel-scroll"><table><thead><tr><th>#</th><th>Logo</th><th>Name</th><th>Category</th><th>Status</th><th>Action</th></tr></thead><tbody id="channelRows"></tbody></table></div>
           </div>
           <div class="panel preview">
-            <div class="panel-title"><h2>▶ Live Preview</h2><span class="live-dot">● Ready</span></div>
+            <div class="panel-title"><h2>▶ Live Player</h2><span class="live-dot">● Ready</span></div>
             <div class="video-box"><video id="player" controls playsinline></video><div id="videoPlaceholder">▶<small>Select a channel</small></div></div>
             <div class="preview-info"><p>Name <b id="pName">—</b></p><p>Category <b id="pCategory">—</b></p><p>Status <b id="pStatus">—</b></p></div>
+            <div class="edit-under-player">
+              <div class="edit-title"><h3>✎ Edit Selected Channel</h3><button type="button" class="secondary" onclick="saveSelectedChannel()">Save Changes</button></div>
+              <div class="edit-grid">
+                <label>Channel Name<input id="editName" placeholder="Channel name"></label>
+                <label>Category<select id="editCategory"></select></label>
+                <label>Stream URL<input id="editUrl" placeholder="https://...m3u8"></label>
+                <label>Status<select id="editStatus"><option>Active</option><option>Dead</option><option>Disabled</option><option>Unknown</option></select></label>
+                <label class="logo-editor">Logo URL<input id="editLogo" placeholder="https://.../logo.png"></label>
+                <label class="logo-file">Logo File<input id="editLogoFile" type="file" accept="image/*"><small>Choose an image from your phone / file system.</small></label>
+              </div>
+              <div class="logo-preview-row"><img id="editLogoPreview" alt="Logo preview"><span id="editLogoStatus">No logo selected</span></div>
+            </div>
             <div class="test-box"><input id="testUrl" placeholder="Test stream URL"><button onclick="testStream()">Test</button></div>
           </div>
         </div>
