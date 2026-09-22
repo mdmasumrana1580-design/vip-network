@@ -60,7 +60,8 @@
           </div>
           <div class="panel preview">
             <div class="panel-title"><h2>▶ Live Player</h2><span class="live-dot">● Ready</span></div>
-            <div class="video-box"><video id="player" controls playsinline></video><div id="videoPlaceholder">▶<small>Select a channel</small></div><div class="edit-under-player">
+            <div class="video-box"><video id="player" controls playsinline></video><div id="videoPlaceholder">▶<small>Select a channel</small></div></div>
+            <div class="edit-under-player">
               <div class="edit-title"><h3>✎ Edit Selected Channel</h3><button type="button" class="secondary" onclick="saveSelectedChannel()">Save Changes</button></div>
               <div class="edit-grid">
                 <label>Channel Name<input id="editName" placeholder="Channel name"></label>
@@ -72,9 +73,8 @@
               </div>
               <div class="logo-preview-row"><img id="editLogoPreview" alt="Logo preview"><span id="editLogoStatus">No logo selected</span></div>
             </div>
-            <div class="test-box">
-            </div>
-            <div class="preview-info"><p>Name <b id="pName">—</b></p><p>Category <b id="pCategory">—</b></p><p>Status <b id="pStatus">—</b></p></div><input id="testUrl" placeholder="Test stream URL"><button onclick="testStream()">Test</button></div>
+            <div class="preview-info"><p>Name <b id="pName">—</b></p><p>Category <b id="pCategory">—</b></p><p>Status <b id="pStatus">—</b></p></div>
+            <div class="test-box"><input id="testUrl" placeholder="Test stream URL"><button onclick="testStream()">Test</button></div>
           </div>
         </div>
       </section>
