@@ -115,3 +115,20 @@ body.light{--text:#162535;--muted:#5f7182;background:#eef4f9}body.light .sidebar
   .tv-workspace .video-box{height:135px}
   .tv-workspace .edit-under-player{max-height:220px}
 }
+
+
+/* V19: compact channel list with all channels independently scrollable */
+.tv-workspace .channel-panel{min-height:0}
+.tv-workspace .channel-scroll{height:360px;max-height:360px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.tv-workspace .channel-scroll table{width:100%;min-width:0}
+.tv-workspace .channel-scroll tbody tr{height:42px}
+@media(max-width:700px){
+  .tv-workspace .channel-scroll{height:330px;max-height:330px}
+  .tv-workspace .channel-scroll tbody tr{height:40px}
+  .tv-workspace .channel-panel{padding:7px}
+  .tv-workspace .channel-panel .panel-title{margin-bottom:7px}
+  .tv-workspace .channel-panel .panel-title h2{font-size:12px}
+}
+@media(max-width:430px){
+  .tv-workspace .channel-scroll{height:310px;max-height:310px}
+}
