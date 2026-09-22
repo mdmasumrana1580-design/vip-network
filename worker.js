@@ -88,7 +88,7 @@ async function hash(s) {
 }
 function token() { return crypto.randomUUID(); }
 function clientIP(r) { return String(r.headers.get('CF-Connecting-IP') || r.headers.get('X-Forwarded-For') || r.headers.get('X-Real-IP') || '').split(',')[0].trim().slice(0, 80) || '—'; }
-function bangladeshTime(iso) { try { return new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Dhaka',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date(iso)); } catch { return iso; } }
+function bangladeshTime(iso) { try { return new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Dhaka',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).format(new Date(iso)); } catch { return iso; } }
 
 function bangladeshDailyWindow(iso) {
   try {
@@ -356,7 +356,16 @@ async function handle(r, e) {
   }
 
   if (p === '/api/admin/devices' && r.method === 'GET') {
-    const devices = await readDevices(e);
+    const ds = await readDevices(e);
+    const users = await readUsers(e);
+    const devices = ds.map(d => {
+      const u0 = users.find(x => (d.userId && x.id === d.userId) || (d.username && String(x.username || '').toLowerCase() === String(d.username || '').toLowerCase()));
+      const rawUser = String(d.userName || d.username || '').trim();
+      const deviceName = String(d.deviceName || d.name || 'Mobile Device').trim() || 'Mobile Device';
+      const isGuest = !!d.guest || !u0 && (!rawUser || rawUser.toLowerCase() === 'guest' || rawUser.toLowerCase() === deviceName.toLowerCase());
+      const displayName = u0 ? String(u0.username || '').trim() : (isGuest ? 'Guest' : (rawUser || 'Guest'));
+      return { ...d, userId: u0?.id || d.userId || null, userName: displayName, username: displayName, number: u0?.number || d.number || '', deviceName, name: deviceName, ip: d.ip || u0?.ip || '—', lastLoginAt: d.lastLoginAt || u0?.lastLoginAt || d.lastSeen || d.createdAt || null };
+    });
     return withCors(json({ ok: true, devices, settings: await readSettings(e) }));
   }
   for (const action of ['block', 'unblock', 'approve']) {
