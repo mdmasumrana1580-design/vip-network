@@ -3,6 +3,14 @@
   const base=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');
   const key='vip-network-user-session';
   const guestKey='vip-network-guest-session';
+  // Generate and persist a device ID because the current site did not define VIP_DEVICE_ID.
+  function getDeviceId(){
+    let id=window.VIP_DEVICE_ID || localStorage.getItem('vip-network-device-id');
+    if(!id){ id=(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now()); localStorage.setItem('vip-network-device-id',id); }
+    window.VIP_DEVICE_ID=id;
+    return id;
+  }
+  getDeviceId();
   function deviceName(){return localStorage.getItem('vip-network-device-name')||''}
   function makeGate(){
     const d=document.createElement('div');d.id='vipVisitorGate';
@@ -51,7 +59,7 @@
         if(!/^\+?[0-9]{6,20}$/.test(number))throw new Error('সঠিক নাম্বার দিন (কমপক্ষে ৬ সংখ্যা)');
         if(!deviceNameValue)throw new Error('ডিভাইস নেম দিন');
         localStorage.setItem('vip-network-device-name',deviceNameValue);
-        const deviceId=window.VIP_DEVICE_ID||'';
+        const deviceId=getDeviceId();
         // Send both the new field names and the older aliases so this file
         // remains compatible with an older deployed Worker during rollout.
         const payload={username:name,name,number,phone:number,deviceId,deviceName:deviceNameValue};
