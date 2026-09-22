@@ -356,8 +356,7 @@ async function handle(r, e) {
   }
 
   if (p === '/api/admin/devices' && r.method === 'GET') {
-    const ds = await readDevices(e);
-    const devices = ds.filter(d => !d?.guest && String(d?.username || d?.userName || '').trim().toLowerCase() !== 'guest');
+    const devices = await readDevices(e);
     return withCors(json({ ok: true, devices, settings: await readSettings(e) }));
   }
   for (const action of ['block', 'unblock', 'approve']) {
