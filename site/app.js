@@ -342,6 +342,9 @@ function restoreWelcomeAfterBack(){
 
 function play(c, clickedCard, retryOriginal) {
   currentChannelIndex = visibleChannels.indexOf(c);
+  const isMovieSeries = String(c && c.cat || "").toUpperCase() === "MOVIE & SERIES";
+  if (videoBox) videoBox.classList.toggle("movie-series-player", isMovieSeries);
+  video.controls = isMovieSeries;
   if (welcomeVideo) welcomeVideo.classList.add("welcome-hidden");
   if (videoBox) videoBox.classList.remove("welcome-active");
   const liveBadge = document.getElementById("liveBadge");
@@ -562,6 +565,8 @@ function closePlayer() {
 
   video.pause();
   video.removeAttribute("src");
+  video.removeAttribute("controls");
+  if (videoBox) videoBox.classList.remove("movie-series-player");
   video.load();
 }
 

@@ -3355,3 +3355,14 @@ video{
   color: #fff !important;
   -webkit-text-fill-color: #fff !important;
 }
+
+/* Movie & Series: show a seek/progress bar so on-demand videos can be dragged.\n   Live TV keeps the existing custom controls unchanged. */
+.video-box.movie-series-player > video#video {
+  cursor: default !important;
+}
+.video-box.movie-series-player > video#video::-webkit-media-controls-panel {
+  background: linear-gradient(transparent, rgba(0,0,0,.88)) !important;
+}
+.video-box.movie-series-player > video#video::-webkit-media-controls-timeline {
+  display: block !important;
+}
