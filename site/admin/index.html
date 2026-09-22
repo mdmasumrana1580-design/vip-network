@@ -22,14 +22,13 @@
     <button class="nav-item" data-section="devices">♙ <span>User & Device Management</span></button>
 
     <div class="nav-group">
-      <button class="nav-item group-head" id="liveGroup">▣ <span>Live TV / Channels</span><b>⌄</b></button>
+      <button class="nav-item group-head" id="liveGroup">▣ <span>Live TV / Movie&amp;series</span><b>⌄</b></button>
       <div class="subnav open" id="liveSub">
-        <button data-section="channels">• <span>Channel Management</span></button>
-        <button data-section="add">• <span>Add Channel</span></button>
-        <button data-section="import">• <span>Playlist / M3U Import</span></button>
-        <button data-section="categories">• <span>Categories</span></button>
+        <button data-section="tv-playlist">• <span>Live TV / Playlist</span></button>
+        <button data-section="movie-playlist">• <span>Movie &amp; Series / Playlist</span></button>
       </div>
     </div>
+    <button class="nav-item" data-section="categories">▤ <span>Categories</span></button>
 
     <button class="nav-item" data-section="settings">⚙ <span>Website Settings</span></button>
     <button class="nav-item" data-section="notice">⚑ <span>Notice / Banner</span></button>
@@ -94,13 +93,22 @@
         <form class="form-card" id="channelForm"><label>Channel Name<input name="name" required></label><label>Category<select name="category" id="addCategory"></select></label><label>Logo URL<input name="logo"></label><label>Stream URL<input name="url" required></label><label>Status<select name="status"><option>Active</option><option>Dead</option><option>Disabled</option></select></label><button class="primary">＋ Save Channel</button></form>
       </section>
 
-      <section id="import" class="section"><div class="page-head"><div><h1>Playlist / M3U Import</h1><p>Import M3U URL, M3U text/file or Xtream Codes.</p></div></div>
-        <div class="tabs"><button class="tab active" data-tab="url">M3U URL</button><button class="tab" data-tab="file">M3U File</button><button class="tab" data-tab="xtream">Xtream Codes</button></div>
+      <section id="tv-playlist" class="section"><div class="page-head"><div><h1>Live TV / Playlist</h1><p>শুধু Live TV channel playlist আপলোড বা আপডেট করুন। Movie &amp; Series playlist এতে পরিবর্তন হবে না।</p></div></div>
+        <div class="tabs playlist-tabs" data-tab-scope="tv"><button class="tab active" data-tab="tv-url">M3U URL</button><button class="tab" data-tab="tv-file">M3U File</button><button class="tab" data-tab="tv-xtream">Xtream Codes</button></div>
         <div class="import-grid">
-          <div class="form-card import-pane active" id="import-url"><label>M3U Playlist URL<input id="m3uUrl" type="url" placeholder="https://example.com/playlist.m3u"></label><button class="primary" type="button" onclick="importM3UUrl()">☁ Import & Sync</button></div>
-          <div class="form-card import-pane" id="import-file"><label>M3U Playlist Text<textarea id="m3uText" placeholder="#EXTM3U"></textarea></label><input type="file" id="m3uFile" accept=".m3u,.m3u8,text/plain"><button class="primary" type="button" onclick="importM3U()">⇧ Import Playlist</button></div>
-          <div class="form-card import-pane" id="import-xtream"><label>Server URL<input id="xtServer"></label><label>Username<input id="xtUser"></label><label>Password<input id="xtPass" type="password"></label><label>Import limit<select id="xtLimit"><option value="all">All live channels</option><option value="100">First 100</option><option value="250">First 250</option></select></label><button class="primary purple" type="button" onclick="importXtream()">⛓ Connect & Sync</button></div>
-          <div class="panel guide"><h2>Import Guide</h2><p><b>M3U URL:</b> paste your playlist link.</p><p><b>M3U File:</b> upload or paste playlist text.</p><p><b>Xtream Codes:</b> use server, username and password.</p></div>
+          <div class="form-card import-pane active" id="import-tv-url"><label>Live TV M3U Playlist URL<input id="tvM3uUrl" type="url" placeholder="https://example.com/live-tv.m3u"></label><button class="primary" type="button" onclick="importTvM3UUrl()">☁ Import &amp; Sync Live TV</button></div>
+          <div class="form-card import-pane" id="import-tv-file"><label>Live TV M3U Playlist Text<textarea id="tvM3uText" placeholder="#EXTM3U"></textarea></label><input type="file" id="tvM3uFile" accept=".m3u,.m3u8,text/plain"><button class="primary" type="button" onclick="importTvM3U()">⇧ Update Live TV Playlist</button></div>
+          <div class="form-card import-pane" id="import-tv-xtream"><label>Server URL<input id="tvXtServer"></label><label>Username<input id="tvXtUser"></label><label>Password<input id="tvXtPass" type="password"></label><label>Import limit<select id="tvXtLimit"><option value="all">All live channels</option><option value="100">First 100</option><option value="250">First 250</option></select></label><button class="primary purple" type="button" onclick="importTvXtream()">⛓ Sync Live TV</button></div>
+          <div class="panel guide"><h2>Live TV Playlist</h2><p>এই অংশে শুধু TV channel playlist আপডেট হবে। Category যেমন SPORTS, BD, INDIA, OTHER playlist-এর তথ্য অনুযায়ী থাকবে।</p></div>
+        </div>
+      </section>
+
+      <section id="movie-playlist" class="section"><div class="page-head"><div><h1>Movie &amp; Series / Playlist</h1><p>শুধু Movie &amp; Series playlist আপলোড বা আপডেট করুন। Live TV playlist এতে পরিবর্তন হবে না।</p></div></div>
+        <div class="tabs playlist-tabs" data-tab-scope="movie"><button class="tab active" data-tab="movie-url">M3U URL</button><button class="tab" data-tab="movie-file">M3U File</button></div>
+        <div class="import-grid">
+          <div class="form-card import-pane active" id="import-movie-url"><label>Movie &amp; Series M3U Playlist URL<input id="movieM3uUrl" type="url" placeholder="https://example.com/movie-series.m3u"></label><button class="primary" type="button" onclick="importMovieM3UUrl()">☁ Import &amp; Sync Movies/Series</button></div>
+          <div class="form-card import-pane" id="import-movie-file"><label>Movie &amp; Series M3U Playlist Text<textarea id="movieM3uText" placeholder="#EXTM3U"></textarea></label><input type="file" id="movieM3uFile" accept=".m3u,.m3u8,text/plain"><button class="primary" type="button" onclick="importMovieM3U()">⇧ Update Movies/Series Playlist</button></div>
+          <div class="panel guide"><h2>Movie &amp; Series Playlist</h2><p>এই playlist-এর সব item স্বয়ংক্রিয়ভাবে <b>MOVIE &amp; SERIES</b> category-তে থাকবে। Live TV channel data পরিবর্তন হবে না।</p></div>
         </div>
       </section>
 
