@@ -281,6 +281,7 @@ async function handle(r, e) {
     const s = await readState(e);
     return withCors(json({ channels: s.channels || [] }));
   }
+
   if (r.method === 'GET' && p === '/api/movie-playlist') {
     const s = await readState(e);
     return withCors(json({ channels: s.movieSeries || [] }));
