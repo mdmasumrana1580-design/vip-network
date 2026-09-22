@@ -132,3 +132,20 @@ body.light{--text:#162535;--muted:#5f7182;background:#eef4f9}body.light .sidebar
 @media(max-width:430px){
   .tv-workspace .channel-scroll{height:310px;max-height:310px}
 }
+
+/* User & Device Management — match the existing dark teal/red mobile theme */
+.device-list{background:#061820;border:1px solid #164d4c;border-radius:10px;overflow:hidden}
+.device-user-card{padding:14px 16px;border-bottom:1px solid rgba(77,184,168,.18);background:linear-gradient(145deg,#071c20,#06171b)}
+.device-user-card:last-child{border-bottom:0}
+.device-user-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:7px}
+.device-user-head>b{font-size:16px;color:#edf7f5}
+.device-status{font-size:11px;padding:4px 8px;border-radius:10px;font-weight:700}
+.device-status.logged{background:#063d2b;color:#48e6a0}
+.device-status.blocked{background:#4b0d17;color:#ff7180}
+.device-user-info{color:#d7e5e2;font-size:13px;line-height:1.55}
+.device-user-info div b{color:#a9c4bf}
+.device-actions{display:flex;gap:7px;margin-top:10px}
+.device-actions button{flex:1;border:1px solid #b51d2d;background:linear-gradient(180deg,#c81024,#970b18);color:#fff;border-radius:8px;padding:8px 10px;font-weight:700;box-shadow:0 0 10px rgba(214,25,48,.12)}
+.device-actions button:hover{filter:brightness(1.08)}
+.device-actions button.del{border-color:#b51d2d;background:linear-gradient(180deg,#c81024,#970b18)}
+@media(max-width:650px){.device-user-card{padding:14px 10px}.device-user-head>b{font-size:16px}.device-user-info{font-size:13px}.device-actions button{padding:8px 6px}}
