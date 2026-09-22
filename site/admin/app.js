@@ -47,7 +47,58 @@ async function clearAll(){if(!confirm('Clear all channels?'))return;channels=[];
 function testStream(){const u=document.getElementById('testUrl').value.trim();if(!u)return;const v=document.getElementById('player');v.src=u;v.play().catch(()=>toast('URL loaded'))}
 async function refreshData(){try{if(connected)await loadRemoteState();else render();toast('Data refreshed')}catch(e){toast(e.message)}}
 function bdDeviceTime(v){try{return new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Dhaka',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).format(new Date(v))+' BD'}catch{return v||'—'}}
-async function loadDevices(){const box=document.getElementById('deviceList');if(!connected){box.textContent='Please login first.';return}box.innerHTML='<div style="padding:18px;text-align:center;color:#9bacbf">Loading devices...</div>';try{const d=await api('/api/admin/devices'),list=Array.isArray(d?.devices)?d.devices:[];const count=document.getElementById('deviceConnected');if(count)count.textContent=list.length;const allowed=document.getElementById('deviceAllowed');if(allowed)allowed.textContent=d?.settings?.deviceLimit??d?.settings?.maxDevices??'—';if(!list.length){box.innerHTML='<div style="padding:18px;color:#9bacbf">No devices registered.</div>';return}box.innerHTML=list.map(x=>{const id=esc(x.deviceId||x.id||''),blocked=x.blocked===true||x.status==='Blocked',name=String(x.userName||x.username||x.user||'Guest'),number=String(x.number||x.mobile||x.phone||'—'),device=String(x.deviceName||x.name||'Mobile Device'),when=x.lastLoginAt||x.lastLogin||x.lastSeen||x.createdAt||'',ip=String(x.ip||x.ipAddress||'—');return `<div class="device-user-card" style="padding:16px 14px;border-bottom:1px solid rgba(120,220,220,.14)"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px"><b style="font-size:17px;color:#e8f2fc">${esc(name)}</b><b style="font-size:14px;color:${blocked?'#ff5b67':'#39e58c'}">${blocked?'Blocked':'Logged in'}</b></div><div style="line-height:1.65;color:#e7eef8;font-size:14px"><b>Name:</b> ${esc(name)}<br><b>Number:</b> ${esc(number)}<br><b>Device:</b> ${esc(device)}<br><b>Time:</b> ${esc(bdDeviceTime(when))}<br><b>IP:</b> ${esc(ip)}</div><div class="device-actions" style="display:flex;gap:8px;margin-top:11px"><button onclick="${blocked?'unblockDevice':'blockDevice'}('${id}')" style="flex:1;background:${blocked?'#0c2b46':'#b40016'}">${blocked?'Unblock':'Block'}</button><button onclick="deleteDevice('${id}')" style="flex:1">Delete</button></div></div>`}).join('')}catch(e){box.innerHTML='<div style="padding:18px;color:#ff7b86">Could not load devices: '+esc(e.message)+'</div>'}}
+async function loadDevices(){
+  const box=document.getElementById('deviceList');
+  if(!connected){box.textContent='Please login first.';return}
+  box.innerHTML='<div style="padding:18px;text-align:center;color:#9bacbf">Loading devices...</div>';
+  try{
+    const d=await api('/api/admin/devices');
+    let list=Array.isArray(d?.devices)?d.devices:[];
+    const count=document.getElementById('deviceConnected');
+    if(count)count.textContent=list.length;
+    const allowed=document.getElementById('deviceAllowed');
+    if(allowed)allowed.textContent=d?.settings?.deviceLimit??d?.settings?.maxDevices??'—';
+
+    // Always show the most recently active/login device first.
+    const deviceTime=x=>x.lastLoginAt||x.lastLogin||x.lastSeen||x.createdAt||'';
+    list=[...list].sort((a,b)=>{
+      const at=Date.parse(deviceTime(a)), bt=Date.parse(deviceTime(b));
+      return (Number.isFinite(bt)?bt:0)-(Number.isFinite(at)?at:0);
+    });
+
+    const searchEl=document.getElementById('deviceSearch');
+    const query=String(searchEl?.value||'').trim().toLowerCase();
+    if(query){
+      list=list.filter(x=>{
+        const blocked=x.blocked===true||x.status==='Blocked';
+        const name=String(x.userName||x.username||x.user||'Guest');
+        const number=String(x.number||x.mobile||x.phone||'—');
+        const device=String(x.deviceName||x.name||'Mobile Device');
+        const ip=String(x.ip||x.ipAddress||'—');
+        const status=blocked?'Blocked':'Logged in';
+        return [name,number,device,ip,status].some(v=>v.toLowerCase().includes(query));
+      });
+    }
+
+    if(!list.length){
+      box.innerHTML='<div style="padding:18px;color:#9bacbf">'+(query?'No matching users/devices found.':'No devices registered.')+'</div>';
+      return;
+    }
+
+    box.innerHTML=list.map(x=>{
+      const id=esc(x.deviceId||x.id||''),
+        blocked=x.blocked===true||x.status==='Blocked',
+        name=String(x.userName||x.username||x.user||'Guest'),
+        number=String(x.number||x.mobile||x.phone||'—'),
+        device=String(x.deviceName||x.name||'Mobile Device'),
+        when=deviceTime(x),
+        ip=String(x.ip||x.ipAddress||'—');
+      return `<div class="device-user-card" style="padding:16px 14px;border-bottom:1px solid rgba(120,220,220,.14)"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px"><b style="font-size:17px;color:#e8f2fc">${esc(name)}</b><b style="font-size:14px;color:${blocked?'#ff5b67':'#39e58c'}">${blocked?'Blocked':'Logged in'}</b></div><div style="line-height:1.65;color:#e7eef8;font-size:14px"><b>Name:</b> ${esc(name)}<br><b>Number:</b> ${esc(number)}<br><b>Device:</b> ${esc(device)}<br><b>Time:</b> ${esc(bdDeviceTime(when))}<br><b>IP:</b> ${esc(ip)}</div><div class="device-actions" style="display:flex;gap:8px;margin-top:11px"><button onclick="${blocked?'unblockDevice':'blockDevice'}('${id}')" style="flex:1;background:${blocked?'#0c2b46':'#b40016'}">${blocked?'Unblock':'Block'}</button><button onclick="deleteDevice('${id}')" style="flex:1">Delete</button></div></div>`
+    }).join('');
+  }catch(e){
+    box.innerHTML='<div style="padding:18px;color:#ff7b86">Could not load devices: '+esc(e.message)+'</div>';
+  }
+}
 async function blockDevice(id){if(!confirm('Block this device?'))return;try{await api('/api/admin/devices/block',{method:'POST',body:JSON.stringify({deviceId:id})});await loadDevices();logAction('Blocked device: '+id)}catch(e){toast(e.message)}}
 async function unblockDevice(id){try{await api('/api/admin/devices/unblock',{method:'POST',body:JSON.stringify({deviceId:id})});await loadDevices();logAction('Unblocked device: '+id)}catch(e){toast(e.message)}}
 async function deleteDevice(id){if(!confirm('Delete this device?'))return;try{await api('/api/admin/devices?deviceId='+encodeURIComponent(id),{method:'DELETE'});await loadDevices();logAction('Deleted device: '+id)}catch(e){toast(e.message)}}
@@ -69,6 +120,7 @@ document.querySelectorAll('.playlist-tabs').forEach(scope=>scope.querySelectorAl
 document.getElementById('editLogoFile').addEventListener('change',e=>{const f=e.target.files[0],img=document.getElementById('editLogoPreview'),msg=document.getElementById('editLogoStatus');if(!f)return;const r=new FileReader();r.onload=()=>{img.src=r.result;img.style.display='block';msg.textContent=f.name+' selected'};r.readAsDataURL(f)});
 document.getElementById('editLogo').addEventListener('input',e=>{const u=e.target.value.trim(),img=document.getElementById('editLogoPreview'),msg=document.getElementById('editLogoStatus');if(!u)return;img.src=u;img.style.display='block';msg.textContent='Logo URL selected'});
 ['dashSearch','dashCat','managerSearch','managerCat','managerStatus'].forEach(id=>{const e=document.getElementById(id);if(e){e.addEventListener('input',render);e.addEventListener('change',render)}});
+const deviceSearch=document.getElementById('deviceSearch');if(deviceSearch){deviceSearch.addEventListener('input',loadDevices);deviceSearch.addEventListener('change',loadDevices)}
 
 document.getElementById('channelForm').addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.target),c={name:f.get('name'),category:f.get('category'),logo:f.get('logo'),url:f.get('url'),status:f.get('status')};channels.push(c);if(await saveRemoteState()){e.target.reset();render();logAction('Added channel: '+c.name);toast('Channel added')}});
 document.getElementById('noticeForm').addEventListener('submit',async e=>{e.preventDefault();const x=Object.fromEntries(new FormData(e.target));try{await saveRemoteState({notice:{...x,enabled:x.enabled==='Yes'},headline:x.text});logAction('Updated website notice');toast('Banner saved')}catch{}});
