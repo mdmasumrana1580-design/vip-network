@@ -58,3 +58,7 @@ body.light{--text:#162535;--muted:#5f7182;background:#eef4f9}body.light .sidebar
   .tv-workspace .channel-scroll{max-height:560px}
   .tv-workspace .preview-info{font-size:9px}
 }
+
+/* V17: remove dashboard quick actions and keep edit immediately under player */
+.tv-workspace .edit-under-player{margin-top:6px}
+.tv-workspace .preview-info{margin-top:6px}
