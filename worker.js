@@ -53,15 +53,19 @@ function norm(c = {}) {
   };
 }
 
+function splitPlaylistState(s = {}) {
+  const legacy = Array.isArray(s.channels) ? s.channels.map(norm) : [];
+  let tvChannels = Array.isArray(s.tvChannels) ? s.tvChannels.map(norm) : legacy.filter(c => String(c.category || '').toUpperCase() !== 'MOVIE & SERIES');
+  let movieSeries = Array.isArray(s.movieSeries) ? s.movieSeries.map(c => ({ ...norm(c), category: 'MOVIE & SERIES' })) : legacy.filter(c => String(c.category || '').toUpperCase() === 'MOVIE & SERIES').map(c => ({ ...norm(c), category: 'MOVIE & SERIES' }));
+  movieSeries = movieSeries.map(c => ({ ...c, category: 'MOVIE & SERIES' }));
+  return { ...s, tvChannels, movieSeries, channels: [...tvChannels, ...movieSeries], categories: ['SPORTS','BD','INDIA','OTHERS','MOVIE & SERIES'] };
+}
 async function readState(e) {
   const r = await kv(e).get(STATE_KEY);
-  try {
-    return r ? JSON.parse(r) : { channels: [], notice: { text: '', type: 'Information', enabled: true }, headline: '' };
-  } catch {
-    return { channels: [], notice: {}, headline: '' };
-  }
+  try { return splitPlaylistState(r ? JSON.parse(r) : { channels: [], notice: { text: '', type: 'Information', enabled: true }, headline: '' }); }
+  catch { return splitPlaylistState({ channels: [], notice: {}, headline: '' }); }
 }
-async function saveState(e, s) { await kv(e).put(STATE_KEY, JSON.stringify(s)); }
+async function saveState(e, s) { await kv(e).put(STATE_KEY, JSON.stringify(splitPlaylistState(s))); }
 async function readDevices(e) { try { return JSON.parse((await kv(e).get(DEVICES_KEY)) || '[]'); } catch { return []; } }
 async function saveDevices(e, x) { await kv(e).put(DEVICES_KEY, JSON.stringify(x)); }
 async function readSettings(e) { try { return JSON.parse((await kv(e).get(SETTINGS_KEY)) || '{"deviceLimit":1,"accessMode":"auto"}'); } catch { return { deviceLimit: 1, accessMode: 'auto' }; } }
@@ -119,7 +123,7 @@ async function requireAdmin(r, e) {
   return (await authorized(r, e)) ? null : json({ ok: false, error: 'Unauthorized' }, 401);
 }
 
-function parseM3U(t) {
+function parseM3U(t, forceMovie = false) {
   const a = String(t || '').replace(/\r/g, '').split('\n'), o = [];
   let m = null;
   for (const q of a) {
@@ -130,7 +134,11 @@ function parseM3U(t) {
       continue;
     }
     if (l && !l.startsWith('#') && m) {
-      if (/^(https?|rtmp|rtsp|hls):\/\//i.test(l)) o.push(norm({ ...m, url: l, status: 'Unknown' }));
+      if (/^(https?|rtmp|rtsp|hls):\/\//i.test(l)) {
+        const item = norm({ ...m, url: l, status: 'Unknown' });
+        if (forceMovie) item.category = 'MOVIE & SERIES';
+        o.push(item);
+      }
       m = null;
     }
   }
@@ -267,7 +275,7 @@ async function handle(r, e) {
 
   if (r.method === 'GET' && p === '/api/state') {
     const s = await readState(e);
-    return withCors(json({ channels: s.channels || [], notice: s.notice || {}, headline: s.headline || '' }));
+    return withCors(json({ channels: s.channels || [], tvChannels: s.tvChannels || [], movieSeries: s.movieSeries || [], categories: s.categories || [], notice: s.notice || {}, headline: s.headline || '' }));
   }
   if (r.method === 'GET' && p === '/api/playlist') {
     const s = await readState(e);
@@ -315,9 +323,11 @@ async function handle(r, e) {
   if (p === '/api/admin/state' && r.method === 'GET') return withCors(json({ ok: true, state: await readState(e) }));
   if (p === '/api/admin/state' && r.method === 'PUT') {
     const b = await r.json().catch(() => ({})), s = { ...(await readState(e)), ...b };
-    if (Array.isArray(b.channels)) s.channels = b.channels.map(norm);
+    if (Array.isArray(b.tvChannels)) s.tvChannels = b.tvChannels.map(norm);
+    if (Array.isArray(b.movieSeries)) s.movieSeries = b.movieSeries.map(c => ({ ...norm(c), category: 'MOVIE & SERIES' }));
+    if (Array.isArray(b.channels) && !Array.isArray(b.tvChannels) && !Array.isArray(b.movieSeries)) s.channels = b.channels.map(norm);
     await saveState(e, s);
-    return withCors(json({ ok: true, state: s }));
+    return withCors(json({ ok: true, state: await readState(e) }));
   }
 
   if (p === '/api/admin/users' && r.method === 'GET') {
@@ -377,21 +387,38 @@ async function handle(r, e) {
     return withCors(json({ ok: true, settings: s }));
   }
 
-  if (p === '/api/admin/import-m3u-url' && r.method === 'POST') {
-    const b = await r.json().catch(() => ({}));
-    if (!/^https?:\/\//i.test(String(b.url || ''))) return withCors(json({ ok: false, error: 'Invalid M3U URL' }, 400));
-    const x = await fetch(b.url), s = await readState(e);
-    if (!x.ok) return withCors(json({ ok: false, error: 'M3U URL failed' }, 400));
-    s.channels = parseM3U(await x.text());
+  async function importPlaylistFromUrl(target, movie = false) {
+    const x = await fetch(target);
+    if (!x.ok) throw new Error('M3U URL failed');
+    const s = await readState(e);
+    if (movie) s.movieSeries = parseM3U(await x.text(), true);
+    else s.tvChannels = parseM3U(await x.text(), false);
     await saveState(e, s);
-    return withCors(json({ ok: true, count: s.channels.length }));
+    return readState(e);
   }
-
-  if (p === '/api/admin/import-m3u' && r.method === 'POST') {
+  if ((p === '/api/admin/import-m3u-url' || p === '/api/admin/import-tv-m3u-url') && r.method === 'POST') {
+    const b = await r.json().catch(() => ({})), target = String(b.url || '');
+    if (!/^https?:\/\//i.test(target)) return withCors(json({ ok: false, error: 'Invalid M3U URL' }, 400));
+    try { const s = await importPlaylistFromUrl(target, false); return withCors(json({ ok: true, count: s.tvChannels.length, state: s })); }
+    catch (err) { return withCors(json({ ok: false, error: err.message }, 400)); }
+  }
+  if (p === '/api/admin/import-movie-m3u-url' && r.method === 'POST') {
+    const b = await r.json().catch(() => ({})), target = String(b.url || '');
+    if (!/^https?:\/\//i.test(target)) return withCors(json({ ok: false, error: 'Invalid M3U URL' }, 400));
+    try { const s = await importPlaylistFromUrl(target, true); return withCors(json({ ok: true, count: s.movieSeries.length, state: s })); }
+    catch (err) { return withCors(json({ ok: false, error: err.message }, 400)); }
+  }
+  if ((p === '/api/admin/import-m3u' || p === '/api/admin/import-tv-m3u') && r.method === 'POST') {
     const b = await r.text(), s = await readState(e);
-    s.channels = parseM3U(b);
+    s.tvChannels = parseM3U(b, false);
     await saveState(e, s);
-    return withCors(json({ ok: true, count: s.channels.length }));
+    return withCors(json({ ok: true, count: s.tvChannels.length, state: await readState(e) }));
+  }
+  if (p === '/api/admin/import-movie-m3u' && r.method === 'POST') {
+    const b = await r.text(), s = await readState(e);
+    s.movieSeries = parseM3U(b, true);
+    await saveState(e, s);
+    return withCors(json({ ok: true, count: s.movieSeries.length, state: await readState(e) }));
   }
 
   return withCors(json({ ok: false, error: 'API route not found' }, 404));
