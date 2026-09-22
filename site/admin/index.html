@@ -4,6 +4,8 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#020d19"><title>Admin-Panel</title>
 <link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="luxury-ui.css">
+<link rel="stylesheet" href="category-fix.css">
 </head>
 <body>
 <div class="topbar"><div class="brand"><img src="https://i.postimg.cc/8Cz84Dh1/file-000000002db882119d2d71c9e1944207.png"><div><b>VIP-TV</b><small>ADMIN PANEL</small></div></div><div class="welcome"><b>Welcome Back, Admin</b><small>Last Login: <span id="syncTime">—</span></small></div><div class="session">◷ Session: 30 Minutes</div><button id="themeBtn" class="iconbtn">☾</button><button onclick="logoutWorker()" class="logout">⇥ Logout</button></div>
@@ -45,5 +47,7 @@
 </main></div>
 <div id="loginModal" class="modal show"><div class="login-card"><img src="https://i.postimg.cc/8Cz84Dh1/file-000000002db882119d2d71c9e1944207.png"><h2>VIP-TV Admin Panel</h2><input id="workerPassword" type="password" placeholder="Admin Password"><button id="loginBtn" class="save big">Login</button><p id="loginStatus"></p></div></div>
 <div id="toast" class="toast"></div>
-<script src="app.js"></script><script src="ui-patch.js"></script>
+<script src="app.js"></script>
+<script src="dashboard-ui.js"></script><script src="ui-patch.js"></script>
+<script src="pwa.js"></script>
 </body></html>
