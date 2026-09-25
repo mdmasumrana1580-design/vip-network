@@ -3361,3 +3361,10 @@ video{
 .video-box.movie-series-player > video#video::-webkit-media-controls-timeline {
   display: block !important;
 }
+
+
+/* Telegram button — matched to the existing Messenger button */
+.telegram-btn{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;position:relative;flex:0 0 58px;overflow:visible;}
+.telegram-btn img{width:100%;height:100%;display:block;object-fit:contain;filter:drop-shadow(0 0 8px rgba(0,174,255,.45));}
+.telegram-btn:after{content:"";position:absolute;inset:-2px;border-radius:50%;box-shadow:0 0 14px rgba(0,174,255,.28);pointer-events:none;}
+@media(max-width:700px){.telegram-btn{width:29px;height:29px;flex-basis:29px}.telegram-btn img{width:29px;height:29px}}
