@@ -1,4 +1,4 @@
-const CACHE = 'vip-tv-pwa-v4';
+const CACHE = 'vip-tv-pwa-v5';
 const CORE = [
   '/',
   '/index.html',
@@ -17,7 +17,7 @@ const CORE = [
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)));
-  self.skipWaiting();
+  // Wait for the user to approve the update from the in-app prompt.
 });
 
 self.addEventListener('activate', event => {
@@ -46,3 +46,5 @@ self.addEventListener('fetch', event => {
       .catch(() => caches.match(event.request).then(cached => cached || caches.match('/index.html')))
   );
 });
+
+self.addEventListener('message', event => { if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting(); });
