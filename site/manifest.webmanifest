@@ -2,27 +2,24 @@
   "name": "MsM.Tv",
   "short_name": "MsM.Tv",
   "description": "MsM.Tv Live TV Web App",
-  "start_url": "./index.html",
-  "scope": "./",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "display_override": [
-    "window-controls-overlay",
-    "standalone"
-  ],
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "orientation": "portrait",
-  "background_color": "#03070b",
-  "theme_color": "#03070b",
-  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "vip-tv-logo-192.png",
+      "src": "/vip-tv-logo-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "vip-tv-logo-512.png",
+      "src": "/vip-tv-logo-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
