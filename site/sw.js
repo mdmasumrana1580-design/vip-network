@@ -1,4 +1,4 @@
-const CACHE = 'vip-tv-pwa-v5';
+const CACHE = 'msm-tv-pwa-v6';
 const CORE = [
   '/',
   '/index.html',

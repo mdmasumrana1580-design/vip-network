@@ -1,13 +1,19 @@
 {
+  "id": "/",
   "name": "MsM.Tv",
   "short_name": "MsM.Tv",
   "description": "MsM.Tv Live TV Web App",
+  "lang": "bn",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": [
+    "standalone"
+  ],
   "background_color": "#000000",
   "theme_color": "#000000",
   "orientation": "portrait",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/vip-tv-logo-192.png",
