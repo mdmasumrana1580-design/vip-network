@@ -3368,92 +3368,91 @@ video{
 }
 
 
-/* HEADER ACTIONS: Install, Messenger and Telegram stay together at the top. */
-.header .actions{
-  display:flex !important;
-  align-items:center !important;
-  justify-content:flex-end !important;
-  gap:8px !important;
-  flex:0 0 auto !important;
-}
-.header .actions .messenger-btn,
-.header .actions .telegram-btn,
-.header .actions .install-app-btn{
-  width:34px !important;
-  height:34px !important;
-  flex:0 0 34px !important;
+/* Telegram button — matched to the existing Messenger button */
+.telegram-btn{
+  width:32px !important;
+  height:32px !important;
+  flex:0 0 32px !important;
   padding:0 !important;
-  margin:0 !important;
-  border-radius:50% !important;
   display:flex !important;
   align-items:center !important;
   justify-content:center !important;
-  position:relative !important;
-  box-sizing:border-box !important;
-}
-.header .actions .messenger-btn,
-.header .actions .telegram-btn{
-  border:0 !important;
   background:transparent !important;
+  border:0 !important;
+  border-radius:50% !important;
   text-decoration:none !important;
+  position:relative !important;
+  animation:telegramWiggle 3.8s ease-in-out infinite !important;
 }
-.header .actions .messenger-btn img,
-.header .actions .telegram-btn img{
-  width:34px !important;
-  height:34px !important;
+.telegram-btn img{
+  width:32px !important;
+  height:32px !important;
   display:block !important;
   object-fit:cover !important;
   border-radius:50% !important;
+  filter:drop-shadow(0 2px 6px rgba(0,120,255,.45)) !important;
 }
-.header .actions .telegram-btn{
-  animation:headerButtonWiggle 3.8s ease-in-out infinite !important;
+.telegram-btn:after{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  border:1px solid rgba(65,183,255,.45);
+  border-radius:50%;
+  animation:telegramPulse 2.6s ease-out infinite;
+  pointer-events:none;
 }
-.header .actions .messenger-btn{
-  animation:headerButtonWiggle 3.8s ease-in-out infinite !important;
-  animation-delay:.18s !important;
-}
-.header .actions .messenger-btn:after,
-.header .actions .telegram-btn:after{
-  content:"" !important;
-  position:absolute !important;
-  inset:-2px !important;
-  border:1px solid rgba(65,183,255,.45) !important;
-  border-radius:50% !important;
-  animation:headerButtonPulse 2.6s ease-out infinite !important;
-  pointer-events:none !important;
-}
-.header .actions .telegram-btn:after{animation-delay:.35s !important;}
-.header .actions .install-app-btn{
-  border:1px solid rgba(0,255,150,.65) !important;
-  color:#fff !important;
-  background:linear-gradient(135deg,#d20028,#009655) !important;
-  font:bold 22px/1 Arial,sans-serif !important;
-  box-shadow:0 2px 10px rgba(0,0,0,.45),0 0 9px rgba(0,255,150,.22) !important;
-  cursor:pointer !important;
-  animation:headerButtonWiggle 3.8s ease-in-out infinite !important;
-  animation-delay:.36s !important;
-}
-.header .actions .install-app-btn[hidden]{display:none !important;}
-@keyframes headerButtonWiggle{
-  0%,78%,100%{transform:translate3d(0,0,0) rotate(0deg)}
+@keyframes telegramWiggle{
+  0%,78%,100%{transform:translate3d(0,0,0) rotate(0)}
   82%{transform:translate3d(-1px,-1px,0) rotate(-6deg)}
   85%{transform:translate3d(1px,0,0) rotate(6deg)}
   88%{transform:translate3d(-1px,0,0) rotate(-4deg)}
-  91%{transform:translate3d(0,0,0) rotate(0deg)}
+  91%{transform:translate3d(0,0,0) rotate(0)}
 }
-@keyframes headerButtonPulse{
+@keyframes telegramPulse{
   0%,65%{transform:scale(.92);opacity:.65}
   85%,100%{transform:scale(1.22);opacity:0}
 }
+@media(max-width:420px){
+  .telegram-btn{width:29px !important;height:29px !important;flex-basis:29px !important}
+  .telegram-btn img{width:29px !important;height:29px !important}
+}
+
+
+/* Header App Install button: clear text so everyone understands it. */
+.actions{display:flex !important;align-items:center !important;gap:7px !important;white-space:nowrap !important;}
+.install-app-header{
+  width:auto !important;
+  min-width:64px !important;
+  height:32px !important;
+  padding:0 7px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:3px !important;
+  border:1px solid rgba(0,255,150,.65) !important;
+  border-radius:999px !important;
+  color:#fff !important;
+  background:linear-gradient(135deg,#c9002f,#008f58) !important;
+  box-shadow:0 0 10px rgba(0,255,150,.25),0 2px 8px rgba(0,0,0,.45) !important;
+  font:800 8px/1 Arial,sans-serif !important;
+  letter-spacing:.2px !important;
+  cursor:pointer !important;
+  animation:installWiggle 3.6s ease-in-out infinite !important;
+}
+.install-app-header[hidden]{display:none !important;}
+.install-app-header .install-arrow{font-size:14px !important;line-height:1 !important;font-weight:900 !important;}
+.install-app-header .install-text{font-size:8px !important;line-height:1 !important;}
+@keyframes installWiggle{
+  0%,82%,100%{transform:translate(0,0) rotate(0)}
+  85%{transform:translate(-1px,-1px) rotate(-5deg)}
+  88%{transform:translate(1px,0) rotate(5deg)}
+  91%{transform:translate(0,0) rotate(0)}
+}
+/* Prevent the old bottom floating install button from appearing. */
 .channel-topbar{display:none !important;}
 @media(max-width:420px){
-  .header .actions{gap:6px !important;}
-  .header .actions .messenger-btn,
-  .header .actions .telegram-btn,
-  .header .actions .install-app-btn{
-    width:32px !important;height:32px !important;flex-basis:32px !important;
-  }
-  .header .actions .messenger-btn img,
-  .header .actions .telegram-btn img{width:32px !important;height:32px !important;}
-  .header .actions .install-app-btn{font-size:20px !important;}
+  .actions{gap:6px !important;}
+  .install-app-header{min-width:62px !important;height:29px !important;padding:0 5px !important;font-size:7px !important;}
+  .install-app-header .install-arrow{font-size:13px !important;}
+  .install-app-header .install-text{font-size:7px !important;}
 }
