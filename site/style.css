@@ -3367,22 +3367,39 @@ video{
   display: block !important;
 }
 
-/* Premium Telegram icon beside Messenger */
+
+/* Telegram button — matched to the existing Messenger button */
 .telegram-btn{
-  width:32px !important;height:32px !important;flex:0 0 32px !important;padding:0 !important;
-  display:flex !important;align-items:center !important;justify-content:center !important;
-  background:transparent !important;border:0 !important;border-radius:50% !important;
-  text-decoration:none !important;position:relative !important;
+  width:32px !important;
+  height:32px !important;
+  flex:0 0 32px !important;
+  padding:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:transparent !important;
+  border:0 !important;
+  border-radius:50% !important;
+  text-decoration:none !important;
+  position:relative !important;
   animation:telegramWiggle 3.8s ease-in-out infinite !important;
 }
 .telegram-btn img{
-  width:32px !important;height:32px !important;display:block !important;
-  object-fit:cover !important;border-radius:50% !important;
+  width:32px !important;
+  height:32px !important;
+  display:block !important;
+  object-fit:cover !important;
+  border-radius:50% !important;
   filter:drop-shadow(0 2px 6px rgba(0,120,255,.45)) !important;
 }
 .telegram-btn:after{
-  content:"";position:absolute;inset:-1px;border:1px solid rgba(65,183,255,.45);
-  border-radius:50%;animation:telegramPulse 2.6s ease-out infinite;pointer-events:none;
+  content:"";
+  position:absolute;
+  inset:-1px;
+  border:1px solid rgba(65,183,255,.45);
+  border-radius:50%;
+  animation:telegramPulse 2.6s ease-out infinite;
+  pointer-events:none;
 }
 @keyframes telegramWiggle{
   0%,78%,100%{transform:translate3d(0,0,0) rotate(0)}
@@ -3391,5 +3408,11 @@ video{
   88%{transform:translate3d(-1px,0,0) rotate(-4deg)}
   91%{transform:translate3d(0,0,0) rotate(0)}
 }
-@keyframes telegramPulse{0%,65%{transform:scale(.92);opacity:.65}85%,100%{transform:scale(1.22);opacity:0}}
-@media(max-width:420px){.telegram-btn{width:29px !important;height:29px !important;flex-basis:29px !important}.telegram-btn img{width:29px !important;height:29px !important}}
+@keyframes telegramPulse{
+  0%,65%{transform:scale(.92);opacity:.65}
+  85%,100%{transform:scale(1.22);opacity:0}
+}
+@media(max-width:420px){
+  .telegram-btn{width:29px !important;height:29px !important;flex-basis:29px !important}
+  .telegram-btn img{width:29px !important;height:29px !important}
+}
