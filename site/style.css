@@ -2295,37 +2295,32 @@ body{
 }
 
 
-/* PWA install button — small floating button at the bottom-right corner. */
-.channel-topbar{
-  position:fixed;
-  right:12px;
-  bottom:18px;
-  width:auto;
-  min-height:0;
-  margin:0;
-  padding:0;
-  display:block;
-  z-index:99990;
-  pointer-events:none;
-}
+/* PWA install button — shown in the header beside Messenger when install is available. */
 .install-app-btn{
-  pointer-events:auto;
+  width:29px;
+  height:29px;
+  flex:0 0 29px;
+  padding:0;
   border:1px solid rgba(0,255,150,.55);
   color:#eafff7;
   background:linear-gradient(135deg,rgba(210,0,40,.94),rgba(0,150,85,.94));
-  border-radius:999px;
-  padding:6px 10px;
-  font-weight:800;
-  font-size:10px;
+  border-radius:50%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  font-size:18px;
   line-height:1;
   box-shadow:0 2px 12px rgba(0,0,0,.45),0 0 10px rgba(0,255,150,.18);
   cursor:pointer;
   white-space:nowrap;
+  margin:0;
+  order:1;
 }
 .install-app-btn[hidden]{display:none!important}
+.install-app-btn:active{transform:scale(.94);}
 @media(max-width:600px){
-  .channel-topbar{right:10px;bottom:20px;}
-  .install-app-btn{padding:5px 9px;font-size:9px;}
+  .install-app-btn{width:29px;height:29px;flex-basis:29px;font-size:17px;}
 }
 
 
@@ -3365,54 +3360,4 @@ video{
 }
 .video-box.movie-series-player > video#video::-webkit-media-controls-timeline {
   display: block !important;
-}
-
-
-/* Telegram button — matched to the existing Messenger button */
-.telegram-btn{
-  width:32px !important;
-  height:32px !important;
-  flex:0 0 32px !important;
-  padding:0 !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  background:transparent !important;
-  border:0 !important;
-  border-radius:50% !important;
-  text-decoration:none !important;
-  position:relative !important;
-  animation:telegramWiggle 3.8s ease-in-out infinite !important;
-}
-.telegram-btn img{
-  width:32px !important;
-  height:32px !important;
-  display:block !important;
-  object-fit:cover !important;
-  border-radius:50% !important;
-  filter:drop-shadow(0 2px 6px rgba(0,120,255,.45)) !important;
-}
-.telegram-btn:after{
-  content:"";
-  position:absolute;
-  inset:-1px;
-  border:1px solid rgba(65,183,255,.45);
-  border-radius:50%;
-  animation:telegramPulse 2.6s ease-out infinite;
-  pointer-events:none;
-}
-@keyframes telegramWiggle{
-  0%,78%,100%{transform:translate3d(0,0,0) rotate(0)}
-  82%{transform:translate3d(-1px,-1px,0) rotate(-6deg)}
-  85%{transform:translate3d(1px,0,0) rotate(6deg)}
-  88%{transform:translate3d(-1px,0,0) rotate(-4deg)}
-  91%{transform:translate3d(0,0,0) rotate(0)}
-}
-@keyframes telegramPulse{
-  0%,65%{transform:scale(.92);opacity:.65}
-  85%,100%{transform:scale(1.22);opacity:0}
-}
-@media(max-width:420px){
-  .telegram-btn{width:29px !important;height:29px !important;flex-basis:29px !important}
-  .telegram-btn img{width:29px !important;height:29px !important}
 }
