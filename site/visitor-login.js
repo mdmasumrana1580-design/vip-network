@@ -1,110 +1,43 @@
-/* VIP-Network.TV visitor login: Name + Number + Device Name. */
+/* MSM.TV welcome gate — no login form. Close (×) to enter the website. */
 (function(){
-  const base=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');
-  // Generate and persist a device ID because the current site did not define VIP_DEVICE_ID.
-  function getDeviceId(){
-    let id=window.VIP_DEVICE_ID || localStorage.getItem('vip-network-device-id');
-    if(!id){ id=(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now()); localStorage.setItem('vip-network-device-id',id); }
-    window.VIP_DEVICE_ID=id;
-    return id;
-  }
-  getDeviceId();
-  function deviceName(){return localStorage.getItem('vip-network-device-name')||''}
   function makeGate(){
-    const d=document.createElement('div');d.id='vipVisitorGate';
-    d.innerHTML=`<div class="vip-gate-card" role="dialog" aria-modal="true" aria-label="VIP-Network.TV Login">
-      <img class="vip-gate-logo" src="vip-network-logo.png" alt="VIP NETWORK TV Logo" onerror="this.style.display='none'">
-      <h1 class="vip-gate-title">VIP-NETWORK.TV</h1><div class="vip-gate-sub">স্বাগতম</div>
-      <p class="vip-gate-tagline"><strong>🔥 বিনোদনের নতুন ঠিকানা—VIP-Network.TV! 🔥</strong><br>আপনার প্রিয় অনুষ্ঠান, খেলাধুলা, খবর ও জমজমাট বিনোদনের সব আয়োজন নিয়ে সবসময় আপনার পাশে। আজই যুক্ত হোন VIP-Network.TV-এর সঙ্গে এবং উপভোগ করুন বিনোদনের এক নতুন, রোমাঞ্চকর জগৎ! ✨</p>
-      <div class="vip-features"><div class="vip-feature"><i>📺</i><b>Live TV</b></div><div class="vip-feature"><i>⚽</i><b>Sports</b></div><div class="vip-feature"><i>🎬</i><b>Movies</b></div><div class="vip-feature"><i>▶️</i><b>Series</b></div></div>
-      <form id="vipVisitorLogin" class="vip-login-form">
-        <label class="vip-input"><span>👤</span><input id="vipUserName" autocomplete="name" placeholder="নাম" maxlength="100" required></label>
-        <label class="vip-input"><span>📱</span><input id="vipUserNumber" type="tel" inputmode="numeric" autocomplete="tel" placeholder="নাম্বার" maxlength="20" required></label>
-        <label class="vip-input"><span>💻</span><input id="vipDeviceName" placeholder="ডিভাইস নেম" maxlength="100" required></label>
-        <button class="vip-login-btn" type="submit">⇥ &nbsp; LOGIN</button><div class="vip-gate-status" id="vipGateStatus" aria-live="polite"></div>
-        <button class="vip-guest-btn" id="vipGuestLogin" type="button">👤 &nbsp; GUEST ACCOUNT</button>
-      </form>
-      <div class="vip-gate-credit">💻 <b>VIP-Network.TV</b> সফটওয়্যারটি তৈরি করেছেন <em>মাসুম</em>—তার সৃজনশীলতা ও পরিশ্রমেই প্রযুক্তির সাথে বিনোদনের এই সুন্দর সংযোগ। ✨</div>
-    </div>`;document.body.appendChild(d);return d;
+    const d=document.createElement('div');
+    d.id='vipVisitorGate';
+    d.innerHTML=`
+      <div class="vip-gate-card" role="dialog" aria-modal="true" aria-label="MSM.TV Welcome">
+        <button class="vip-gate-close" id="vipGateClose" type="button" aria-label="Close and enter website">×</button>
+        <img class="vip-gate-logo" src="vip-tv-logo-192.png" alt="MSM.TV" onerror="this.style.display='none'">
+        <h1 class="vip-gate-title">MsM.TV</h1>
+        <div class="vip-gate-sub">স্বাগতম</div>
+        <p class="vip-gate-tagline"><strong>🔥 বিনোদনের নতুন ঠিকানা—MsM.TV! 🔥</strong><br>
+          আপনার প্রিয় অনুষ্ঠান, খেলাধুলা, খবর ও জমজমাট বিনোদনের সব আয়োজন নিয়ে সবসময় আপনার পাশে। আজই যুক্ত হোন MsM.TV-এর সঙ্গে এবং উপভোগ করুন বিনোদনের এক নতুন, রোমাঞ্চকর জগৎ! ✨
+        </p>
+        <div class="vip-features" aria-label="Features">
+          <div class="vip-feature"><i>📺</i><b>Live TV</b></div>
+          <div class="vip-feature"><i>⚽</i><b>Sports</b></div>
+          <div class="vip-feature"><i>🎬</i><b>Movies</b></div>
+          <div class="vip-feature"><i>▶️</i><b>Series</b></div>
+        </div>
+        <div class="vip-gate-credit">💻 <b>MsM.TV</b> সফটওয়্যারটি তৈরি করেছেন <em>মাসুম</em>—তার সৃজনশীলতা ও পরিশ্রমেই প্রযুক্তির সাথে বিনোদনের এই সুন্দর সংযোগ। ✨</div>
+      </div>`;
+    document.body.appendChild(d);
+    document.body.classList.add('vip-gate-open');
+
+    const close=()=>{
+      d.classList.add('vip-gate-closing');
+      document.body.classList.remove('vip-gate-open');
+      setTimeout(()=>d.remove(),180);
+    };
+    d.querySelector('#vipGateClose').addEventListener('click',close);
+    return d;
   }
-  async function checkSession(){try{const r=await fetch(base+'/api/user/session',{credentials:'include',cache:'no-store'});return r.ok}catch(e){return false}}
-  async function init(){
-    if(await checkSession())return;
-    const gate=makeGate(),form=gate.querySelector('#vipVisitorLogin'),status=gate.querySelector('#vipGateStatus'),btn=gate.querySelector('.vip-login-btn'),guestBtn=gate.querySelector('#vipGuestLogin'),u=gate.querySelector('#vipUserName'),n=gate.querySelector('#vipUserNumber'),dn=gate.querySelector('#vipDeviceName');
-    dn.value=deviceName();
-    guestBtn.onclick=async()=>{
-      guestBtn.disabled=true;btn.disabled=true;status.textContent='Guest Account চালু হচ্ছে...';status.style.color='#9de5ff';
-      try{
-        let visitorId=localStorage.getItem('vip-guest-visitor-id');
-        if(!visitorId)visitorId=(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now());
-        localStorage.setItem('vip-guest-visitor-id',visitorId);
-        const deviceNameValue=deviceName()||((/Mobi|Android/i.test(navigator.userAgent))?'Mobile Guest':'Guest Device');
-        localStorage.setItem('vip-network-device-name',deviceNameValue);
-        const r=await fetch(base+'/api/guest/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceId:window.VIP_DEVICE_ID||'',deviceName:deviceNameValue}),cache:'no-store'});
-        const data=await r.json().catch(()=>({}));
-        if(r.status===403||data.blocked){if(typeof window.VIP_SHOW_BLOCKED_PAGE==='function')window.VIP_SHOW_BLOCKED_PAGE();return;}
-        if(!r.ok&&!data.storageLimited)throw new Error(data.error||'Guest login failed');
-        // Guest access is intentionally temporary. Do not persist a local
-        // login flag that can bypass the real login gate after a refresh.
-        gate.remove();
-        window.dispatchEvent(new CustomEvent('vip:guest-login',{detail:data}));
-      }catch(err){status.textContent=err.message||'Guest login failed';status.style.color='#ff9ba7';guestBtn.disabled=false;btn.disabled=false}
-    };
-    form.onsubmit=async e=>{e.preventDefault();btn.disabled=true;guestBtn.disabled=true;status.textContent='Connecting...';status.style.color='#9de5ff';
-      try{
-        const name=u.value.trim(),number=n.value.replace(/\s+/g,'').trim(),deviceNameValue=dn.value.trim();
-        // Client-side validation matches the Worker and prevents the old
-        // "Name and device information are required" false validation.
-        if(name.length<2)throw new Error('নাম কমপক্ষে ২ অক্ষরের হতে হবে');
-        if(!/^\+?[0-9]{6,20}$/.test(number))throw new Error('সঠিক নাম্বার দিন (কমপক্ষে ৬ সংখ্যা)');
-        if(!deviceNameValue)throw new Error('ডিভাইস নেম দিন');
-        localStorage.setItem('vip-network-device-name',deviceNameValue);
-        const deviceId=getDeviceId();
-        // Send both the new field names and the older aliases so this file
-        // remains compatible with an older deployed Worker during rollout.
-        const payload={username:name,name,number,phone:number,deviceId,deviceName:deviceNameValue};
-        const r=await fetch(base+'/api/user/login',{method:'POST',headers:{'content-type':'application/json','X-ViP-Device-ID':deviceId},credentials:'include',body:JSON.stringify(payload),cache:'no-store'});
-        const data=await r.json().catch(()=>({}));
-        if(r.status===403&&data.blocked){if(typeof window.VIP_SHOW_BLOCKED_PAGE==='function')window.VIP_SHOW_BLOCKED_PAGE();return;}
-        // When the Cloudflare Worker request limit is exhausted, the edge
-        // normally responds with HTTP 429 (and sometimes an error body that
-        // contains Cloudflare rate-limit code 1015). Show the requested
-        // daily-login-window message instead of the generic login error.
-        const rawBody=typeof data==='object'&&data?JSON.stringify(data):'';
-        if(r.status===429 || /1015|rate.?limit|too many requests|worker.*limit/i.test(rawBody)){
-          throw new Error('আগামীকাল সকাল ৬টার পর লগইন করতে পারবেন ধন্যবাদ।');
-        }
-        if(!r.ok)throw new Error(data.error||'Login failed');
-        // Do not store a client-only login flag. Access must always be
-        // backed by the server-side VIP_USER_SESSION cookie.
 
-// Do not reload immediately after login. The login request has already
-// authenticated the user; verify the session first, then let the app
-// transition to the TV interface without a browser refresh.
-for (let attempt = 0; attempt < 3; attempt++) {
-  try {
-    const verify = await fetch(base + '/api/user/session', {
-      credentials: 'include',
-      cache: 'no-store'
-    });
-    if (verify.ok) {
-      let session = null;
-      try { session = await verify.json(); } catch (_) {}
-      gate.remove();
-      window.dispatchEvent(new CustomEvent('vip:user-login', {
-        detail: session || data
-      }));
-      return;
-    }
-  } catch (_) {}
-  await new Promise(resolve => setTimeout(resolve, 250));
-}
-
-// Never unlock the site from a local flag alone. If the server session
-// cannot be verified, keep the login gate visible.
-throw new Error('Login session verify করা যায়নি। আবার Login করুন।');
-      }catch(err){status.textContent=err.message||'Login failed';status.style.color='#ff9ba7'}finally{btn.disabled=false;guestBtn.disabled=false}
-    };
+  function init(){
+    // Keep the existing server-session behavior: authenticated users go straight in.
+    const base=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');
+    fetch(base+'/api/user/session',{credentials:'include',cache:'no-store'})
+      .then(r=>{ if(!r.ok) makeGate(); })
+      .catch(()=>makeGate());
   }
   init();
 })();
