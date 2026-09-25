@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vip-tv-pwa-v1';
+const CACHE_NAME = 'vip-tv-pwa-v3';
 const CORE = [
   './',
   './index.html',
@@ -44,3 +44,5 @@ self.addEventListener('fetch', event => {
       ))
   );
 });
+
+self.addEventListener('message', event => { if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting(); });
