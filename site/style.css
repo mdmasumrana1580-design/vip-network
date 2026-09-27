@@ -3478,7 +3478,7 @@ video{
   padding:0 !important;
   border:0 !important;
   border-radius:0 !important;
-  object-fit:contain !important;
+  object-fit:cover !important;
   object-position:center center !important;
   background:#000 !important;
   z-index:2147483647 !important;
