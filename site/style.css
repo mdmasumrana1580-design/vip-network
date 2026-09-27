@@ -3457,84 +3457,43 @@ video{
   .install-app-header .install-text{font-size:7px !important;}
 }
 
-/* Bangladesh clock — added without changing the existing site/player styles */
-.bd-clock{position:absolute;inset:0;z-index:20;overflow:hidden;border-radius:inherit;background:#000;pointer-events:none}
-.bd-clock-bg-wrap{position:absolute;inset:0;z-index:0}
-.bd-clock-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block}
-.bd-clock-name-rgb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;z-index:1;pointer-events:none;animation:bdClockNameRGB 5s linear infinite}
-@keyframes bdClockNameRGB{0%{filter:hue-rotate(0deg) saturate(1.45) drop-shadow(0 0 3px #ff0000) drop-shadow(0 0 9px #ff0000)}16.66%{filter:hue-rotate(60deg) saturate(1.45) drop-shadow(0 0 3px #ffff00) drop-shadow(0 0 9px #ffff00)}33.33%{filter:hue-rotate(120deg) saturate(1.45) drop-shadow(0 0 3px #00ff00) drop-shadow(0 0 9px #00ff00)}50%{filter:hue-rotate(180deg) saturate(1.45) drop-shadow(0 0 3px #00ffff) drop-shadow(0 0 9px #00ffff)}66.66%{filter:hue-rotate(240deg) saturate(1.45) drop-shadow(0 0 3px #0000ff) drop-shadow(0 0 9px #0000ff)}83.33%{filter:hue-rotate(300deg) saturate(1.45) drop-shadow(0 0 3px #ff00ff) drop-shadow(0 0 9px #ff00ff)}100%{filter:hue-rotate(360deg) saturate(1.45) drop-shadow(0 0 3px #ff0000) drop-shadow(0 0 9px #ff0000)}}
-.bd-clock-time{position:absolute;left:50%;top:37%;transform:translate(-50%,-50%);color:#ff1616;font-family:"Courier New",monospace;font-size:clamp(34px,9vw,82px);font-weight:900;letter-spacing:.08em;line-height:1;white-space:nowrap;text-shadow:0 0 5px #ff0000,0 0 14px rgba(255,0,0,.75);z-index:2}
-.bd-clock-days{position:absolute;left:50%;top:60%;transform:translateX(-50%);display:flex;gap:clamp(5px,1.2vw,12px);font:800 clamp(8px,1.7vw,15px)/1 Arial,sans-serif;letter-spacing:.04em;color:#111;z-index:2}
-.bd-clock-days span.active{color:#f00;text-shadow:0 0 5px rgba(255,0,0,.5)}
-.bd-clock-date{position:absolute;left:50%;top:69%;transform:translateX(-50%);display:flex;align-items:baseline;gap:3px;color:#111;font:900 clamp(12px,2.3vw,22px)/1 Arial,sans-serif;z-index:2}
-.bd-clock-date small{font-size:.48em;margin-right:5px}
-.bd-clock-zone{position:absolute;left:50%;bottom:4%;transform:translateX(-50%);color:#164c9a;font:700 clamp(8px,1.4vw,13px)/1 Arial,sans-serif;white-space:nowrap;z-index:2}
-.video-box>.video-clock-dummy{display:none}
 
-/* Clock visibility layer: shown only when the player has no selected video. */
-#vipVideoBox > .bd-clock{z-index:31 !important;pointer-events:none}
-#vipVideoBox > video{position:relative;z-index:2}
-#vipVideoBox.clock-hidden > .bd-clock{display:none !important}
-
-
-/* V30: Bangladesh clock belongs in the blank header area beside the social icons. */
-.bd-clock{display:none !important;}
-.bd-header-clock{
-  position:relative !important;
-  width:178px !important;
-  height:54px !important;
-  flex:0 1 178px !important;
-  margin-left:auto !important;
-  margin-right:6px !important;
-  border:1px solid rgba(0,220,120,.65) !important;
-  border-radius:10px !important;
-  overflow:hidden !important;
+/* MOVIE & SERIES ONLY — native video fullscreen.
+   The video element enters fullscreen directly, so leaving fullscreen lets the
+   browser restore the exact pre-fullscreen player size/position. TV player rules
+   above are intentionally left unchanged. */
+.video-box.movie-series-player > video#video:fullscreen,
+.video-box.movie-series-player > video#video:-webkit-full-screen {
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  width:100dvw !important;
+  height:100dvh !important;
+  max-width:none !important;
+  max-height:none !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  object-fit:cover !important;
+  object-position:center center !important;
   background:#000 !important;
-  box-shadow:0 0 8px rgba(0,210,100,.18), inset 0 0 8px rgba(255,0,0,.10) !important;
-  pointer-events:none !important;
+  z-index:2147483647 !important;
 }
-.bd-header-clock-bg{position:absolute;inset:0;z-index:0;overflow:hidden;}
-.bd-header-clock-bg img{width:100%;height:100%;display:block;object-fit:fill;opacity:.72;}
-.bd-header-clock-time{
-  position:absolute;left:50%;top:18px;transform:translateX(-50%);z-index:2;
-  color:#ff1717;font:900 20px/1 "Courier New",monospace;letter-spacing:1px;white-space:nowrap;
-  text-shadow:0 0 4px #f00,0 0 10px rgba(255,0,0,.7);
+
+/* After native fullscreen exits, no Movie & Series fullscreen geometry is
+   retained by CSS. */
+.video-box.movie-series-player:not(:fullscreen) > video#video:not(:fullscreen) {
+  position:relative !important;
+  inset:auto !important;
+  width:100% !important;
+  height:100% !important;
+  max-width:none !important;
+  max-height:none !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+  border-radius:9px !important;
 }
-.bd-header-clock-days{
-  position:absolute;left:50%;top:35px;transform:translateX(-50%);z-index:2;
-  display:flex;gap:3px;white-space:nowrap;font:800 6px/1 Arial,sans-serif;color:#aaa;
-}
-.bd-header-clock-days span.active{color:#ff3030;text-shadow:0 0 4px #f00;}
-.bd-header-clock-date{
-  position:absolute;right:5px;top:4px;z-index:2;display:flex;align-items:baseline;gap:1px;
-  color:#ddd;font:800 6px/1 Arial,sans-serif;
-}
-.bd-header-clock-date small{font-size:4px;margin-right:1px;color:#aaa;}
-.bd-header-clock-name{
-  position:absolute;left:50%;bottom:2px;transform:translateX(-50%);z-index:3;
-  white-space:nowrap;font:900 8px/1 Arial,sans-serif;letter-spacing:.3px;
-  animation:bdHeaderNameRGB 4.5s linear infinite;
-  text-shadow:0 0 3px currentColor,0 0 7px currentColor;
-}
-@keyframes bdHeaderNameRGB{
-  0%{color:#ff1744} 16%{color:#ff9800} 33%{color:#ffee00} 50%{color:#00e676} 66%{color:#00b0ff} 83%{color:#7c4dff} 100%{color:#ff1744}
-}
-@media(max-width:520px){
-  .bd-header-clock{width:150px !important;height:50px !important;flex-basis:150px !important;margin-right:4px !important;}
-  .bd-header-clock-time{font-size:17px;top:17px;}
-  .bd-header-clock-days{top:32px;font-size:5px;gap:2px;}
-  .bd-header-clock-name{font-size:7px;bottom:2px;}
-  .bd-header-clock-date{font-size:5px;top:3px;}
-}
-@media(max-width:420px){
-  .bd-header-clock{width:132px !important;height:46px !important;flex-basis:132px !important;}
-  .bd-header-clock-time{font-size:15px;top:15px;}
-  .bd-header-clock-days{top:29px;font-size:4.5px;}
-  .bd-header-clock-name{font-size:6px;}
-}
-/* Put the clock in the empty header area, to the RIGHT of Messenger/Telegram. */
-.header .brand-wrap{order:1;}
-.header .actions{order:2;}
-.header .bd-header-clock{order:3;margin-left:8px !important;margin-right:0 !important;flex-shrink:1 !important;}
-@media(max-width:520px){.header .bd-header-clock{width:128px !important;flex-basis:128px !important;}}
-@media(max-width:420px){.header .bd-header-clock{width:108px !important;flex-basis:108px !important;}}
