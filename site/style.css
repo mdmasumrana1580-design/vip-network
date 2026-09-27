@@ -3456,3 +3456,44 @@ video{
   .install-app-header .install-arrow{font-size:13px !important;}
   .install-app-header .install-text{font-size:7px !important;}
 }
+
+
+/* MOVIE & SERIES ONLY — native video fullscreen.
+   The video element enters fullscreen directly, so leaving fullscreen lets the
+   browser restore the exact pre-fullscreen player size/position. TV player rules
+   above are intentionally left unchanged. */
+.video-box.movie-series-player > video#video:fullscreen,
+.video-box.movie-series-player > video#video:-webkit-full-screen {
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  width:100dvw !important;
+  height:100dvh !important;
+  max-width:none !important;
+  max-height:none !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+  background:#000 !important;
+  z-index:2147483647 !important;
+}
+
+/* After native fullscreen exits, no Movie & Series fullscreen geometry is
+   retained by CSS. */
+.video-box.movie-series-player:not(:fullscreen) > video#video:not(:fullscreen) {
+  position:relative !important;
+  inset:auto !important;
+  width:100% !important;
+  height:100% !important;
+  max-width:none !important;
+  max-height:none !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+  border-radius:9px !important;
+}

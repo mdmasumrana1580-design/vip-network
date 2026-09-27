@@ -439,8 +439,37 @@ function play(c, clickedCard, retryOriginal) {
   }
 }
 
+function isMovieSeriesPlayer() {
+  return !!(videoBox && videoBox.classList.contains("movie-series-player"));
+}
+
+function isMovieSeriesVideoFullscreen() {
+  return isMovieSeriesPlayer() && !!(document.fullscreenElement === video || document.webkitFullscreenElement === video);
+}
+
 async function requestNativeFullscreen() {
   if (!videoBox) return;
+
+  // Movie & Series uses the browser's native video controls. Fullscreen the
+  // actual <video> element so Android/Chrome can restore the exact inline
+  // player geometry when Back/Exit Fullscreen is pressed. TV keeps the
+  // existing container-fullscreen implementation below unchanged.
+  if (isMovieSeriesPlayer()) {
+    try {
+      if (video.requestFullscreen) {
+        await video.requestFullscreen({navigationUI:"hide"});
+      } else if (video.webkitRequestFullscreen) {
+        video.webkitRequestFullscreen();
+      }
+    } catch (e) {}
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        await screen.orientation.lock("landscape");
+      }
+    } catch (e) {}
+    return;
+  }
+
   try {
     if (videoBox.requestFullscreen) {
       await videoBox.requestFullscreen({navigationUI:"hide"});
@@ -466,11 +495,14 @@ async function exitNativeFullscreen() {
     if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
     else if (document.webkitFullscreenElement && document.webkitExitFullscreen) document.webkitExitFullscreen();
   } catch (e) {}
-  if (videoBox) {
+
+  // Native Movie & Series fullscreen owns the video element, so do not force
+  // the TV/container fullscreen classes onto it during the exit transition.
+  if (videoBox && !isMovieSeriesVideoFullscreen()) {
     videoBox.classList.remove("vip-css-fullscreen","vip-fullscreen","is-fullscreen","vip-orientation-fallback");
   }
   try {
-    if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+    if (screen.orientation && screen.orientation.unlock) await screen.orientation.unlock();
   } catch (e) {}
 }
 
@@ -491,12 +523,19 @@ async function toggleNativeFullscreen() {
 
 function setFullscreenButtonState() {
   const isFs = isNativeFullscreen();
+  const movieNativeFs = isMovieSeriesVideoFullscreen();
   if (videoBox) {
-    videoBox.classList.toggle("vip-fullscreen", isFs);
-    videoBox.classList.toggle("is-fullscreen", isFs);
-    videoBox.classList.toggle("vip-css-fullscreen", isFs);
+    // For Movie & Series native video fullscreen, the browser owns the
+    // fullscreen viewport. Do not mirror that state onto the parent container.
+    if (!movieNativeFs) {
+      videoBox.classList.toggle("vip-fullscreen", isFs);
+      videoBox.classList.toggle("is-fullscreen", isFs);
+      videoBox.classList.toggle("vip-css-fullscreen", isFs);
+    } else {
+      videoBox.classList.remove("vip-fullscreen","is-fullscreen","vip-css-fullscreen","vip-orientation-fallback");
+    }
   }
-  document.body.classList.toggle("vip-player-fullscreen", isFs);
+  document.body.classList.toggle("vip-player-fullscreen", isFs && !movieNativeFs);
   const controls = document.getElementById("landscapeChannelControls");
   if (controls) controls.setAttribute("aria-hidden", isFs ? "false" : "true");
 }
