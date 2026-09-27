@@ -2578,136 +2578,895 @@ body.vip-player-fullscreen{overflow:hidden!important;background:#000!important;}
      This rule only prevents overflow while the rotation transition completes. */
   body.vip-player-fullscreen{overflow:hidden!important;}
 }
+/* ================================
+   ViP-tv DESKTOP LAYOUT
+   1024px and above
+================================ */
+
+@media (min-width: 1024px) {
+
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden !important;
+  }
+
+  body {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 1fr);
+    grid-template-rows: auto auto auto auto auto 1fr auto;
+    column-gap: 18px;
+    align-items: start;
+  }
+
+  /* Header */
+  .header {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+    position: relative !important;
+    top: auto !important;
+    z-index: 20 !important;
+  }
+
+  /* Player: left side */
+  .player-section {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    float: none !important;
+    z-index: 5 !important;
+  }
+
+  .video-box {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 16 / 9 !important;
+  }
+
+  /* Fixed-player spacer is unnecessary on desktop */
+  .player-spacer {
+    display: none !important;
+  }
+
+  /* Notice: below player */
+  .headline {
+    grid-column: 1 !important;
+    grid-row: 3 !important;
+
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+
+    width: 100% !important;
+    margin: 14px 0 0 !important;
+    z-index: 4 !important;
+  }
+
+  /* Categories below Notice */
+  .cats {
+    grid-column: 1 / -1 !important;
+    grid-row: 4 !important;
+
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+
+    width: 100% !important;
+    margin: 12px 0 0 !important;
+    z-index: 4 !important;
+  }
+
+  .blue-line {
+    grid-column: 1 / -1 !important;
+    grid-row: 5 !important;
+  }
+
+  /* Channel list: right side and only scrollable area */
+  #grid,
+  main.grid {
+    grid-column: 2 !important;
+    grid-row: 2 / 7 !important;
+
+    width: 100% !important;
+    height: calc(100vh - 115px) !important;
+    max-height: calc(100vh - 115px) !important;
+
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+
+    display: grid !important;
+    align-content: start !important;
+
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+
+    float: none !important;
+    margin: 0 !important;
+    padding: 8px !important;
+
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  #grid::-webkit-scrollbar,
+  main.grid::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+  }
+
+  /* Channel cards */
+  #grid .channel-card,
+  main.grid .channel-card {
+    min-width: 0 !important;
+  }
+
+  /* Hide duplicate desktop channel topbar if it occupies space */
+  .channel-topbar {
+    position: fixed !important;
+    right: 14px !important;
+    bottom: 14px !important;
+    z-index: 100 !important;
+  }
+
+  /* Empty message stays in right column */
+  #empty {
+    grid-column: 2 !important;
+    grid-row: 2 / 7 !important;
+    align-self: center !important;
+    justify-self: center !important;
+  }
+
+  /* Footer */
+  .site-footer {
+    grid-column: 1 / -1 !important;
+    grid-row: 7 !important;
+  }
+
+  /* Prevent unwanted horizontal page movement */
+  * {
+    max-width: 100%;
+  }
+}
+
+
+/* VIP-TV FINAL FIX: 6 categories + white Notice text */
+.headline-track span,
+.headline-track span:first-child,
+.headline-track span:last-child {
+  background: none !important;
+  background-image: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  -webkit-text-fill-color: #fff !important;
+  color: #fff !important;
+  text-shadow: 0 0 5px rgba(255,255,255,.18) !important;
+}
+
+/* MOVIE & SERIES icon */
+.cats button:nth-child(6)::before {
+  content: '▶' !important;
+  font-size: 8px !important;
+}
+
+/* Keep all category buttons compact after removing NEW STYLE */
+.cats button {
+  white-space: nowrap !important;
+}
+
+@media (max-width: 700px) {
+  .cats {
+    gap: 5px !important;
+    padding: 7px 6px 6px !important;
+  }
+  .cats button {
+    min-width: 70px !important;
+    height: 32px !important;
+    padding-left: 27px !important;
+    padding-right: 9px !important;
+    font-size: 11px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .cats {
+    gap: 4px !important;
+    padding: 6px 5px 5px !important;
+  }
+  .cats button {
+    min-width: 68px !important;
+    height: 30px !important;
+    padding-left: 25px !important;
+    padding-right: 7px !important;
+    font-size: 10px !important;
+  }
+  .cats button:nth-child(3)::before,
+  .cats button:nth-child(4)::before {
+    font-size: 6px !important;
+  }
+  .cats button:nth-child(6)::before {
+    font-size: 7px !important;
+  }
+}
 
 
 
-/* ViP-tv APP splash — created only on standalone app launch, never on refresh. */
-.app-splash{
-  position:fixed!important; inset:0!important; width:100vw!important; height:100dvh!important;
-  z-index:2147483647!important; display:flex; align-items:center; justify-content:center;
-  background:#000!important; overflow:hidden!important; opacity:1; visibility:visible;
-  transition:opacity .38s ease,visibility .38s ease;
-}
-.app-splash img{
-  width:100%!important; height:100%!important; max-width:none!important; max-height:none!important;
-  object-fit:cover!important; object-position:center!important; display:block!important;
-}
-.app-splash-hide{opacity:0!important; visibility:hidden!important; pointer-events:none!important}
 
-/* V32 layout: Messenger at upper-right, Install App directly below it. */
-.header .actions{
-  position:fixed !important;
-  top:12px !important;
-  right:12px !important;
-  z-index:2147482000 !important;
-  margin:0 !important;
+/* VIP NETWORK: hide the 1px bottom system/edge divider without changing layout */
+html::after, body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:2px;background:#000!important;z-index:2147483647;pointer-events:none}
+
+/* VIP fullscreen final fix: fill the entire fullscreen viewport and crop only the excess aspect ratio. */
+html:has(#vipVideoBox:fullscreen),
+html:has(#vipVideoBox:-webkit-full-screen){
+  background:#000!important;
 }
-.header .messenger-btn{
-  width:42px !important;
-  height:42px !important;
-  flex-basis:42px !important;
-  border-radius:12px !important;
-  margin:0 !important;
+#vipVideoBox:fullscreen,
+#vipVideoBox:-webkit-full-screen,
+#vipVideoBox.vip-fullscreen,
+#vipVideoBox.is-fullscreen,
+#vipVideoBox.vip-css-fullscreen{
+  display:block!important;
+  overflow:hidden!important;
 }
-.header .messenger-btn img{
-  width:42px !important;
-  height:42px !important;
-  border-radius:12px !important;
-}
-.channel-topbar{
-  top:60px !important;
-  right:12px !important;
-  bottom:auto !important;
-  z-index:2147481999 !important;
-}
-.install-app-btn{
-  min-height:30px !important;
-  padding:6px 9px !important;
-  font-size:10px !important;
-  border-radius:999px !important;
-}
-@media(max-width:600px){
-  .header .actions{top:10px !important;right:10px !important;}
-  .header .messenger-btn,.header .messenger-btn img{width:38px !important;height:38px !important;flex-basis:38px !important;}
-  .channel-topbar{top:53px !important;right:10px !important;}
-  .install-app-btn{font-size:9px !important;padding:5px 8px !important;}
+#vipVideoBox:fullscreen > video#video,
+#vipVideoBox:-webkit-full-screen > video#video,
+#vipVideoBox.vip-fullscreen > video#video,
+#vipVideoBox.is-fullscreen > video#video,
+#vipVideoBox.vip-css-fullscreen > video#video{
+  display:block!important;
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:100%!important;
+  min-height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  margin:0!important;
+  padding:0!important;
+  transform:none!important;
 }
 
-/* FINAL: Messenger top-right; Install App floating above channel area at bottom-right */
+/* VIP NETWORK: HARD FULLSCREEN FIX — video must occupy the complete screen. */
+#vipVideoBox:fullscreen,
+#vipVideoBox:-webkit-full-screen,
+#vipVideoBox.vip-fullscreen,
+#vipVideoBox.is-fullscreen,
+#vipVideoBox.vip-css-fullscreen{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  min-width:100vw!important;
+  min-height:100dvh!important;
+  max-width:none!important;
+  max-height:none!important;
+  aspect-ratio:auto!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  overflow:hidden!important;
+  background:#000!important;
+  z-index:2147483646!important;
+}
+#vipVideoBox:fullscreen > video#video,
+#vipVideoBox:-webkit-full-screen > video#video,
+#vipVideoBox.vip-fullscreen > video#video,
+#vipVideoBox.is-fullscreen > video#video,
+#vipVideoBox.vip-css-fullscreen > video#video{
+  position:absolute!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  min-width:100vw!important;
+  min-height:100dvh!important;
+  max-width:none!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  transform:none!important;
+  object-fit:fill!important;
+  object-position:center center!important;
+  display:block!important;
+}
 
-/* ViP-tv clean floating controls */
-.header .actions{
-  position:fixed !important;
-  top:10px !important;
-  right:10px !important;
-  z-index:2147482000 !important;
+
+/* VIP NETWORK — TELEVIZO-STYLE FILL SCREEN: no crop, no bars. */
+#vipVideoBox:fullscreen > video#video,
+#vipVideoBox:-webkit-full-screen > video#video,
+#vipVideoBox.vip-fullscreen > video#video,
+#vipVideoBox.is-fullscreen > video#video,
+#vipVideoBox.vip-css-fullscreen > video#video{
+  width:100% !important;
+  height:100% !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  max-width:none !important;
+  max-height:none !important;
+  object-fit:fill !important;
+  object-position:center center !important;
+  transform:none !important;
+  left:0 !important; right:0 !important; top:0 !important; bottom:0 !important;
 }
-.header .messenger-btn{
-  width:38px !important;
-  height:38px !important;
-  min-width:38px !important;
-  padding:0 !important;
-  margin:0 !important;
-  border-radius:50% !important;
+
+/* VIP CONTROL COLORS + REMOVE FULL-PLAYER BLUE TAP/FOCUS EFFECT */
+html,body,#vipVideoBox,.video-box,video{
+  -webkit-tap-highlight-color:transparent !important;
+  tap-highlight-color:transparent !important;
 }
-.header .messenger-btn img{
-  width:38px !important;
-  height:38px !important;
-  display:block !important;
+#vipVideoBox:focus,
+#vipVideoBox:focus-visible,
+.video-box:focus,
+.video-box:focus-visible,
+video:focus,
+video:focus-visible{
+  outline:none !important;
+  box-shadow:none !important;
 }
-.channel-topbar{
-  position:fixed !important;
-  right:10px !important;
-  bottom:82px !important;
-  top:auto !important;
-  z-index:2147481999 !important;
+video{
+  -webkit-user-select:none !important;
+  user-select:none !important;
+}
+
+/* Clean white + VIP green player controls */
+.vip-volume-control button,
+.vip-fullscreen-btn,
+.landscape-channel-controls button{
+  color:#f5f7f8 !important;
+  text-shadow:0 0 6px rgba(0,230,118,.65),0 0 12px rgba(0,230,118,.28) !important;
+}
+.vip-volume-control input{
+  accent-color:#00d66a !important;
+}
+.landscape-channel-controls button:active,
+.vip-bottom-controls button:active,
+.vip-fullscreen-btn:active{
+  color:#00e676 !important;
+  transform:scale(.92) !important;
+}
+.vip-fullscreen-btn:hover,
+.vip-volume-control button:hover,
+.landscape-channel-controls button:hover{
+  color:#00e676 !important;
+}
+
+/* Prevent any accidental blue selection/touch layer over the player */
+#vipVideoBox *{
+  -webkit-tap-highlight-color:transparent !important;
+}
+
+/* VIP NETWORK — MOBILE TV CONTROLS / GESTURES */
+.video-box{touch-action:pan-y;}
+.landscape-channel-controls button{
+  width:48px!important;
+  height:48px!important;
+  min-width:48px!important;
+  min-height:48px!important;
+  font-size:31px!important;
+  line-height:1!important;
+  font-weight:700!important;
+  color:#19e6a2!important;
+  -webkit-text-fill-color:#19e6a2!important;
+  text-shadow:0 0 9px rgba(25,230,162,.85)!important;
+  border-radius:50%!important;
+}
+.vip-bottom-controls{gap:12px!important;}
+.vip-volume-control{min-height:46px!important;height:46px!important;}
+.vip-volume-control button{
+  width:38px!important;height:38px!important;min-width:38px!important;
+  font-size:20px!important;line-height:1!important;
+}
+.vip-volume-control input{
+  width:125px!important;height:10px!important;
+  accent-color:#19e6a2!important;
+}
+.vip-fullscreen-btn{
+  width:46px!important;height:46px!important;min-width:46px!important;
+  font-size:29px!important;line-height:1!important;
+}
+
+/* Fullscreen: controls are slightly larger and fade away after inactivity. */
+#vipVideoBox.vip-controls-visible .landscape-channel-controls,
+#vipVideoBox.vip-controls-visible .vip-bottom-controls,
+#vipVideoBox.vip-controls-visible .live-badge{opacity:1!important;pointer-events:auto!important;}
+#vipVideoBox:not(.vip-controls-visible) .landscape-channel-controls,
+#vipVideoBox:not(.vip-controls-visible) .vip-bottom-controls{opacity:0!important;pointer-events:none!important;transition:opacity .22s ease!important;}
+#vipVideoBox.vip-controls-visible .landscape-channel-controls,
+#vipVideoBox.vip-controls-visible .vip-bottom-controls{transition:opacity .22s ease!important;}
+
+@media (max-width:600px){
+  .landscape-channel-controls button{width:52px!important;height:52px!important;min-width:52px!important;min-height:52px!important;font-size:33px!important;}
+  .vip-volume-control input{width:135px!important;}
+  .vip-fullscreen-btn{width:50px!important;height:50px!important;min-width:50px!important;font-size:31px!important;}
+  .vip-volume-control button{width:38px!important;height:38px!important;min-width:38px!important;font-size:20px!important;}
+}
+
+
+/* VIP NETWORK — PREMIUM RED/GREEN LUXURY CONTROLS */
+.landscape-channel-controls button,
+.vip-fullscreen-btn,
+.vip-volume-control {
+  border: 1px solid transparent !important;
+  background:
+    linear-gradient(#070b0d,#070b0d) padding-box,
+    linear-gradient(135deg,#ff2638 0%,#ff4d4d 32%,#19e6a2 68%,#00b85a 100%) border-box !important;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.04), 0 5px 18px rgba(0,0,0,.65), 0 0 14px rgba(25,230,162,.12) !important;
+}
+.landscape-channel-controls button {
+  color:#fff !important;
+  -webkit-text-fill-color:#fff !important;
+  text-shadow:0 0 7px rgba(255,40,60,.55),0 0 10px rgba(25,230,162,.35) !important;
+}
+.landscape-channel-controls button:active,
+.vip-fullscreen-btn:active,
+.vip-volume-control button:active {
+  background:
+    linear-gradient(#101416,#101416) padding-box,
+    linear-gradient(135deg,#ff1830,#ff5965,#00f08a,#00b85a) border-box !important;
+}
+.vip-volume-control {
+  min-width:0 !important;
   width:auto !important;
-  margin:0 !important;
-  padding:0 !important;
-  background:transparent !important;
-}
-.install-app-btn{
-  min-height:28px !important;
-  height:28px !important;
   padding:5px 8px !important;
-  font-size:9px !important;
-  line-height:1 !important;
-  border-radius:999px !important;
-  white-space:nowrap !important;
+  gap:5px !important;
+  border-radius:11px !important;
+}
+.vip-volume-control button {
+  width:30px !important;
+  height:30px !important;
+  min-width:30px !important;
+  font-size:16px !important;
+}
+.vip-volume-control input {
+  width:78px !important;
+  height:7px !important;
+  accent-color:#19e6a2 !important;
+}
+.vip-fullscreen-btn {
+  width:42px !important;
+  height:42px !important;
+  min-width:42px !important;
+  margin-left:2px !important;
+  color:#fff !important;
+  font-size:25px !important;
+  flex:0 0 42px !important;
+}
+.vip-bottom-controls {
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:7px !important;
+  width:auto !important;
+  max-width:100% !important;
+  padding-left:8px !important;
+  padding-right:8px !important;
+  box-sizing:border-box !important;
+}
+@media (max-width:600px){
+  .vip-bottom-controls { gap:6px !important; padding-left:7px !important; padding-right:7px !important; }
+  .vip-volume-control { padding:4px 6px !important; gap:4px !important; }
+  .vip-volume-control button { width:28px !important; height:28px !important; min-width:28px !important; font-size:15px !important; }
+  .vip-volume-control input { width:70px !important; }
+  .vip-fullscreen-btn { width:40px !important; height:40px !important; min-width:40px !important; flex-basis:40px !important; font-size:23px !important; }
+}
+
+/* Final VIP premium controls correction: no outer borders; same red/green look in fullscreen. */
+.landscape-channel-controls button,
+.vip-fullscreen-btn,
+.vip-volume-control,
+.vip-volume-control button {
+  border: 0 !important;
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.landscape-channel-controls button,
+.vip-fullscreen-btn,
+.vip-volume-control button {
+  background: linear-gradient(135deg,#ff2638 0%,#ff4d4d 35%,#19e6a2 68%,#00b85a 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(25,230,162,.28), 0 0 8px rgba(255,38,56,.20) !important;
+}
+
+/* Keep the exact same premium colors after entering browser fullscreen. */
+#vipVideoBox:fullscreen .landscape-channel-controls button,
+#vipVideoBox:-webkit-full-screen .landscape-channel-controls button,
+#vipVideoBox.vip-fullscreen .landscape-channel-controls button,
+#vipVideoBox.is-fullscreen .landscape-channel-controls button,
+#vipVideoBox.vip-css-fullscreen .landscape-channel-controls button,
+#vipVideoBox:fullscreen .vip-fullscreen-btn,
+#vipVideoBox:-webkit-full-screen .vip-fullscreen-btn,
+#vipVideoBox.vip-fullscreen .vip-fullscreen-btn,
+#vipVideoBox.is-fullscreen .vip-fullscreen-btn,
+#vipVideoBox.vip-css-fullscreen .vip-fullscreen-btn,
+#vipVideoBox:fullscreen .vip-volume-control button,
+#vipVideoBox:-webkit-full-screen .vip-volume-control button,
+#vipVideoBox.vip-fullscreen .vip-volume-control button,
+#vipVideoBox.is-fullscreen .vip-volume-control button,
+#vipVideoBox.vip-css-fullscreen .vip-volume-control button {
+  border: 0 !important;
+  outline: none !important;
+  background: linear-gradient(135deg,#ff2638 0%,#ff4d4d 35%,#19e6a2 68%,#00b85a 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(25,230,162,.30), 0 0 8px rgba(255,38,56,.22) !important;
+}
+
+#vipVideoBox:fullscreen .vip-volume-control,
+#vipVideoBox:-webkit-full-screen .vip-volume-control,
+#vipVideoBox.vip-fullscreen .vip-volume-control,
+#vipVideoBox.is-fullscreen .vip-volume-control,
+#vipVideoBox.vip-css-fullscreen .vip-volume-control {
+  border: 0 !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* FINAL: Premium red/green styling ONLY for channel change buttons. */
+.landscape-channel-controls button {
+  border: 0 !important;
+  outline: none !important;
+  background: linear-gradient(135deg,#ff2638 0%,#ff4d4d 45%,#19e6a2 70%,#00b85a 100%) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  box-shadow: 0 0 10px rgba(25,230,162,.28), 0 0 8px rgba(255,38,56,.20) !important;
+}
+.landscape-channel-controls button:active,
+.landscape-channel-controls button:hover {
+  background: linear-gradient(135deg,#ff1830 0%,#ff5965 45%,#00f08a 70%,#00b85a 100%) !important;
+  color: #fff !important;
+}
+
+/* Volume + fullscreen: restore the previous normal player appearance. */
+.vip-volume-control,
+.vip-volume-control button,
+.vip-fullscreen-btn {
+  border: 0 !important;
+  outline: none !important;
+  background: transparent !important;
+  color: #f5f7f8 !important;
+  -webkit-text-fill-color: #f5f7f8 !important;
+  box-shadow: none !important;
+  text-shadow: 0 0 6px rgba(0,230,118,.65),0 0 12px rgba(0,230,118,.28) !important;
+}
+.vip-volume-control button:hover,
+.vip-volume-control button:active,
+.vip-fullscreen-btn:hover,
+.vip-fullscreen-btn:active {
+  background: transparent !important;
+  color: #00e676 !important;
+  -webkit-text-fill-color: #00e676 !important;
+  box-shadow: none !important;
+}
+.vip-volume-control input {
+  accent-color: #00d66a !important;
+}
+
+/* Keep channel buttons red/green and volume/fullscreen normal in fullscreen too. */
+#vipVideoBox:fullscreen .landscape-channel-controls button,
+#vipVideoBox:-webkit-full-screen .landscape-channel-controls button,
+#vipVideoBox.vip-fullscreen .landscape-channel-controls button,
+#vipVideoBox.is-fullscreen .landscape-channel-controls button,
+#vipVideoBox.vip-css-fullscreen .landscape-channel-controls button {
+  border: 0 !important;
+  background: linear-gradient(135deg,#ff2638 0%,#ff4d4d 45%,#19e6a2 70%,#00b85a 100%) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+#vipVideoBox:fullscreen .vip-volume-control,
+#vipVideoBox:-webkit-full-screen .vip-volume-control,
+#vipVideoBox.vip-fullscreen .vip-volume-control,
+#vipVideoBox.is-fullscreen .vip-volume-control,
+#vipVideoBox.vip-css-fullscreen .vip-volume-control,
+#vipVideoBox:fullscreen .vip-volume-control button,
+#vipVideoBox:-webkit-full-screen .vip-volume-control button,
+#vipVideoBox.vip-fullscreen .vip-volume-control button,
+#vipVideoBox.is-fullscreen .vip-volume-control button,
+#vipVideoBox.vip-css-fullscreen .vip-volume-control button,
+#vipVideoBox:fullscreen .vip-fullscreen-btn,
+#vipVideoBox:-webkit-full-screen .vip-fullscreen-btn,
+#vipVideoBox.vip-fullscreen .vip-fullscreen-btn,
+#vipVideoBox.is-fullscreen .vip-fullscreen-btn,
+#vipVideoBox.vip-css-fullscreen .vip-fullscreen-btn {
+  border: 0 !important;
+  outline: none !important;
+  background: transparent !important;
+  color: #f5f7f8 !important;
+  -webkit-text-fill-color: #f5f7f8 !important;
+  box-shadow: none !important;
+  text-shadow: 0 0 6px rgba(0,230,118,.65),0 0 12px rgba(0,230,118,.28) !important;
+}
+
+/* VIP NETWORK — FINAL CONTROL COLORS / POSITION */
+/* Channel change arrows: move a little higher */
+.landscape-channel-controls{
+  bottom:70px !important;
+  transform:none !important;
+}
+.video-box.vip-fullscreen .landscape-channel-controls,
+.video-box.is-fullscreen .landscape-channel-controls,
+.video-box.vip-css-fullscreen .landscape-channel-controls,
+#vipVideoBox:fullscreen .landscape-channel-controls,
+#vipVideoBox:-webkit-full-screen .landscape-channel-controls{
+  bottom:82px !important;
+}
+
+/* Fullscreen button = red in normal + fullscreen */
+.vip-fullscreen-btn,
+#vipFullscreen,
+#vipFullscreenLauncher{
+  color:#ff3045 !important;
+  -webkit-text-fill-color:#ff3045 !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  text-shadow:0 0 8px rgba(255,48,69,.65) !important;
+}
+#vipVideoBox:fullscreen .vip-fullscreen-btn,
+#vipVideoBox:-webkit-full-screen .vip-fullscreen-btn,
+#vipVideoBox.vip-fullscreen .vip-fullscreen-btn,
+#vipVideoBox.is-fullscreen .vip-fullscreen-btn,
+#vipVideoBox.vip-css-fullscreen .vip-fullscreen-btn{
+  color:#ff3045 !important;
+  -webkit-text-fill-color:#ff3045 !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  text-shadow:0 0 8px rgba(255,48,69,.65) !important;
+}
+
+/* Volume controls = blue in normal + fullscreen */
+.vip-volume-control,
+.vip-volume-control button{
+  color:#2196ff !important;
+  -webkit-text-fill-color:#2196ff !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  text-shadow:0 0 8px rgba(33,150,255,.60) !important;
+}
+.vip-volume-control input{
+  accent-color:#2196ff !important;
+}
+.vip-volume-control button:hover,
+.vip-volume-control button:active{
+  color:#55b4ff !important;
+  -webkit-text-fill-color:#55b4ff !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+#vipVideoBox:fullscreen .vip-volume-control,
+#vipVideoBox:-webkit-full-screen .vip-volume-control,
+#vipVideoBox.vip-fullscreen .vip-volume-control,
+#vipVideoBox.is-fullscreen .vip-volume-control,
+#vipVideoBox.vip-css-fullscreen .vip-volume-control,
+#vipVideoBox:fullscreen .vip-volume-control button,
+#vipVideoBox:-webkit-full-screen .vip-volume-control button,
+#vipVideoBox.vip-fullscreen .vip-volume-control button,
+#vipVideoBox.is-fullscreen .vip-volume-control button,
+#vipVideoBox.vip-css-fullscreen .vip-volume-control button{
+  color:#2196ff !important;
+  -webkit-text-fill-color:#2196ff !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  text-shadow:0 0 8px rgba(33,150,255,.60) !important;
+}
+#vipVideoBox:fullscreen .vip-volume-control input,
+#vipVideoBox:-webkit-full-screen .vip-volume-control input,
+#vipVideoBox.vip-fullscreen .vip-volume-control input,
+#vipVideoBox.is-fullscreen .vip-volume-control input,
+#vipVideoBox.vip-css-fullscreen .vip-volume-control input{
+  accent-color:#2196ff !important;
+}
+
+@media (max-width:600px){
+  .landscape-channel-controls{bottom:62px !important;}
+  .video-box.vip-fullscreen .landscape-channel-controls,
+  .video-box.is-fullscreen .landscape-channel-controls,
+  .video-box.vip-css-fullscreen .landscape-channel-controls,
+  #vipVideoBox:fullscreen .landscape-channel-controls,
+  #vipVideoBox:-webkit-full-screen .landscape-channel-controls{bottom:72px !important;}
+}
+
+
+/* FINAL ICON CLEANUP: keep only the new fullscreen diamond icon in normal and fullscreen modes. */
+.vip-fullscreen-btn,
+#vipFullscreen,
+#vipFullscreenLauncher,
+#vipVideoBox:fullscreen .vip-fullscreen-btn,
+#vipVideoBox:-webkit-full-screen .vip-fullscreen-btn,
+#vipVideoBox.vip-fullscreen .vip-fullscreen-btn,
+#vipVideoBox.is-fullscreen .vip-fullscreen-btn,
+#vipVideoBox.vip-css-fullscreen .vip-fullscreen-btn {
+  font-size: 0 !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+.vip-fullscreen-btn::after,
+#vipFullscreen::after,
+#vipFullscreenLauncher::after {
+  content: "💠" !important;
+  font-size: 24px !important;
+  line-height: 1 !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  text-shadow: 0 0 8px rgba(255,255,255,.35) !important;
+}
+#vipVideoBox:fullscreen .vip-fullscreen-btn::after,
+#vipVideoBox:-webkit-full-screen .vip-fullscreen-btn::after,
+#vipVideoBox.vip-fullscreen .vip-fullscreen-btn::after,
+#vipVideoBox.is-fullscreen .vip-fullscreen-btn::after,
+#vipVideoBox.vip-css-fullscreen .vip-fullscreen-btn::after {
+  content: "💠" !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+@media (max-width:600px){
+  .vip-fullscreen-btn::after,
+  #vipFullscreen::after,
+  #vipFullscreenLauncher::after { font-size: 22px !important; }
+}
+
+/* FINAL CLEANUP: remove the old red/green channel-button styling. */
+.landscape-channel-controls button,
+#vipVideoBox:fullscreen .landscape-channel-controls button,
+#vipVideoBox:-webkit-full-screen .landscape-channel-controls button,
+#vipVideoBox.vip-fullscreen .landscape-channel-controls button,
+#vipVideoBox.is-fullscreen .landscape-channel-controls button,
+#vipVideoBox.vip-css-fullscreen .landscape-channel-controls button {
+  background: rgba(0,0,0,.42) !important;
+  background-image: none !important;
+  border: 0 !important;
+  outline: none !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,.45) !important;
+  text-shadow: 0 1px 4px rgba(0,0,0,.8) !important;
+}
+.landscape-channel-controls button:hover,
+.landscape-channel-controls button:active {
+  background: rgba(255,255,255,.16) !important;
+  background-image: none !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+/* Movie & Series: show a seek/progress bar so on-demand videos can be dragged.\n   Live TV keeps the existing custom controls unchanged. */
+.video-box.movie-series-player > video#video {
+  cursor: default !important;
+}
+.video-box.movie-series-player > video#video::-webkit-media-controls-panel {
+  background: linear-gradient(transparent, rgba(0,0,0,.88)) !important;
+}
+.video-box.movie-series-player > video#video::-webkit-media-controls-timeline {
+  display: block !important;
+}
+
+
+/* Telegram button — matched to the existing Messenger button */
+.telegram-btn{
+  width:32px !important;
+  height:32px !important;
+  flex:0 0 32px !important;
+  padding:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:transparent !important;
+  border:0 !important;
+  border-radius:50% !important;
+  text-decoration:none !important;
+  position:relative !important;
+  animation:telegramWiggle 3.8s ease-in-out infinite !important;
+}
+.telegram-btn img{
+  width:32px !important;
+  height:32px !important;
+  display:block !important;
+  object-fit:cover !important;
+  border-radius:50% !important;
+  filter:drop-shadow(0 2px 6px rgba(0,120,255,.45)) !important;
+}
+.telegram-btn:after{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  border:1px solid rgba(65,183,255,.45);
+  border-radius:50%;
+  animation:telegramPulse 2.6s ease-out infinite;
+  pointer-events:none;
+}
+@keyframes telegramWiggle{
+  0%,78%,100%{transform:translate3d(0,0,0) rotate(0)}
+  82%{transform:translate3d(-1px,-1px,0) rotate(-6deg)}
+  85%{transform:translate3d(1px,0,0) rotate(6deg)}
+  88%{transform:translate3d(-1px,0,0) rotate(-4deg)}
+  91%{transform:translate3d(0,0,0) rotate(0)}
+}
+@keyframes telegramPulse{
+  0%,65%{transform:scale(.92);opacity:.65}
+  85%,100%{transform:scale(1.22);opacity:0}
 }
 @media(max-width:420px){
-  .header .actions{top:9px !important;right:8px !important;}
-  .header .messenger-btn,.header .messenger-btn img{width:34px !important;height:34px !important;min-width:34px !important;}
-  .channel-topbar{right:8px !important;bottom:76px !important;}
-  .install-app-btn{height:26px !important;min-height:26px !important;font-size:8px !important;padding:4px 7px !important;}
+  .telegram-btn{width:29px !important;height:29px !important;flex-basis:29px !important}
+  .telegram-btn img{width:29px !important;height:29px !important}
 }
 
-/* Bangladesh live clock only */
-.video-box { position: relative; overflow: hidden; }
-.bd-clock { position:absolute; inset:0; z-index:0; overflow:hidden; border-radius:inherit; background:#000; pointer-events:none; }
-.bd-clock-bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; display:block; }
-.bd-clock-time { position:absolute; left:50%; top:37%; transform:translate(-50%,-50%); color:#ff1616; font-family:"Courier New",monospace; font-size:clamp(34px,9vw,82px); font-weight:900; letter-spacing:.08em; line-height:1; white-space:nowrap; text-shadow:0 0 5px #ff0000,0 0 14px rgba(255,0,0,.75); z-index:2; }
-.bd-clock-days { position:absolute; left:50%; top:60%; transform:translateX(-50%); display:flex; gap:clamp(5px,1.2vw,12px); font:800 clamp(8px,1.7vw,15px)/1 Arial,sans-serif; letter-spacing:.04em; color:#111; z-index:2; }
-.bd-clock-days span.active { color:#f00; text-shadow:0 0 5px rgba(255,0,0,.5); }
-.bd-clock-date { position:absolute; left:50%; top:69%; transform:translateX(-50%); display:flex; align-items:baseline; gap:3px; color:#111; font:900 clamp(12px,2.3vw,22px)/1 Arial,sans-serif; z-index:2; }
-.bd-clock-date small { font-size:.48em; margin-right:5px; }
-.bd-clock-zone { position:absolute; left:50%; bottom:4%; transform:translateX(-50%); color:#164c9a; font:700 clamp(8px,1.4vw,13px)/1 Arial,sans-serif; white-space:nowrap; z-index:2; }
-.video-box > video { position:relative; z-index:2; }
 
-/* RGB light for the clock name: Md- MASUM RANA */
-.bd-clock-name-rgb{
-  position:absolute; inset:0; width:100%; height:100%;
-  object-fit:cover; object-position:center; display:block;
-  z-index:1; pointer-events:none;
-  animation: bdClockNameRGB 5s linear infinite;
-  filter: drop-shadow(0 0 3px currentColor) drop-shadow(0 0 8px currentColor);
+/* Header App Install button: clear text so everyone understands it. */
+.actions{display:flex !important;align-items:center !important;gap:7px !important;white-space:nowrap !important;}
+.install-app-header{
+  width:auto !important;
+  min-width:64px !important;
+  height:32px !important;
+  padding:0 7px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:3px !important;
+  border:1px solid rgba(0,255,150,.65) !important;
+  border-radius:999px !important;
+  color:#fff !important;
+  background:linear-gradient(135deg,#c9002f,#008f58) !important;
+  box-shadow:0 0 10px rgba(0,255,150,.25),0 2px 8px rgba(0,0,0,.45) !important;
+  font:800 8px/1 Arial,sans-serif !important;
+  letter-spacing:.2px !important;
+  cursor:pointer !important;
+  animation:installWiggle 3.6s ease-in-out infinite !important;
 }
-@keyframes bdClockNameRGB{
-  0%{filter:hue-rotate(0deg) saturate(1.45) drop-shadow(0 0 3px #ff0000) drop-shadow(0 0 9px #ff0000);}
-  16.66%{filter:hue-rotate(60deg) saturate(1.45) drop-shadow(0 0 3px #ffff00) drop-shadow(0 0 9px #ffff00);}
-  33.33%{filter:hue-rotate(120deg) saturate(1.45) drop-shadow(0 0 3px #00ff00) drop-shadow(0 0 9px #00ff00);}
-  50%{filter:hue-rotate(180deg) saturate(1.45) drop-shadow(0 0 3px #00ffff) drop-shadow(0 0 9px #00ffff);}
-  66.66%{filter:hue-rotate(240deg) saturate(1.45) drop-shadow(0 0 3px #0000ff) drop-shadow(0 0 9px #0000ff);}
-  83.33%{filter:hue-rotate(300deg) saturate(1.45) drop-shadow(0 0 3px #ff00ff) drop-shadow(0 0 9px #ff00ff);}
-  100%{filter:hue-rotate(360deg) saturate(1.45) drop-shadow(0 0 3px #ff0000) drop-shadow(0 0 9px #ff0000);}
+.install-app-header[hidden]{display:none !important;}
+.install-app-header .install-arrow{font-size:14px !important;line-height:1 !important;font-weight:900 !important;}
+.install-app-header .install-text{font-size:8px !important;line-height:1 !important;}
+@keyframes installWiggle{
+  0%,82%,100%{transform:translate(0,0) rotate(0)}
+  85%{transform:translate(-1px,-1px) rotate(-5deg)}
+  88%{transform:translate(1px,0) rotate(5deg)}
+  91%{transform:translate(0,0) rotate(0)}
 }
+/* Prevent the old bottom floating install button from appearing. */
+.channel-topbar{display:none !important;}
+@media(max-width:420px){
+  .actions{gap:6px !important;}
+  .install-app-header{min-width:62px !important;height:29px !important;padding:0 5px !important;font-size:7px !important;}
+  .install-app-header .install-arrow{font-size:13px !important;}
+  .install-app-header .install-text{font-size:7px !important;}
+}
+
+/* Bangladesh clock — added without changing the existing site/player styles */
+.bd-clock{position:absolute;inset:0;z-index:0;overflow:hidden;border-radius:inherit;background:#000;pointer-events:none}
+.bd-clock-bg-wrap{position:absolute;inset:0;z-index:0}
+.bd-clock-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+.bd-clock-name-rgb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;z-index:1;pointer-events:none;animation:bdClockNameRGB 5s linear infinite}
+@keyframes bdClockNameRGB{0%{filter:hue-rotate(0deg) saturate(1.45) drop-shadow(0 0 3px #ff0000) drop-shadow(0 0 9px #ff0000)}16.66%{filter:hue-rotate(60deg) saturate(1.45) drop-shadow(0 0 3px #ffff00) drop-shadow(0 0 9px #ffff00)}33.33%{filter:hue-rotate(120deg) saturate(1.45) drop-shadow(0 0 3px #00ff00) drop-shadow(0 0 9px #00ff00)}50%{filter:hue-rotate(180deg) saturate(1.45) drop-shadow(0 0 3px #00ffff) drop-shadow(0 0 9px #00ffff)}66.66%{filter:hue-rotate(240deg) saturate(1.45) drop-shadow(0 0 3px #0000ff) drop-shadow(0 0 9px #0000ff)}83.33%{filter:hue-rotate(300deg) saturate(1.45) drop-shadow(0 0 3px #ff00ff) drop-shadow(0 0 9px #ff00ff)}100%{filter:hue-rotate(360deg) saturate(1.45) drop-shadow(0 0 3px #ff0000) drop-shadow(0 0 9px #ff0000)}}
+.bd-clock-time{position:absolute;left:50%;top:37%;transform:translate(-50%,-50%);color:#ff1616;font-family:"Courier New",monospace;font-size:clamp(34px,9vw,82px);font-weight:900;letter-spacing:.08em;line-height:1;white-space:nowrap;text-shadow:0 0 5px #ff0000,0 0 14px rgba(255,0,0,.75);z-index:2}
+.bd-clock-days{position:absolute;left:50%;top:60%;transform:translateX(-50%);display:flex;gap:clamp(5px,1.2vw,12px);font:800 clamp(8px,1.7vw,15px)/1 Arial,sans-serif;letter-spacing:.04em;color:#111;z-index:2}
+.bd-clock-days span.active{color:#f00;text-shadow:0 0 5px rgba(255,0,0,.5)}
+.bd-clock-date{position:absolute;left:50%;top:69%;transform:translateX(-50%);display:flex;align-items:baseline;gap:3px;color:#111;font:900 clamp(12px,2.3vw,22px)/1 Arial,sans-serif;z-index:2}
+.bd-clock-date small{font-size:.48em;margin-right:5px}
+.bd-clock-zone{position:absolute;left:50%;bottom:4%;transform:translateX(-50%);color:#164c9a;font:700 clamp(8px,1.4vw,13px)/1 Arial,sans-serif;white-space:nowrap;z-index:2}
+.video-box>.video-clock-dummy{display:none}
