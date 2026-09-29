@@ -447,6 +447,41 @@ function isMovieSeriesVideoFullscreen() {
   return isMovieSeriesPlayer() && !!(document.fullscreenElement === video || document.webkitFullscreenElement === video);
 }
 
+function showMsMTvFullscreenNotice() {
+  try {
+    const id = "msmTvFullscreenNotice";
+    let notice = document.getElementById(id);
+    if (!notice) {
+      notice = document.createElement("div");
+      notice.id = id;
+      notice.textContent = "MsM.Tv – To exit full screen, drag from the top and touch the back button";
+      Object.assign(notice.style, {
+        position: "fixed",
+        left: "50%",
+        bottom: "18px",
+        transform: "translateX(-50%)",
+        zIndex: "2147483647",
+        maxWidth: "calc(100vw - 24px)",
+        padding: "9px 14px",
+        boxSizing: "border-box",
+        borderRadius: "7px",
+        background: "rgba(45,45,45,.96)",
+        color: "#fff",
+        font: "14px/1.35 sans-serif",
+        textAlign: "center",
+        boxShadow: "0 2px 8px rgba(0,0,0,.35)",
+        pointerEvents: "none"
+      });
+      document.body.appendChild(notice);
+    }
+    notice.style.display = "block";
+    clearTimeout(window.__msmTvFullscreenNoticeTimer);
+    window.__msmTvFullscreenNoticeTimer = setTimeout(() => {
+      if (notice) notice.style.display = "none";
+    }, 4500);
+  } catch (e) {}
+}
+
 async function requestNativeFullscreen() {
   if (!videoBox) return;
 
@@ -467,6 +502,7 @@ async function requestNativeFullscreen() {
         await screen.orientation.lock("landscape");
       }
     } catch (e) {}
+    showMsMTvFullscreenNotice();
     return;
   }
 
@@ -488,6 +524,7 @@ async function requestNativeFullscreen() {
   } catch (e) {
     // Orientation locking is browser-dependent; keep normal fullscreen if unavailable.
   }
+  showMsMTvFullscreenNotice();
 }
 
 async function exitNativeFullscreen() {
