@@ -444,107 +444,61 @@ function isMovieSeriesPlayer() {
 }
 
 function isMovieSeriesVideoFullscreen() {
-  return isMovieSeriesPlayer() && !!(document.fullscreenElement === video || document.webkitFullscreenElement === video);
+  // Use the app's CSS fullscreen for all players. This avoids Android/Chrome's
+  // native fullscreen education message and lets us show our own app message.
+  return false;
 }
 
-function showMsMTvFullscreenNotice() {
-  try {
-    const id = "msmTvFullscreenNotice";
-    let notice = document.getElementById(id);
-    if (!notice) {
-      notice = document.createElement("div");
-      notice.id = id;
-      notice.textContent = "MsM.Tv – To exit full screen, drag from the top and touch the back button";
-      Object.assign(notice.style, {
-        position: "fixed",
-        left: "50%",
-        bottom: "18px",
-        transform: "translateX(-50%)",
-        zIndex: "2147483647",
-        maxWidth: "calc(100vw - 24px)",
-        padding: "9px 14px",
-        boxSizing: "border-box",
-        borderRadius: "7px",
-        background: "rgba(45,45,45,.96)",
-        color: "#fff",
-        font: "14px/1.35 sans-serif",
-        textAlign: "center",
-        boxShadow: "0 2px 8px rgba(0,0,0,.35)",
-        pointerEvents: "none"
-      });
-      document.body.appendChild(notice);
-    }
-    notice.style.display = "block";
-    clearTimeout(window.__msmTvFullscreenNoticeTimer);
-    window.__msmTvFullscreenNoticeTimer = setTimeout(() => {
-      if (notice) notice.style.display = "none";
-    }, 4500);
-  } catch (e) {}
+function showFullscreenHint() {
+  let el = document.getElementById("msmFullscreenHint");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "msmFullscreenHint";
+    el.textContent = "MsM.Tv – To exit full screen, drag from the top and touch the back button";
+    Object.assign(el.style, {
+      position: "fixed",
+      left: "50%",
+      bottom: "10px",
+      transform: "translateX(-50%)",
+      zIndex: "2147483647",
+      maxWidth: "calc(100vw - 24px)",
+      boxSizing: "border-box",
+      padding: "8px 14px",
+      borderRadius: "6px",
+      background: "rgba(70,70,70,.94)",
+      color: "#fff",
+      font: "14px/1.35 Arial,sans-serif",
+      textAlign: "center",
+      pointerEvents: "none",
+      opacity: "0",
+      transition: "opacity .18s ease"
+    });
+    document.body.appendChild(el);
+  }
+  el.style.opacity = "1";
+  clearTimeout(window.__msmFullscreenHintTimer);
+  window.__msmFullscreenHintTimer = setTimeout(() => { el.style.opacity = "0"; }, 5000);
 }
 
 async function requestNativeFullscreen() {
   if (!videoBox) return;
-
-  // Movie & Series uses the browser's native video controls. Fullscreen the
-  // actual <video> element so Android/Chrome can restore the exact inline
-  // player geometry when Back/Exit Fullscreen is pressed. TV keeps the
-  // existing container-fullscreen implementation below unchanged.
-  if (isMovieSeriesPlayer()) {
-    try {
-      if (video.requestFullscreen) {
-        await video.requestFullscreen({navigationUI:"hide"});
-      } else if (video.webkitRequestFullscreen) {
-        video.webkitRequestFullscreen();
-      }
-    } catch (e) {}
-    try {
-      if (screen.orientation && screen.orientation.lock) {
-        await screen.orientation.lock("landscape");
-      }
-    } catch (e) {}
-    showMsMTvFullscreenNotice();
-    return;
-  }
-
-  try {
-    if (videoBox.requestFullscreen) {
-      await videoBox.requestFullscreen({navigationUI:"hide"});
-    } else if (videoBox.webkitRequestFullscreen) {
-      videoBox.webkitRequestFullscreen();
-    } else {
-      videoBox.classList.add("vip-css-fullscreen");
-    }
-  } catch (e) {
-    videoBox.classList.add("vip-css-fullscreen");
-  }
-  try {
-    if (screen.orientation && screen.orientation.lock) {
-      await screen.orientation.lock("landscape");
-    }
-  } catch (e) {
-    // Orientation locking is browser-dependent; keep normal fullscreen if unavailable.
-  }
-  showMsMTvFullscreenNotice();
+  // Deliberately do NOT call requestFullscreen(). Android/Chrome owns the
+  // native fullscreen message, so it cannot be renamed from a webpage.
+  // The player instead uses the existing CSS fullscreen layout.
+  videoBox.classList.add("vip-css-fullscreen", "vip-fullscreen", "is-fullscreen");
+  document.body.classList.add("vip-player-fullscreen");
+  showFullscreenHint();
 }
 
 async function exitNativeFullscreen() {
-  try {
-    if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
-    else if (document.webkitFullscreenElement && document.webkitExitFullscreen) document.webkitExitFullscreen();
-  } catch (e) {}
-
-  // Native Movie & Series fullscreen owns the video element, so do not force
-  // the TV/container fullscreen classes onto it during the exit transition.
-  if (videoBox && !isMovieSeriesVideoFullscreen()) {
-    videoBox.classList.remove("vip-css-fullscreen","vip-fullscreen","is-fullscreen","vip-orientation-fallback");
+  if (videoBox) {
+    videoBox.classList.remove("vip-css-fullscreen", "vip-fullscreen", "is-fullscreen", "vip-orientation-fallback");
   }
-  try {
-    if (screen.orientation && screen.orientation.unlock) await screen.orientation.unlock();
-  } catch (e) {}
+  document.body.classList.remove("vip-player-fullscreen");
 }
 
 function isNativeFullscreen() {
-  return !!(document.fullscreenElement || (videoBox && videoBox.classList.contains("vip-css-fullscreen")));
+  return !!(videoBox && videoBox.classList.contains("vip-css-fullscreen"));
 }
 
 async function toggleNativeFullscreen() {
