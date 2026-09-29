@@ -447,25 +447,95 @@ function isMovieSeriesVideoFullscreen() {
   return isMovieSeriesPlayer() && !!(document.fullscreenElement === video || document.webkitFullscreenElement === video);
 }
 
-function enableLandscapeFallbackIfNeeded() {
-  if (!videoBox || !isNativeFullscreen()) return;
-  const portrait = window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
-  if (!portrait) return;
-  videoBox.classList.add("vip-orientation-fallback");
-  if (!document.getElementById("msm-landscape-fallback-style")) {
-    const st = document.createElement("style");
-    st.id = "msm-landscape-fallback-style";
-    st.textContent = `
-      .video-box.vip-orientation-fallback{
-        position:fixed !important; left:50% !important; top:50% !important; right:auto !important; bottom:auto !important;
-        width:100dvh !important; height:100vw !important; max-width:none !important; max-height:none !important;
-        transform:translate(-50%,-50%) rotate(90deg) !important; transform-origin:center center !important;
-      }
-      .video-box.vip-orientation-fallback > video,.video-box.vip-orientation-fallback .welcome-video{
-        width:100% !important; height:100% !important; object-fit:contain !important;
-      }`;
-    document.head.appendChild(st);
+function showMsMTvFullscreenNotice() {
+  try {
+    const id = "msmTvFullscreenNotice";
+    let notice = document.getElementById(id);
+    if (!notice) {
+      notice = document.createElement("div");
+      notice.id = id;
+      notice.textContent = "MsM.Tv – To exit full screen, drag from the top and touch the back button";
+      Object.assign(notice.style, {
+        position: "fixed",
+        left: "50%",
+        bottom: "18px",
+        transform: "translateX(-50%)",
+        zIndex: "2147483647",
+        maxWidth: "calc(100vw - 24px)",
+        padding: "9px 14px",
+        boxSizing: "border-box",
+        borderRadius: "7px",
+        background: "rgba(45,45,45,.96)",
+        color: "#fff",
+        font: "14px/1.35 sans-serif",
+        textAlign: "center",
+        boxShadow: "0 2px 8px rgba(0,0,0,.35)",
+        pointerEvents: "none"
+      });
+      document.body.appendChild(notice);
+    }
+    notice.style.display = "block";
+    clearTimeout(window.__msmTvFullscreenNoticeTimer);
+    window.__msmTvFullscreenNoticeTimer = setTimeout(() => {
+      if (notice) notice.style.display = "none";
+    }, 4500);
+  } catch (e) {}
+}
+
+
+function ensurePortraitFullscreenLandscapeFallback() {
+  try {
+    const styleId = "msmTvLandscapeFallbackStyle";
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.textContent = `
+        @media (orientation: portrait) {
+          #vipVideoBox.vip-force-landscape,
+          #vipVideoBox.vip-force-landscape.vip-fullscreen,
+          #vipVideoBox.vip-force-landscape.is-fullscreen,
+          #vipVideoBox.vip-force-landscape.vip-css-fullscreen {
+            position: fixed !important;
+            width: 100vh !important;
+            height: 100vw !important;
+            left: 50% !important;
+            top: 50% !important;
+            right: auto !important;
+            bottom: auto !important;
+            inset: auto !important;
+            margin: 0 !important;
+            transform: translate(-50%, -50%) rotate(90deg) !important;
+            transform-origin: center center !important;
+            max-width: none !important;
+            max-height: none !important;
+            overflow: hidden !important;
+          }
+          #vipVideoBox.vip-force-landscape > #video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain !important;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    if (videoBox) {
+      const portrait = window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
+      const fs = isNativeFullscreen();
+      videoBox.classList.toggle("vip-force-landscape", !!(fs && portrait && !isMovieSeriesVideoFullscreen()));
+    }
+  } catch (e) {}
+}
+
+async function lockLandscapeAfterFullscreen() {
+  if (!screen.orientation || !screen.orientation.lock) return false;
+  for (const mode of ["landscape-primary", "landscape"]) {
+    try {
+      await screen.orientation.lock(mode);
+      return true;
+    } catch (e) {}
   }
+  return false;
 }
 
 async function requestNativeFullscreen() {
@@ -483,11 +553,9 @@ async function requestNativeFullscreen() {
         video.webkitRequestFullscreen();
       }
     } catch (e) {}
-    try {
-      if (screen.orientation && screen.orientation.lock) {
-        await screen.orientation.lock("landscape");
-      }
-    } catch (e) {}
+    await lockLandscapeAfterFullscreen();
+    ensurePortraitFullscreenLandscapeFallback();
+    showMsMTvFullscreenNotice();
     return;
   }
 
@@ -502,13 +570,9 @@ async function requestNativeFullscreen() {
   } catch (e) {
     videoBox.classList.add("vip-css-fullscreen");
   }
-  try {
-    if (screen.orientation && screen.orientation.lock) {
-      await screen.orientation.lock("landscape");
-    }
-  } catch (e) {
-    // Orientation locking is browser-dependent; keep normal fullscreen if unavailable.
-  }
+  await lockLandscapeAfterFullscreen();
+  ensurePortraitFullscreenLandscapeFallback();
+  showMsMTvFullscreenNotice();
 }
 
 async function exitNativeFullscreen() {
@@ -520,7 +584,7 @@ async function exitNativeFullscreen() {
   // Native Movie & Series fullscreen owns the video element, so do not force
   // the TV/container fullscreen classes onto it during the exit transition.
   if (videoBox && !isMovieSeriesVideoFullscreen()) {
-    videoBox.classList.remove("vip-css-fullscreen","vip-fullscreen","is-fullscreen","vip-orientation-fallback");
+    videoBox.classList.remove("vip-css-fullscreen","vip-fullscreen","is-fullscreen","vip-orientation-fallback","vip-force-landscape");
   }
   try {
     if (screen.orientation && screen.orientation.unlock) await screen.orientation.unlock();
@@ -538,8 +602,6 @@ async function toggleNativeFullscreen() {
     await requestNativeFullscreen();
   }
   syncFullscreenState();
-  setTimeout(enableLandscapeFallbackIfNeeded, 400);
-  setTimeout(enableLandscapeFallbackIfNeeded, 1000);
   setTimeout(syncFullscreenState, 120);
   setTimeout(syncFullscreenState, 500);
 }
@@ -565,7 +627,8 @@ function setFullscreenButtonState() {
 
 function syncFullscreenState() {
   setFullscreenButtonState();
-  requestAnimationFrame(setFullscreenButtonState);
+  ensurePortraitFullscreenLandscapeFallback();
+  requestAnimationFrame(function(){ setFullscreenButtonState(); ensurePortraitFullscreenLandscapeFallback(); });
 }
 
 function changeChannel(step) {
