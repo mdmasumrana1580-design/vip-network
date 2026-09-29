@@ -559,17 +559,10 @@ async function requestNativeFullscreen() {
     return;
   }
 
-  try {
-    if (videoBox.requestFullscreen) {
-      await videoBox.requestFullscreen({navigationUI:"hide"});
-    } else if (videoBox.webkitRequestFullscreen) {
-      videoBox.webkitRequestFullscreen();
-    } else {
-      videoBox.classList.add("vip-css-fullscreen");
-    }
-  } catch (e) {
-    videoBox.classList.add("vip-css-fullscreen");
-  }
+  // TV player: use CSS fullscreen instead of the browser Fullscreen API.
+  // Android shows its own "To exit full screen..." system message whenever
+  // requestFullscreen() is used; CSS fullscreen avoids that system message.
+  videoBox.classList.add("vip-css-fullscreen","vip-fullscreen","is-fullscreen");
   await lockLandscapeAfterFullscreen();
   ensurePortraitFullscreenLandscapeFallback();
   showMsMTvFullscreenNotice();
