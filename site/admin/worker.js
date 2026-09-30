@@ -183,7 +183,7 @@ async function handleApi(request,env){
     const channels=parseM3U(await r.text()),s=await readState(env);s.channels=channels;s.categories=[...new Set(channels.map(c=>c.category))];
     return withCors(json({ok:true,count:channels.length,state:await saveState(env,s)}));
   }
-  if(path==='/api/xtream/import'&&request.method==='POST'){
+  if((path==='/api/xtream/import'||path==='/api/admin/xtream/import')&&request.method==='POST'){
     const b=await request.json().catch(()=>({})),server=String(b.server||'').replace(/\/$/,''),user=String(b.username||''),pass=String(b.password||'');
     if(!server||!user||!pass)return withCors(json({ok:false,error:'server, username and password required'},400));
     const auth=`username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
