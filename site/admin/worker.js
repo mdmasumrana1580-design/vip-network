@@ -183,23 +183,17 @@ async function handleApi(request,env){
     const channels=parseM3U(await r.text()),s=await readState(env);s.channels=channels;s.categories=[...new Set(channels.map(c=>c.category))];
     return withCors(json({ok:true,count:channels.length,state:await saveState(env,s)}));
   }
-  if((path==='/api/xtream/import'||path==='/api/admin/xtream/import')&&request.method==='POST'){
+  if(path==='/api/xtream/import'&&request.method==='POST'){
     const b=await request.json().catch(()=>({})),server=String(b.server||'').replace(/\/$/,''),user=String(b.username||''),pass=String(b.password||'');
     if(!server||!user||!pass)return withCors(json({ok:false,error:'server, username and password required'},400));
-    const auth=`username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
-    const get=async action=>{const r=await fetch(`${server}/player_api.php?${auth}&action=${action}`,{redirect:'follow'});if(!r.ok)throw new Error(`Xtream ${action} HTTP ${r.status}`);const d=await r.json();return Array.isArray(d)?d:[]};
-    try{
-      const [liveData,movieData,seriesData]=await Promise.all([get('get_live_streams'),get('get_vod_streams'),get('get_series')]);
-      const liveBase=server+'/live/'+encodeURIComponent(user)+'/'+encodeURIComponent(pass)+'/';
-      const movieBase=server+'/movie/'+encodeURIComponent(user)+'/'+encodeURIComponent(pass)+'/';
-      const live=liveData.map(x=>{const category=detectCategory(x.name||'',x.category_name||'','');return norm({id:`live-${x.stream_id}`,name:x.name||('Channel '+x.stream_id),category,cat:category,logo:x.stream_icon||'',url:liveBase+encodeURIComponent(String(x.stream_id))+'.m3u8',status:'Unknown'})});
-      const movies=movieData.map(x=>({id:`movie-${x.stream_id}`,name:x.name||('Movie '+x.stream_id),category:'MOVIE & SERIES',cat:'MOVIE & SERIES',logo:x.stream_icon||'',url:movieBase+encodeURIComponent(String(x.stream_id))+'.'+String(x.container_extension||'mp4').replace(/^\./,''),status:'Unknown',enabled:true}));
-      const series=seriesData.map(x=>({id:`series-${x.series_id}`,name:x.name||('Series '+x.series_id),category:'MOVIE & SERIES',cat:'MOVIE & SERIES',logo:x.cover||x.cover_big||'',url:`${server}/player_api.php?${auth}&action=get_series_info&series_id=${encodeURIComponent(String(x.series_id))}`,status:'Unknown',enabled:true,contentType:'series',seriesId:String(x.series_id)}));
-      const channels=[...live,...movies,...series];
-      const s=await readState(env);s.channels=channels;s.categories=['ALL','SPORTS','BD','INDIA','OTHER','MOVIE & SERIES'];
-      const saved=await saveState(env,s);
-      return withCors(json({ok:true,count:channels.length,liveCount:live.length,movieCount:movies.length,seriesCount:series.length,state:saved}));
-    }catch(e){return withCors(json({ok:false,error:e?.message||'Xtream import failed'},400))}
+    const apiUrl=server+'/player_api.php?username='+encodeURIComponent(user)+'&password='+encodeURIComponent(pass)+'&action=get_live_streams';
+    const r=await fetch(apiUrl,{redirect:'follow'});if(!r.ok)return withCors(json({ok:false,error:`Xtream HTTP ${r.status}`},400));
+    const data=await r.json();if(!Array.isArray(data))return withCors(json({ok:false,error:'Xtream returned invalid data'},400));
+    const lim=String(b.limit||'all'),items=lim==='all'?data:data.slice(0,Number(lim)||100);
+    const base=server+'/live/'+encodeURIComponent(user)+'/'+encodeURIComponent(pass)+'/';
+    const channels=items.map(x=>{const category=detectCategory(x.name||'',x.category_name||'','');return norm({name:x.name||('Channel '+x.stream_id),category,cat:category,logo:x.stream_icon||'',url:base+encodeURIComponent(String(x.stream_id))+'.m3u8',status:'Unknown'})});
+    const s=await readState(env);s.channels=channels;s.categories=[...new Set(channels.map(c=>c.category))];
+    return withCors(json({ok:true,count:channels.length,state:await saveState(env,s)}));
   }
   if(path==='/api/admin/check-all'&&request.method==='POST'){
     const s=await readState(env),channels=s.channels||[];
