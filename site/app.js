@@ -360,6 +360,16 @@ function play(c, clickedCard, retryOriginal) {
     hls = null;
   }
 
+  // Clean up any dynamically-created MPEG-DASH / MPEG-TS player.
+  if (window.vipDashPlayer) {
+    try { window.vipDashPlayer.reset(); } catch (e) {}
+    window.vipDashPlayer = null;
+  }
+  if (window.vipMpegtsPlayer) {
+    try { window.vipMpegtsPlayer.destroy(); } catch (e) {}
+    window.vipMpegtsPlayer = null;
+  }
+
   video.pause();
   video.removeAttribute("src");
   video.load();
@@ -368,13 +378,13 @@ function play(c, clickedCard, retryOriginal) {
   video.muted = false;
   video.volume = 1;
 
-  const originalUrl = c.url;
+  const originalUrl = String(c.url || "").trim();
   let fallbackUsed = !retryOriginal && c._usingFallback === true;
   const sourceUrl = fallbackUsed ? STREAM_FALLBACK_URL : originalUrl;
 
-  function showPlaybackError() {
+  function showPlaybackError(message) {
     const note = document.getElementById("note");
-    note.textContent = "ভিডিও চালু করা যাচ্ছে না।";
+    note.textContent = message || "ভিডিও চালু করা যাচ্ছে না।";
     note.style.display = "block";
   }
 
@@ -388,6 +398,14 @@ function play(c, clickedCard, retryOriginal) {
     if (hls) {
       try { hls.destroy(); } catch (e) {}
       hls = null;
+    }
+    if (window.vipDashPlayer) {
+      try { window.vipDashPlayer.reset(); } catch (e) {}
+      window.vipDashPlayer = null;
+    }
+    if (window.vipMpegtsPlayer) {
+      try { window.vipMpegtsPlayer.destroy(); } catch (e) {}
+      window.vipMpegtsPlayer = null;
     }
     video.pause();
     video.removeAttribute("src");
@@ -406,37 +424,134 @@ function play(c, clickedCard, retryOriginal) {
     });
   }
 
-  if (/\.m3u8(\?|$)/i.test(sourceUrl) && window.Hls && Hls.isSupported()) {
-    hls = new Hls({ enableWorker:true, lowLatencyMode:true, backBufferLength:30 });
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MEDIA_ATTACHED, function () {
-      if (hls) hls.loadSource(sourceUrl);
-    });
-    hls.on(Hls.Events.MANIFEST_PARSED, function () {
-      video.muted = false;
-      video.volume = 1;
-      startPlayback();
-    });
-    hls.on(Hls.Events.ERROR, function (_event, data) {
-      if (!data || !data.fatal || !hls) return;
-      if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-        try { hls.recoverMediaError(); } catch (e) {}
-      } else {
-        try { hls.destroy(); } catch (e) {}
-        hls = null;
-        switchToFallback();
+  function loadScriptOnce(src, globalName) {
+    return new Promise(function(resolve, reject) {
+      if (window[globalName]) return resolve(window[globalName]);
+      const existing = document.querySelector('script[data-vip-player="' + globalName + '"]');
+      if (existing) {
+        existing.addEventListener("load", function(){ resolve(window[globalName]); }, {once:true});
+        existing.addEventListener("error", reject, {once:true});
+        return;
       }
+      const script = document.createElement("script");
+      script.src = src;
+      script.async = true;
+      script.dataset.vipPlayer = globalName;
+      script.onload = function () {
+        if (window[globalName]) resolve(window[globalName]);
+        else reject(new Error(globalName + " unavailable"));
+      };
+      script.onerror = reject;
+      document.head.appendChild(script);
     });
-  } else {
-    video.src = sourceUrl;
-    video.addEventListener("loadedmetadata", startPlayback, {once:true});
-    video.addEventListener("canplay", startPlayback, {once:true});
-    video.addEventListener("error", function () {
-      if (!fallbackUsed) switchToFallback();
-      else showPlaybackError();
-    }, {once:true});
-    startPlayback();
   }
+
+  // HLS: use hls.js where available, otherwise use native HLS (Safari/iOS).
+  if (/\.m3u8(?:[?#]|$)/i.test(sourceUrl)) {
+    if (window.Hls && Hls.isSupported()) {
+      hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: true,
+        backBufferLength: 30,
+        maxBufferLength: 30
+      });
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MEDIA_ATTACHED, function () {
+        if (hls) hls.loadSource(sourceUrl);
+      });
+      hls.on(Hls.Events.MANIFEST_PARSED, startPlayback);
+      hls.on(Hls.Events.ERROR, function (_event, data) {
+        if (!data || !data.fatal || !hls) return;
+        if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          try { hls.recoverMediaError(); } catch (e) {}
+        } else {
+          try { hls.destroy(); } catch (e) {}
+          hls = null;
+          switchToFallback();
+        }
+      });
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = sourceUrl;
+      video.addEventListener("loadedmetadata", startPlayback, {once:true});
+      video.addEventListener("error", function () {
+        if (!fallbackUsed) switchToFallback();
+        else showPlaybackError();
+      }, {once:true});
+      video.load();
+    } else {
+      showPlaybackError("এই ব্রাউজারে HLS (.m3u8) চালানো যাচ্ছে না।");
+    }
+    return;
+  }
+
+  // MPEG-DASH: .mpd via dash.js, loaded only when needed.
+  if (/\.mpd(?:[?#]|$)/i.test(sourceUrl)) {
+    loadScriptOnce("https://cdn.dashjs.org/latest/dash.all.min.js", "dashjs")
+      .then(function (dashjs) {
+        if (!dashjs || !dashjs.MediaPlayer) throw new Error("dash.js unavailable");
+        const player = dashjs.MediaPlayer().create();
+        window.vipDashPlayer = player;
+        player.initialize(video, sourceUrl, false);
+        player.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, startPlayback);
+        player.on(dashjs.MediaPlayer.events.ERROR, function () {
+          if (window.vipDashPlayer === player) {
+            try { player.reset(); } catch (e) {}
+            window.vipDashPlayer = null;
+            if (!fallbackUsed) switchToFallback();
+            else showPlaybackError();
+          }
+        });
+      })
+      .catch(function () {
+        if (!fallbackUsed) switchToFallback();
+        else showPlaybackError("DASH (.mpd) চালু করা যাচ্ছে না।");
+      });
+    return;
+  }
+
+  // MPEG-TS: .ts via mpegts.js when the browser cannot play it natively.
+  if (/\.(?:ts|m2ts|mts)(?:[?#]|$)/i.test(sourceUrl)) {
+    loadScriptOnce("https://cdn.jsdelivr.net/npm/mpegts.js@latest/dist/mpegts.min.js", "mpegts")
+      .then(function (mpegts) {
+        if (!mpegts || !mpegts.isSupported()) throw new Error("mpegts unsupported");
+        const player = mpegts.createPlayer({
+          type: "mpegts",
+          url: sourceUrl,
+          isLive: true
+        }, {
+          enableStashBuffer: false,
+          liveBufferLatencyChasing: true
+        });
+        window.vipMpegtsPlayer = player;
+        player.attachMediaElement(video);
+        player.load();
+        player.play().catch(function () {});
+        player.on(mpegts.Events.ERROR, function () {
+          if (window.vipMpegtsPlayer === player) {
+            try { player.destroy(); } catch (e) {}
+            window.vipMpegtsPlayer = null;
+            if (!fallbackUsed) switchToFallback();
+            else showPlaybackError();
+          }
+        });
+      })
+      .catch(function () {
+        if (!fallbackUsed) switchToFallback();
+        else showPlaybackError("MPEG-TS stream চালু করা যাচ্ছে না।");
+      });
+    return;
+  }
+
+  // Native browser formats: MP4/WebM/Ogg and direct HTTPS video URLs.
+  video.src = sourceUrl;
+  video.addEventListener("loadedmetadata", startPlayback, {once:true});
+  video.addEventListener("canplay", startPlayback, {once:true});
+  video.addEventListener("error", function () {
+    if (!fallbackUsed) switchToFallback();
+    else showPlaybackError();
+  }, {once:true});
+  video.load();
+  startPlayback();
 }
 
 function isMovieSeriesPlayer() {
