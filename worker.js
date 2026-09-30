@@ -43,14 +43,6 @@ function cookies(r) {
   return o;
 }
 
-function detectCategory(name = '', group = '', metaLine = '') {
-  const text = `${name} ${group} ${metaLine}`.toLowerCase();
-  if (/sport|cricket|football|fifa|espn|bein|wwe|golf|nfl|nba|star\s*sports|sony\s*sports|ten\s*cricket|ptv\s*sports|willow/.test(text)) return 'SPORTS';
-  if (/bangla|bangladesh|\bbd\b|somoy|jamuna|ekattor|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi\s*tv|\bgtv\b|b\s*tv|duronto|deepto|nagorik|mohona|asian\s*tv|desh\s*tv|bijoy\s*tv|mytv|satv|ekushey|bangla\s*tv|\bbtv\b|channel\s*i/.test(text)) return 'BD';
-  if (/india|indian|sony|zee|star|colors|\bset\b|\bsab\b|aaj\s*tak|ndtv|republic|news18|times\s*now|india\s*tv|dd\s*(national|sports)|sun\s*tv|asianet|vijay|jaya|starplus|star\s*gold|sony\s*max|sony\s*pix|sony\s*wah|sony\s*yay|sony\s*pal|pictures|b4u|movies\s*now|mnx|hbo\s*india/.test(text)) return 'INDIA';
-  return 'OTHER';
-}
-
 function norm(c = {}) {
   return {
     name: String(c.name || c.title || 'Unnamed'),
@@ -68,90 +60,12 @@ function splitPlaylistState(s = {}) {
   movieSeries = movieSeries.map(c => ({ ...c, category: 'MOVIE & SERIES' }));
   return { ...s, tvChannels, movieSeries, channels: [...tvChannels, ...movieSeries], categories: ['SPORTS','BD','INDIA','OTHERS','MOVIE & SERIES'] };
 }
-const STATE_CHUNK_PREFIX = 'vip_state_chunk_v2:';
-const STATE_CHUNK_BYTES = 8 * 1024 * 1024;
-
-function jsonBytes(v) { return new TextEncoder().encode(JSON.stringify(v)).byteLength; }
-
-function chunkArray(arr) {
-  const chunks = [];
-  let cur = [];
-  let size = 2;
-  for (const item of (Array.isArray(arr) ? arr : [])) {
-    const itemSize = jsonBytes(item) + (cur.length ? 1 : 0);
-    if (cur.length && size + itemSize > STATE_CHUNK_BYTES) {
-      chunks.push(cur);
-      cur = [];
-      size = 2;
-    }
-    cur.push(item);
-    size += itemSize;
-  }
-  if (cur.length || !chunks.length) chunks.push(cur);
-  return chunks;
-}
-
-async function readChunkedArray(e, prefix, count) {
-  if (!count) return [];
-  const out = [];
-  for (let i = 0; i < count; i++) {
-    const raw = await kv(e).get(prefix + i);
-    if (!raw) continue;
-    try { const part = JSON.parse(raw); if (Array.isArray(part)) out.push(...part); } catch {}
-  }
-  return out;
-}
-
 async function readState(e) {
-  const k = kv(e);
-  const manifestRaw = await k.get(STATE_KEY);
-  try {
-    const manifest = manifestRaw ? JSON.parse(manifestRaw) : null;
-    if (manifest && manifest.version === 2 && manifest.chunks) {
-      const [tvChannels, movieSeries] = await Promise.all([
-        readChunkedArray(e, STATE_CHUNK_PREFIX + 'tv:', Number(manifest.chunks.tv || 0)),
-        readChunkedArray(e, STATE_CHUNK_PREFIX + 'movie:', Number(manifest.chunks.movie || 0))
-      ]);
-      return splitPlaylistState({
-        tvChannels,
-        movieSeries,
-        notice: manifest.notice || { text: '', type: 'Information', enabled: true },
-        headline: manifest.headline || ''
-      });
-    }
-    return splitPlaylistState(manifestRaw ? JSON.parse(manifestRaw) : { channels: [], notice: { text: '', type: 'Information', enabled: true }, headline: '' });
-  } catch {
-    return splitPlaylistState({ channels: [], notice: {}, headline: '' });
-  }
+  const r = await kv(e).get(STATE_KEY);
+  try { return splitPlaylistState(r ? JSON.parse(r) : { channels: [], notice: { text: '', type: 'Information', enabled: true }, headline: '' }); }
+  catch { return splitPlaylistState({ channels: [], notice: {}, headline: '' }); }
 }
-
-async function saveState(e, s) {
-  const k = kv(e);
-  const normalized = splitPlaylistState(s);
-  const tvChunks = chunkArray(normalized.tvChannels);
-  const movieChunks = chunkArray(normalized.movieSeries);
-
-  // Write payload chunks first; publish the small manifest only after all chunks succeed.
-  await Promise.all(tvChunks.map((part, i) => k.put(STATE_CHUNK_PREFIX + 'tv:' + i, JSON.stringify(part))));
-  await Promise.all(movieChunks.map((part, i) => k.put(STATE_CHUNK_PREFIX + 'movie:' + i, JSON.stringify(part))));
-
-  // The manifest stays tiny, so the KV value-size limit is never hit by a large playlist.
-  await k.put(STATE_KEY, JSON.stringify({
-    version: 2,
-    chunks: { tv: tvChunks.length, movie: movieChunks.length },
-    notice: normalized.notice || { text: '', type: 'Information', enabled: true },
-    headline: normalized.headline || ''
-  }));
-
-  // Remove unused old chunks when a playlist shrinks.
-  const old = s && s.__stateChunkCounts;
-  if (old) {
-    const deletes = [];
-    for (let i = tvChunks.length; i < Number(old.tv || 0); i++) deletes.push(k.delete(STATE_CHUNK_PREFIX + 'tv:' + i));
-    for (let i = movieChunks.length; i < Number(old.movie || 0); i++) deletes.push(k.delete(STATE_CHUNK_PREFIX + 'movie:' + i));
-    if (deletes.length) await Promise.all(deletes);
-  }
-}
+async function saveState(e, s) { await kv(e).put(STATE_KEY, JSON.stringify(splitPlaylistState(s))); }
 async function readDevices(e) { try { return JSON.parse((await kv(e).get(DEVICES_KEY)) || '[]'); } catch { return []; } }
 async function saveDevices(e, x) { await kv(e).put(DEVICES_KEY, JSON.stringify(x)); }
 async function readSettings(e) { try { return JSON.parse((await kv(e).get(SETTINGS_KEY)) || '{"deviceLimit":1,"accessMode":"auto"}'); } catch { return { deviceLimit: 1, accessMode: 'auto' }; } }
@@ -518,79 +432,6 @@ async function handle(r, e) {
     s.movieSeries = parseM3U(b, true);
     await saveState(e, s);
     return withCors(json({ ok: true, count: s.movieSeries.length, state: await readState(e) }));
-  }
-
-
-  if ((p === '/api/xtream/import' || p === '/api/admin/xtream/import') && r.method === 'POST') {
-    const b = await r.json().catch(() => ({}));
-    const server = String(b.server || '').trim().replace(/\/$/, '');
-    const user = String(b.username || '').trim();
-    const pass = String(b.password || '');
-    if (!server || !user || !pass) {
-      return withCors(json({ ok: false, error: 'server, username and password required' }, 400));
-    }
-
-    const auth = `username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
-    const get = async action => {
-      const resp = await fetch(`${server}/player_api.php?${auth}&action=${action}`, { redirect: 'follow' });
-      if (!resp.ok) throw new Error(`Xtream ${action} HTTP ${resp.status}`);
-      const data = await resp.json().catch(() => []);
-      return Array.isArray(data) ? data : [];
-    };
-
-    try {
-      const [liveData, movieData, seriesData] = await Promise.all([
-        get('get_live_streams'),
-        get('get_vod_streams'),
-        get('get_series')
-      ]);
-
-      const liveBase = `${server}/live/${encodeURIComponent(user)}/${encodeURIComponent(pass)}/`;
-      const movieBase = `${server}/movie/${encodeURIComponent(user)}/${encodeURIComponent(pass)}/`;
-
-      const live = liveData.map(x => {
-        const category = detectCategory(x.name || '', x.category_name || '', '');
-        return norm({
-          name: x.name || `Channel ${x.stream_id}`,
-          category,
-          logo: x.stream_icon || '',
-          url: liveBase + encodeURIComponent(String(x.stream_id)) + '.m3u8',
-          status: 'Unknown'
-        });
-      });
-
-      const movies = movieData.map(x => ({
-        name: x.name || `Movie ${x.stream_id}`,
-        category: 'MOVIE & SERIES',
-        logo: x.stream_icon || '',
-        url: movieBase + encodeURIComponent(String(x.stream_id)) + '.' + String(x.container_extension || 'mp4').replace(/^\./, ''),
-        status: 'Unknown'
-      }));
-
-      const series = seriesData.map(x => ({
-        name: x.name || `Series ${x.series_id}`,
-        category: 'MOVIE & SERIES',
-        logo: x.cover || x.cover_big || '',
-        url: `${server}/player_api.php?${auth}&action=get_series_info&series_id=${encodeURIComponent(String(x.series_id))}`,
-        status: 'Unknown',
-        contentType: 'series',
-        seriesId: String(x.series_id)
-      }));
-
-      const s = await readState(e);
-      s.tvChannels = live;
-      s.movieSeries = [...movies, ...series];
-      await saveState(e, s);
-      return withCors(json({
-        ok: true,
-        count: live.length + movies.length + series.length,
-        liveCount: live.length,
-        movieCount: movies.length,
-        seriesCount: series.length
-      }));
-    } catch (err) {
-      return withCors(json({ ok: false, error: err?.message || 'Xtream import failed' }, 400));
-    }
   }
 
   return withCors(json({ ok: false, error: 'API route not found' }, 404));
