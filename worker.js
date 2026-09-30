@@ -43,6 +43,14 @@ function cookies(r) {
   return o;
 }
 
+function detectCategory(name = '', group = '', metaLine = '') {
+  const text = `${name} ${group} ${metaLine}`.toLowerCase();
+  if (/sport|cricket|football|fifa|espn|bein|wwe|golf|nfl|nba|star\s*sports|sony\s*sports|ten\s*cricket|ptv\s*sports|willow/.test(text)) return 'SPORTS';
+  if (/bangla|bangladesh|\bbd\b|somoy|jamuna|ekattor|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi\s*tv|\bgtv\b|b\s*tv|duronto|deepto|nagorik|mohona|asian\s*tv|desh\s*tv|bijoy\s*tv|mytv|satv|ekushey|bangla\s*tv|\bbtv\b|channel\s*i/.test(text)) return 'BD';
+  if (/india|indian|sony|zee|star|colors|\bset\b|\bsab\b|aaj\s*tak|ndtv|republic|news18|times\s*now|india\s*tv|dd\s*(national|sports)|sun\s*tv|asianet|vijay|jaya|starplus|star\s*gold|sony\s*max|sony\s*pix|sony\s*wah|sony\s*yay|sony\s*pal|pictures|b4u|movies\s*now|mnx|hbo\s*india/.test(text)) return 'INDIA';
+  return 'OTHER';
+}
+
 function norm(c = {}) {
   return {
     name: String(c.name || c.title || 'Unnamed'),
@@ -432,6 +440,82 @@ async function handle(r, e) {
     s.movieSeries = parseM3U(b, true);
     await saveState(e, s);
     return withCors(json({ ok: true, count: s.movieSeries.length, state: await readState(e) }));
+  }
+
+
+  if ((p === '/api/xtream/import' || p === '/api/admin/xtream/import') && r.method === 'POST') {
+    const b = await r.json().catch(() => ({}));
+    const server = String(b.server || '').trim().replace(/\/$/, '');
+    const user = String(b.username || '').trim();
+    const pass = String(b.password || '');
+    if (!server || !user || !pass) {
+      return withCors(json({ ok: false, error: 'server, username and password required' }, 400));
+    }
+
+    const auth = `username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
+    const get = async action => {
+      const resp = await fetch(`${server}/player_api.php?${auth}&action=${action}`, { redirect: 'follow' });
+      if (!resp.ok) throw new Error(`Xtream ${action} HTTP ${resp.status}`);
+      const data = await resp.json().catch(() => []);
+      return Array.isArray(data) ? data : [];
+    };
+
+    try {
+      const [liveData, movieData, seriesData] = await Promise.all([
+        get('get_live_streams'),
+        get('get_vod_streams'),
+        get('get_series')
+      ]);
+
+      const liveBase = `${server}/live/${encodeURIComponent(user)}/${encodeURIComponent(pass)}/`;
+      const movieBase = `${server}/movie/${encodeURIComponent(user)}/${encodeURIComponent(pass)}/`;
+
+      const live = liveData.map(x => {
+        const category = detectCategory(x.name || '', x.category_name || '', '');
+        return norm({
+          name: x.name || `Channel ${x.stream_id}`,
+          category,
+          logo: x.stream_icon || '',
+          url: liveBase + encodeURIComponent(String(x.stream_id)) + '.m3u8',
+          status: 'Unknown'
+        });
+      });
+
+      const movies = movieData.map(x => ({
+        name: x.name || `Movie ${x.stream_id}`,
+        category: 'MOVIE & SERIES',
+        logo: x.stream_icon || '',
+        url: movieBase + encodeURIComponent(String(x.stream_id)) + '.' + String(x.container_extension || 'mp4').replace(/^\./, ''),
+        status: 'Unknown'
+      }));
+
+      const series = seriesData.map(x => ({
+        name: x.name || `Series ${x.series_id}`,
+        category: 'MOVIE & SERIES',
+        logo: x.cover || x.cover_big || '',
+        url: `${server}/player_api.php?${auth}&action=get_series_info&series_id=${encodeURIComponent(String(x.series_id))}`,
+        status: 'Unknown',
+        contentType: 'series',
+        seriesId: String(x.series_id)
+      }));
+
+      const s = await readState(e);
+      s.tvChannels = live;
+      s.movieSeries = [...movies, ...series];
+      await saveState(e, s);
+      const saved = await readState(e);
+
+      return withCors(json({
+        ok: true,
+        count: live.length + movies.length + series.length,
+        liveCount: live.length,
+        movieCount: movies.length,
+        seriesCount: series.length,
+        state: saved
+      }));
+    } catch (err) {
+      return withCors(json({ ok: false, error: err?.message || 'Xtream import failed' }, 400));
+    }
   }
 
   return withCors(json({ ok: false, error: 'API route not found' }, 404));
