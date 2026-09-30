@@ -68,12 +68,90 @@ function splitPlaylistState(s = {}) {
   movieSeries = movieSeries.map(c => ({ ...c, category: 'MOVIE & SERIES' }));
   return { ...s, tvChannels, movieSeries, channels: [...tvChannels, ...movieSeries], categories: ['SPORTS','BD','INDIA','OTHERS','MOVIE & SERIES'] };
 }
-async function readState(e) {
-  const r = await kv(e).get(STATE_KEY);
-  try { return splitPlaylistState(r ? JSON.parse(r) : { channels: [], notice: { text: '', type: 'Information', enabled: true }, headline: '' }); }
-  catch { return splitPlaylistState({ channels: [], notice: {}, headline: '' }); }
+const STATE_CHUNK_PREFIX = 'vip_state_chunk_v2:';
+const STATE_CHUNK_BYTES = 8 * 1024 * 1024;
+
+function jsonBytes(v) { return new TextEncoder().encode(JSON.stringify(v)).byteLength; }
+
+function chunkArray(arr) {
+  const chunks = [];
+  let cur = [];
+  let size = 2;
+  for (const item of (Array.isArray(arr) ? arr : [])) {
+    const itemSize = jsonBytes(item) + (cur.length ? 1 : 0);
+    if (cur.length && size + itemSize > STATE_CHUNK_BYTES) {
+      chunks.push(cur);
+      cur = [];
+      size = 2;
+    }
+    cur.push(item);
+    size += itemSize;
+  }
+  if (cur.length || !chunks.length) chunks.push(cur);
+  return chunks;
 }
-async function saveState(e, s) { await kv(e).put(STATE_KEY, JSON.stringify(splitPlaylistState(s))); }
+
+async function readChunkedArray(e, prefix, count) {
+  if (!count) return [];
+  const out = [];
+  for (let i = 0; i < count; i++) {
+    const raw = await kv(e).get(prefix + i);
+    if (!raw) continue;
+    try { const part = JSON.parse(raw); if (Array.isArray(part)) out.push(...part); } catch {}
+  }
+  return out;
+}
+
+async function readState(e) {
+  const k = kv(e);
+  const manifestRaw = await k.get(STATE_KEY);
+  try {
+    const manifest = manifestRaw ? JSON.parse(manifestRaw) : null;
+    if (manifest && manifest.version === 2 && manifest.chunks) {
+      const [tvChannels, movieSeries] = await Promise.all([
+        readChunkedArray(e, STATE_CHUNK_PREFIX + 'tv:', Number(manifest.chunks.tv || 0)),
+        readChunkedArray(e, STATE_CHUNK_PREFIX + 'movie:', Number(manifest.chunks.movie || 0))
+      ]);
+      return splitPlaylistState({
+        tvChannels,
+        movieSeries,
+        notice: manifest.notice || { text: '', type: 'Information', enabled: true },
+        headline: manifest.headline || ''
+      });
+    }
+    return splitPlaylistState(manifestRaw ? JSON.parse(manifestRaw) : { channels: [], notice: { text: '', type: 'Information', enabled: true }, headline: '' });
+  } catch {
+    return splitPlaylistState({ channels: [], notice: {}, headline: '' });
+  }
+}
+
+async function saveState(e, s) {
+  const k = kv(e);
+  const normalized = splitPlaylistState(s);
+  const tvChunks = chunkArray(normalized.tvChannels);
+  const movieChunks = chunkArray(normalized.movieSeries);
+
+  // Write payload chunks first; publish the small manifest only after all chunks succeed.
+  await Promise.all(tvChunks.map((part, i) => k.put(STATE_CHUNK_PREFIX + 'tv:' + i, JSON.stringify(part))));
+  await Promise.all(movieChunks.map((part, i) => k.put(STATE_CHUNK_PREFIX + 'movie:' + i, JSON.stringify(part))));
+
+  // The manifest stays tiny, so the KV value-size limit is never hit by a large playlist.
+  await k.put(STATE_KEY, JSON.stringify({
+    version: 2,
+    chunks: { tv: tvChunks.length, movie: movieChunks.length },
+    notice: normalized.notice || { text: '', type: 'Information', enabled: true },
+    headline: normalized.headline || ''
+  }));
+
+  // Remove unused old chunks when a playlist shrinks.
+  const old = s && s.__stateChunkCounts;
+  if (old) {
+    const deletes = [];
+    for (let i = tvChunks.length; i < Number(old.tv || 0); i++) deletes.push(k.delete(STATE_CHUNK_PREFIX + 'tv:' + i));
+    for (let i = movieChunks.length; i < Number(old.movie || 0); i++) deletes.push(k.delete(STATE_CHUNK_PREFIX + 'movie:' + i));
+    if (deletes.length) await Promise.all(deletes);
+  }
+}
 async function readDevices(e) { try { return JSON.parse((await kv(e).get(DEVICES_KEY)) || '[]'); } catch { return []; } }
 async function saveDevices(e, x) { await kv(e).put(DEVICES_KEY, JSON.stringify(x)); }
 async function readSettings(e) { try { return JSON.parse((await kv(e).get(SETTINGS_KEY)) || '{"deviceLimit":1,"accessMode":"auto"}'); } catch { return { deviceLimit: 1, accessMode: 'auto' }; } }
@@ -503,15 +581,12 @@ async function handle(r, e) {
       s.tvChannels = live;
       s.movieSeries = [...movies, ...series];
       await saveState(e, s);
-      const saved = await readState(e);
-
       return withCors(json({
         ok: true,
         count: live.length + movies.length + series.length,
         liveCount: live.length,
         movieCount: movies.length,
-        seriesCount: series.length,
-        state: saved
+        seriesCount: series.length
       }));
     } catch (err) {
       return withCors(json({ ok: false, error: err?.message || 'Xtream import failed' }, 400));
