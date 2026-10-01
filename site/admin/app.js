@@ -65,15 +65,18 @@ async function saveSelectedChannel(){
   const url=document.getElementById('editUrl').value.trim();
   const status=document.getElementById('editStatus').value;
   const logoUrl=document.getElementById('editLogo').value.trim();
+  const oldLogo=c.logo||'';
   const file=document.getElementById('editLogoFile').files[0];
   if(!name)return toast('Channel name is required');
   cat=cat.toUpperCase()==='OTHER'?'OTHERS':cat;
   const wasMovie=String(oldCategory).toUpperCase()==='MOVIE & SERIES';
   const isMovie=String(cat).toUpperCase()==='MOVIE & SERIES';
   c.name=name;c.category=cat;c.url=url;c.status=status;
-  if(!file&&logoUrl)c.logo=logoUrl;
-  if(!file&&!logoUrl)c.logo='';
+  // Keep the existing uploaded logo when only the stream URL is changed.
+  // Replace the logo only when a new Logo URL or Logo File is explicitly supplied.
   if(file){try{c.logo=await readLogoFile(file)}catch(e){return toast('Logo file could not be read')}}
+  else if(logoUrl)c.logo=logoUrl;
+  else c.logo=oldLogo;
   if(!categories.includes(cat))categories.push(cat);
   if(wasMovie&&!isMovie){const p=movieSeries.indexOf(c);if(p>=0)movieSeries.splice(p,1);if(!tvChannels.includes(c))tvChannels.push(c)}
   else if(!wasMovie&&isMovie){const p=tvChannels.indexOf(c);if(p>=0)tvChannels.splice(p,1);if(!movieSeries.includes(c))movieSeries.push(c);c.category='MOVIE & SERIES'}
