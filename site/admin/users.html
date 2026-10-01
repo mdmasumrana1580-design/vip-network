@@ -1,5 +1,5 @@
 <!doctype html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VIP NETWORK — User Management</title>
+<title>MsM.Tv — User Management</title>
 <style>
 :root{--bg:#030b18;--card:#08172b;--line:#0b67b8;--text:#edf6ff;--muted:#8ea7c0;--blue:#169cff;--red:#ff5570;--green:#28dd8a}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#0a2a52,#030b18 58%);color:var(--text);font-family:Arial,sans-serif}
@@ -12,7 +12,7 @@ button.danger{background:linear-gradient(135deg,#ff5b74,#b50d38);border-color:#f
 .user{border:1px solid #0b3e68;border-radius:13px;padding:14px;margin:10px 0;background:#061526}.user h3{margin:0 0 8px}.meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;color:var(--muted);font-size:13px}.devices{margin-top:12px;padding-top:10px;border-top:1px solid #0b3154}.device{padding:10px;background:#081c31;border-radius:9px;margin:7px 0;display:flex;justify-content:space-between;gap:10px;align-items:center}.device small{color:var(--muted)}.blocked{color:#ff6b82}.active{color:#41e59a}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.empty{color:var(--muted);padding:25px;text-align:center}
 @media(max-width:650px){.meta{grid-template-columns:1fr}.device{align-items:flex-start;flex-direction:column}header h1{font-size:16px}.wrap{padding:10px}}
 </style></head><body>
-<header><h1>👑 VIP NETWORK — User Management</h1><button class="gray" onclick="logout()">Logout</button></header>
+<header><h1>👑 MsM.Tv — User Management</h1><button class="gray" onclick="logout()">Logout</button></header>
 <main class="wrap">
 <section id="loginBox" class="card login"><h2>Admin Login</h2><input id="pass" type="password" placeholder="Admin Password"><button onclick="login()">LOGIN</button><div id="status" class="status"></div></section>
 <section id="panel" class="hidden"><div class="top"><b>User & Device Management</b><span id="count" class="count"></span><button onclick="loadUsers()">↻ Refresh</button></div><div id="latest" class="card" style="margin-bottom:12px"></div><div id="list" class="card"></div></section>

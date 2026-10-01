@@ -149,3 +149,73 @@ body.light{--text:#162535;--muted:#5f7182;background:#eef4f9}body.light .sidebar
 .device-actions button:hover{filter:brightness(1.08)}
 .device-actions button.del{border-color:#b51d2d;background:linear-gradient(180deg,#c81024,#970b18)}
 @media(max-width:650px){.device-user-card{padding:14px 10px}.device-user-head>b{font-size:16px}.device-user-info{font-size:13px}.device-actions button{padding:8px 6px}}
+
+
+/* MsM.Tv ADMIN — final mobile dashboard layout fix.
+   Desktop/tablet layout remains unchanged; phones stack the workspace vertically. */
+@media (max-width:700px){
+  .tv-workspace{
+    display:flex !important;
+    flex-direction:column !important;
+    grid-template-columns:none !important;
+    gap:10px !important;
+    width:100% !important;
+  }
+  .tv-workspace .channel-panel,
+  .tv-workspace .preview{
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+  }
+  .tv-workspace .channel-scroll{
+    height:360px !important;
+    max-height:360px !important;
+    overflow-x:auto !important;
+    overflow-y:auto !important;
+  }
+  .tv-workspace .channel-scroll table{
+    width:100% !important;
+    min-width:0 !important;
+  }
+  .tv-workspace .video-box{
+    height:210px !important;
+  }
+  .tv-workspace .edit-under-player{
+    max-height:none !important;
+    overflow:visible !important;
+    padding:10px !important;
+  }
+  .tv-workspace .edit-grid{
+    grid-template-columns:1fr !important;
+    gap:8px !important;
+  }
+  .tv-workspace .edit-grid input,
+  .tv-workspace .edit-grid select{
+    width:100% !important;
+    padding:9px !important;
+    font-size:12px !important;
+  }
+  .tv-workspace .edit-title{
+    flex-direction:row !important;
+    align-items:center !important;
+    gap:8px !important;
+  }
+  .tv-workspace .edit-title h3{
+    font-size:15px !important;
+  }
+  .tv-workspace .edit-title .secondary{
+    padding:8px 10px !important;
+    font-size:11px !important;
+    white-space:nowrap !important;
+  }
+}
+
+@media (max-width:430px){
+  .tv-workspace .channel-scroll{
+    height:330px !important;
+    max-height:330px !important;
+  }
+  .tv-workspace .video-box{
+    height:190px !important;
+  }
+}

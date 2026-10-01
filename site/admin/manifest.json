@@ -2,7 +2,7 @@
   "id": "/admin/",
   "name": "Admin-Panel",
   "short_name": "Admin-Panel",
-  "description": "VIP-Network Admin-Panel",
+  "description": "MsM.Tv Admin-Panel",
   "start_url": "/admin/",
   "scope": "/admin/",
   "display": "standalone",
