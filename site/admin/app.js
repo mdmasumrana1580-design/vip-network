@@ -15,7 +15,17 @@ async function logoutWorker(){try{await api('/api/admin/logout',{method:'POST'})
 function norm(c){return {name:c.name||c.title||'Unnamed',category:c.category||c.group||'OTHERS',logo:c.logo||c.tvgLogo||'',url:c.url||c.stream||'',status:c.status||'Unknown'}}
 function rebuildChannels(){channels=[...tvChannels,...movieSeries]}
 async function loadRemoteState(){const d=await api('/api/admin/state');const s=d.state||d;tvChannels=Array.isArray(s.tvChannels)?s.tvChannels.map(norm):(Array.isArray(s.channels)?s.channels.filter(c=>String(c.category||'').toUpperCase()!=='MOVIE & SERIES').map(norm):[]);movieSeries=Array.isArray(s.movieSeries)?s.movieSeries.map(c=>({...norm(c),category:'MOVIE & SERIES'})):(Array.isArray(s.channels)?s.channels.filter(c=>String(c.category||'').toUpperCase()==='MOVIE & SERIES').map(c=>({...norm(c),category:'MOVIE & SERIES'})):[]);rebuildChannels();categories=[...new Set([...categories,...channels.map(x=>x.category).filter(Boolean)])];saveLocal();render();const t=document.getElementById('syncTime');if(t)t.textContent=new Date().toLocaleString()}
-function saveLocal(){localStorage.setItem('vipChannels',JSON.stringify(channels));localStorage.setItem('vipTvChannels',JSON.stringify(tvChannels));localStorage.setItem('vipMovieSeries',JSON.stringify(movieSeries));localStorage.setItem('vipCategories',JSON.stringify(categories))}
+function saveLocal(){
+  // Keep the browser cache lightweight. Uploaded/base64 logos can make the
+  // channel JSON exceed the localStorage quota; the Worker remains the source
+  // of truth, so localStorage is only a small offline cache.
+  const light=list=>list.map(c=>({...c,logo:/^https?:\/\//i.test(String(c.logo||''))?c.logo:''}));
+  const put=(key,value)=>{try{localStorage.removeItem(key);localStorage.setItem(key,JSON.stringify(value));}catch(e){try{localStorage.removeItem(key)}catch{}}};
+  put('vipChannels',light(channels));
+  put('vipTvChannels',light(tvChannels));
+  put('vipMovieSeries',light(movieSeries));
+  put('vipCategories',categories);
+}
 async function saveRemoteState(extra={}){try{const payload={channels,tvChannels:channels.filter(x=>x.category!=='MOVIE & SERIES'),movieSeries:channels.filter(x=>x.category==='MOVIE & SERIES').map(x=>({...x,category:'MOVIE & SERIES'})),...extra};await api('/api/admin/state',{method:'PUT',body:JSON.stringify(payload)});tvChannels=payload.tvChannels.map(norm);movieSeries=payload.movieSeries.map(x=>({...norm(x),category:'MOVIE & SERIES'}));rebuildChannels();saveLocal();return true}catch(e){toast('Save failed: '+e.message);return false}}
 function logo(c){return c.logo?`<img class="logo-cell" src="${esc(c.logo)}" onerror="this.style.display='none'">`:'<span class="logo-cell"></span>'}
 function rows(list,full=false){return list.map((c,i)=>{const idx=channels.indexOf(c);return `<tr><td>${i+1}</td><td>${logo(c)}</td><td><b>${esc(c.name)}</b></td><td>${esc(c.category)}</td><td><span class="badge ${String(c.status).toLowerCase()}">● ${esc(c.status)}</span></td>${full?`<td>${esc(c.url)}</td>`:''}<td><div class="actions"><button onclick="preview(${idx})">▶</button><button onclick="editChannel(${idx})">✎</button><button class="del" onclick="deleteChannel(${idx})">⌫</button></div></td></tr>`}).join('')}
