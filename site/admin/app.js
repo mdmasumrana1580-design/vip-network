@@ -14,6 +14,25 @@ async function loginWorker(){const p=document.getElementById('workerPassword').v
 async function logoutWorker(){try{await api('/api/admin/logout',{method:'POST'})}catch{}setBackend(false);showLogin(true);logAction('Admin logged out')}
 function norm(c){return {name:c.name||c.title||'Unnamed',category:c.category||c.group||'OTHERS',logo:c.logo||c.tvgLogo||'',url:c.url||c.stream||'',status:c.status||'Unknown'}}
 function rebuildChannels(){channels=[...tvChannels,...movieSeries]}
+async function checkAllStatuses(showToast=true){
+  try{
+    if(showToast)toast('Checking channel status...');
+    const d=await api('/api/admin/check-all',{method:'POST'});
+    const checked=Array.isArray(d.channels)?d.channels.map(norm):[];
+    if(checked.length){
+      channels=checked;
+      tvChannels=checked.filter(x=>String(x.category||'').toUpperCase()!=='MOVIE & SERIES');
+      movieSeries=checked.filter(x=>String(x.category||'').toUpperCase()==='MOVIE & SERIES').map(x=>({...x,category:'MOVIE & SERIES'}));
+      saveLocal();
+      render();
+      if(showToast)toast('Channel status updated');
+    }
+    return checked;
+  }catch(e){
+    if(showToast)toast('Status check failed: '+e.message);
+    return [];
+  }
+}
 function looksCorruptName(name){const s=String(name||'').trim();return /^UklGR[0-9A-Za-z+/=_-]{20,}/.test(s)||(/^[A-Za-z0-9+/=_-]{32,}$/.test(s)&&!/[\s.,&()'\-]/.test(s));}
 async function repairCorruptedNames(list){
   const url='https://raw.githubusercontent.com/mdmasumrana1580-design/Playlist-/refs/heads/main/masum.m3u';
@@ -36,7 +55,7 @@ async function repairCorruptedNames(list){
     return changed;
   }catch{return false}
 }
-async function loadRemoteState(){const d=await api('/api/admin/state');const s=d.state||d;tvChannels=Array.isArray(s.tvChannels)?s.tvChannels.map(norm):(Array.isArray(s.channels)?s.channels.filter(c=>String(c.category||'').toUpperCase()!=='MOVIE & SERIES').map(norm):[]);movieSeries=Array.isArray(s.movieSeries)?s.movieSeries.map(c=>({...norm(c),category:'MOVIE & SERIES'})):(Array.isArray(s.channels)?s.channels.filter(c=>String(c.category||'').toUpperCase()==='MOVIE & SERIES').map(c=>({...norm(c),category:'MOVIE & SERIES'})):[]);rebuildChannels();const repaired=await repairCorruptedNames(channels);if(repaired){tvChannels=channels.filter(x=>x.category!=='MOVIE & SERIES');movieSeries=channels.filter(x=>x.category==='MOVIE & SERIES');await saveRemoteState();rebuildChannels();}categories=[...new Set([...categories,...channels.map(x=>x.category).filter(Boolean)])];saveLocal();render();const t=document.getElementById('syncTime');if(t)t.textContent=new Date().toLocaleString()}
+async function loadRemoteState(){const d=await api('/api/admin/state');const s=d.state||d;tvChannels=Array.isArray(s.tvChannels)?s.tvChannels.map(norm):(Array.isArray(s.channels)?s.channels.filter(c=>String(c.category||'').toUpperCase()!=='MOVIE & SERIES').map(norm):[]);movieSeries=Array.isArray(s.movieSeries)?s.movieSeries.map(c=>({...norm(c),category:'MOVIE & SERIES'})):(Array.isArray(s.channels)?s.channels.filter(c=>String(c.category||'').toUpperCase()==='MOVIE & SERIES').map(c=>({...norm(c),category:'MOVIE & SERIES'})):[]);rebuildChannels();const repaired=await repairCorruptedNames(channels);if(repaired){tvChannels=channels.filter(x=>x.category!=='MOVIE & SERIES');movieSeries=channels.filter(x=>x.category==='MOVIE & SERIES');await saveRemoteState();rebuildChannels();}categories=[...new Set([...categories,...channels.map(x=>x.category).filter(Boolean)])];saveLocal();render();const t=document.getElementById('syncTime');if(t)t.textContent=new Date().toLocaleString();checkAllStatuses(false)}
 function saveLocal(){
   // Keep the browser cache lightweight. Uploaded/base64 logos can make the
   // channel JSON exceed the localStorage quota; the Worker remains the source
