@@ -14,7 +14,29 @@ async function loginWorker(){const p=document.getElementById('workerPassword').v
 async function logoutWorker(){try{await api('/api/admin/logout',{method:'POST'})}catch{}setBackend(false);showLogin(true);logAction('Admin logged out')}
 function norm(c){return {name:c.name||c.title||'Unnamed',category:c.category||c.group||'OTHERS',logo:c.logo||c.tvgLogo||'',url:c.url||c.stream||'',status:c.status||'Unknown'}}
 function rebuildChannels(){channels=[...tvChannels,...movieSeries]}
-async function loadRemoteState(){const d=await api('/api/admin/state');const s=d.state||d;tvChannels=Array.isArray(s.tvChannels)?s.tvChannels.map(norm):(Array.isArray(s.channels)?s.channels.filter(c=>String(c.category||'').toUpperCase()!=='MOVIE & SERIES').map(norm):[]);movieSeries=Array.isArray(s.movieSeries)?s.movieSeries.map(c=>({...norm(c),category:'MOVIE & SERIES'})):(Array.isArray(s.channels)?s.channels.filter(c=>String(c.category||'').toUpperCase()==='MOVIE & SERIES').map(c=>({...norm(c),category:'MOVIE & SERIES'})):[]);rebuildChannels();categories=[...new Set([...categories,...channels.map(x=>x.category).filter(Boolean)])];saveLocal();render();const t=document.getElementById('syncTime');if(t)t.textContent=new Date().toLocaleString()}
+function looksCorruptName(name){const s=String(name||'').trim();return /^UklGR[0-9A-Za-z+/=_-]{20,}/.test(s)||(/^[A-Za-z0-9+/=_-]{32,}$/.test(s)&&!/[\s.,&()'\-]/.test(s));}
+async function repairCorruptedNames(list){
+  const url='https://raw.githubusercontent.com/mdmasumrana1580-design/Playlist-/refs/heads/main/masum.m3u';
+  try{
+    const r=await fetch(url,{cache:'no-store'}); if(!r.ok) return false;
+    const text=await r.text(); const lines=text.replace(/\r/g,'').split('\n'); const byUrl=new Map(); let pending=null;
+    for(const line of lines){
+      const x=line.trim();
+      if(x.startsWith('#EXTINF:')){
+        const comma=x.indexOf(','); if(comma>=0) pending=x.slice(comma+1).trim();
+      }else if(pending && x && !x.startsWith('#') && !x.startsWith('-')){
+        byUrl.set(x,pending); const noQuery=x.split('?')[0]; if(!byUrl.has(noQuery)) byUrl.set(noQuery,pending); pending=null;
+      }
+    }
+    let changed=false;
+    for(const c of list){
+      const u=String(c.url||''); const fixed=byUrl.get(u)||byUrl.get(u.split('?')[0]);
+      if(fixed && looksCorruptName(c.name)){c.name=fixed;changed=true;}
+    }
+    return changed;
+  }catch{return false}
+}
+async function loadRemoteState(){const d=await api('/api/admin/state');const s=d.state||d;tvChannels=Array.isArray(s.tvChannels)?s.tvChannels.map(norm):(Array.isArray(s.channels)?s.channels.filter(c=>String(c.category||'').toUpperCase()!=='MOVIE & SERIES').map(norm):[]);movieSeries=Array.isArray(s.movieSeries)?s.movieSeries.map(c=>({...norm(c),category:'MOVIE & SERIES'})):(Array.isArray(s.channels)?s.channels.filter(c=>String(c.category||'').toUpperCase()==='MOVIE & SERIES').map(c=>({...norm(c),category:'MOVIE & SERIES'})):[]);rebuildChannels();const repaired=await repairCorruptedNames(channels);if(repaired){tvChannels=channels.filter(x=>x.category!=='MOVIE & SERIES');movieSeries=channels.filter(x=>x.category==='MOVIE & SERIES');await saveRemoteState();rebuildChannels();}categories=[...new Set([...categories,...channels.map(x=>x.category).filter(Boolean)])];saveLocal();render();const t=document.getElementById('syncTime');if(t)t.textContent=new Date().toLocaleString()}
 function saveLocal(){
   // Keep the browser cache lightweight. Uploaded/base64 logos can make the
   // channel JSON exceed the localStorage quota; the Worker remains the source
