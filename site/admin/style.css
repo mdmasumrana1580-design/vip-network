@@ -219,3 +219,20 @@ body.light{--text:#162535;--muted:#5f7182;background:#eef4f9}body.light .sidebar
     height:190px !important;
   }
 }
+
+/* MsM.Tv mobile: keep channel action buttons visible */
+@media (max-width:700px){
+  .tv-workspace .channel-scroll{overflow-x:hidden !important;}
+  .tv-workspace .channel-scroll table{table-layout:fixed !important;width:100% !important;min-width:0 !important;}
+  .tv-workspace .channel-scroll th:nth-child(1),.tv-workspace .channel-scroll td:nth-child(1){width:34px !important;}
+  .tv-workspace .channel-scroll th:nth-child(2),.tv-workspace .channel-scroll td:nth-child(2){width:58px !important;}
+  .tv-workspace .channel-scroll th:nth-child(3),.tv-workspace .channel-scroll td:nth-child(3){width:auto !important;overflow:hidden;text-overflow:ellipsis;}
+  .tv-workspace .channel-scroll th:nth-child(6),.tv-workspace .channel-scroll td:nth-child(6){width:104px !important;display:table-cell !important;}
+  .tv-workspace .channel-scroll td:nth-child(3) b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
+  .tv-workspace .channel-scroll .actions{display:flex !important;gap:4px !important;justify-content:flex-start;white-space:nowrap;}
+  .tv-workspace .channel-scroll .actions button{display:inline-flex !important;align-items:center;justify-content:center;width:30px !important;height:28px !important;font-size:12px !important;flex:0 0 30px !important;}
+}
+@media (max-width:430px){
+  .tv-workspace .channel-scroll th:nth-child(6),.tv-workspace .channel-scroll td:nth-child(6){width:96px !important;}
+  .tv-workspace .channel-scroll .actions button{width:27px !important;height:27px !important;flex-basis:27px !important;font-size:11px !important;}
+}
