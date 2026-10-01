@@ -335,6 +335,35 @@ async function handle(r, e) {
     return withCors(json({ ok: true, state: await readState(e) }));
   }
 
+  if (p === '/api/admin/check-all' && r.method === 'POST') {
+    const s = await readState(e);
+    const channels = Array.isArray(s.channels) ? s.channels : [];
+    const checkOne = async c => {
+      const url = String(c.url || '').trim();
+      if (!url) return { ...c, status: 'Dead' };
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 7000);
+      try {
+        const rr = await fetch(url, { method: 'GET', redirect: 'follow', signal: controller.signal });
+        return { ...c, status: rr.ok ? 'Active' : 'Dead' };
+      } catch {
+        return { ...c, status: 'Dead' };
+      } finally {
+        clearTimeout(timer);
+      }
+    };
+    const checked = [];
+    for (let i = 0; i < channels.length; i += 8) {
+      const batch = await Promise.all(channels.slice(i, i + 8).map(checkOne));
+      checked.push(...batch);
+    }
+    s.channels = checked;
+    s.tvChannels = checked.filter(c => String(c.category || '').toUpperCase() !== 'MOVIE & SERIES');
+    s.movieSeries = checked.filter(c => String(c.category || '').toUpperCase() === 'MOVIE & SERIES').map(c => ({ ...c, category: 'MOVIE & SERIES' }));
+    await saveState(e, s);
+    return withCors(json({ ok: true, count: checked.length, channels: checked, state: await readState(e) }));
+  }
+
   if (p === '/api/admin/users' && r.method === 'GET') {
     const users = await readUsers(e), ds = await readDevices(e);
     const isGuestDevice = d => !!d?.guest || String(d?.username || d?.userName || '').trim().toLowerCase() === 'guest';
