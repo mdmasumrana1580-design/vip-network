@@ -340,6 +340,38 @@ function restoreWelcomeAfterBack(){
   showVipControls();
 }
 
+
+function loadDashJs() {
+  return new Promise(function(resolve, reject) {
+    if (window.dashjs) return resolve(window.dashjs);
+    const existing = document.querySelector('script[data-msm-dashjs]');
+    if (existing) {
+      existing.addEventListener('load', function(){ resolve(window.dashjs); }, {once:true});
+      existing.addEventListener('error', reject, {once:true});
+      return;
+    }
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/dashjs@latest/dist/dash.all.min.js';
+    s.async = true;
+    s.dataset.msmDashjs = '1';
+    s.onload = function(){ window.dashjs ? resolve(window.dashjs) : reject(new Error('dash.js unavailable')); };
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+function isHlsUrl(url) {
+  return /\.m3u8(?:[?#]|$)/i.test(String(url || ''));
+}
+
+function isDashUrl(url) {
+  return /\.mpd(?:[?#]|$)/i.test(String(url || ''));
+}
+
+function isNativeVideoUrl(url) {
+  return /\.(mp4|m4v|webm|ogv|ogg)(?:[?#]|$)/i.test(String(url || ''));
+}
+
 function play(c, clickedCard, retryOriginal) {
   currentChannelIndex = visibleChannels.indexOf(c);
   const isMovieSeries = String(c && c.cat || "").toUpperCase() === "MOVIE & SERIES";
@@ -406,15 +438,20 @@ function play(c, clickedCard, retryOriginal) {
     });
   }
 
-  if (/\.m3u8(\?|$)/i.test(sourceUrl) && window.Hls && Hls.isSupported()) {
+  const onNativeError = function () {
+    if (!fallbackUsed) switchToFallback();
+    else showPlaybackError();
+  };
+
+  // HLS: use hls.js where needed, otherwise let Safari/compatible browsers
+  // use their native HLS implementation.
+  if (isHlsUrl(sourceUrl) && window.Hls && Hls.isSupported()) {
     hls = new Hls({ enableWorker:true, lowLatencyMode:true, backBufferLength:30 });
     hls.attachMedia(video);
     hls.on(Hls.Events.MEDIA_ATTACHED, function () {
       if (hls) hls.loadSource(sourceUrl);
     });
     hls.on(Hls.Events.MANIFEST_PARSED, function () {
-      video.muted = false;
-      video.volume = 1;
       startPlayback();
     });
     hls.on(Hls.Events.ERROR, function (_event, data) {
@@ -427,14 +464,37 @@ function play(c, clickedCard, retryOriginal) {
         switchToFallback();
       }
     });
+  } else if (isDashUrl(sourceUrl)) {
+    // MPEG-DASH (.mpd) support. dash.js is loaded only when needed.
+    loadDashJs().then(function (dashjs) {
+      try {
+        const player = dashjs.MediaPlayer().create();
+        c._dashPlayer = player;
+        player.initialize(video, sourceUrl, false);
+        player.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, startPlayback);
+        player.on(dashjs.MediaPlayer.events.ERROR, function () {
+          if (c._dashPlayer) {
+            try { c._dashPlayer.reset(); } catch (e) {}
+            c._dashPlayer = null;
+          }
+          if (!fallbackUsed) switchToFallback();
+          else showPlaybackError();
+        });
+        startPlayback();
+      } catch (e) {
+        if (!fallbackUsed) switchToFallback();
+        else showPlaybackError();
+      }
+    }).catch(function () {
+      if (!fallbackUsed) switchToFallback();
+      else showPlaybackError();
+    });
   } else {
+    // Native browser video formats such as MP4, WebM and OGG.
     video.src = sourceUrl;
     video.addEventListener("loadedmetadata", startPlayback, {once:true});
     video.addEventListener("canplay", startPlayback, {once:true});
-    video.addEventListener("error", function () {
-      if (!fallbackUsed) switchToFallback();
-      else showPlaybackError();
-    }, {once:true});
+    video.addEventListener("error", onNativeError, {once:true});
     startPlayback();
   }
 }
@@ -601,7 +661,7 @@ function closePlayer() {
     hls.destroy();
     hls = null;
   }
-
+  try { if (video && video._dashPlayer) video._dashPlayer.reset(); } catch(e) {}
   video.pause();
   video.removeAttribute("src");
   video.removeAttribute("controls");
