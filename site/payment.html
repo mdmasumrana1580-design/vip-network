@@ -1,33 +1,259 @@
 <!doctype html>
-<html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Payment — MsM.Tv</title><style>
-body{margin:0;background:#080b12;color:#fff;font-family:Arial,sans-serif}.wrap{max-width:620px;margin:auto;padding:22px}
-.card{background:#111827;border:1px solid #273449;border-radius:18px;padding:18px;margin:14px 0}h1{margin:4px 0 8px}.muted{color:#9ca9bb}.row{display:flex;gap:10px;flex-wrap:wrap}.method{flex:1;min-width:120px;padding:13px;border:1px solid #34445b;border-radius:12px;background:#151f30;color:#fff}.method.active{border-color:#22c55e}.plan{padding:14px;border:1px solid #34445b;border-radius:12px;margin:8px 0;cursor:pointer}.plan.active{border-color:#22c55e}.num{font-size:20px;font-weight:bold}.copy,button{border:0;border-radius:10px;padding:11px 14px;cursor:pointer}.copy{background:#26354b;color:#fff}input{width:100%;box-sizing:border-box;padding:13px;margin:7px 0 12px;border-radius:10px;border:1px solid #34445b;background:#0b1220;color:#fff}button.submit{width:100%;background:#16a34a;color:#fff;font-size:16px}.msg{padding:12px;border-radius:10px;background:#0b1220;margin-top:12px}.back{display:inline-block;color:#9ed0ff;margin-bottom:15px;text-decoration:none}
-</style></head><body><div class="wrap">
-<a class="back" href="/">← Back to MsM.Tv</a><h1>🔐 Channel Access</h1><div class="muted">চ্যানেল Play করতে subscription প্রয়োজন। Payment সম্পন্ন করে Transaction ID দিন।</div>
-<div class="card"><h3>1. Plan নির্বাচন করুন</h3><div id="plans">Loading...</div></div>
-<div class="card"><h3>2. Send Money</h3><div id="methods" class="row"></div><p id="payNumber" class="num">—</p><button class="copy" onclick="copyNumber()">Copy Number</button><p class="muted">আপনার নির্বাচিত plan-এর ঠিক amount Send Money করুন।</p></div>
-<div class="card"><h3>3. Payment তথ্য দিন</h3><label>যে নম্বর থেকে টাকা পাঠিয়েছেন<input id="sender" inputmode="tel" placeholder="01XXXXXXXXX"></label>
-<label>Transaction ID<input id="txn" autocomplete="off" placeholder="Transaction ID"></label><button class="submit" onclick="submitPayment()">Submit Payment</button><div id="msg"></div></div>
-<div class="card"><h3>Payment Status</h3><div id="history" class="muted">Loading...</div></div>
-</div><script>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Payment — MsM.Tv</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;color:#fff;
+  font-family:Arial,sans-serif;
+  background:
+    radial-gradient(circle at 15% 5%,rgba(0,198,255,.18),transparent 32%),
+    radial-gradient(circle at 90% 20%,rgba(255,0,128,.16),transparent 30%),
+    linear-gradient(145deg,#050811,#0b1020 55%,#07121a);
+}
+.wrap{max-width:650px;margin:auto;padding:18px 14px 30px}
+.card{
+  background:rgba(15,23,42,.92);
+  border:1px solid rgba(110,140,190,.28);
+  border-radius:22px;padding:20px;margin:14px 0;
+  box-shadow:0 10px 35px rgba(0,0,0,.28);
+}
+.card.plan-card{border-top:2px solid #00d4ff}
+.card.method-card{border-top:2px solid #ff3cac}
+.card.form-card{border-top:2px solid #22c55e}
+h3{margin:0 0 16px;font-size:21px}
+.section-title{display:flex;align-items:center;gap:9px}
+.section-title .dot{
+  width:10px;height:10px;border-radius:50%;
+  background:#00e5ff;box-shadow:0 0 14px #00e5ff;
+}
+.plan{
+  padding:15px 16px;margin:10px 0;cursor:pointer;
+  border:1px solid #334155;border-radius:16px;
+  background:linear-gradient(135deg,#111827,#172033);
+  transition:.18s;
+}
+.plan.active{
+  border-color:#00e5ff;
+  box-shadow:0 0 0 1px rgba(0,229,255,.25),0 0 22px rgba(0,229,255,.12);
+  background:linear-gradient(135deg,#102738,#16213b);
+}
+.plan b{font-size:18px}
+.plan .price{margin-top:4px;color:#cbd5e1}
+.methods{display:flex;gap:12px;justify-content:space-between}
+.method-wrap{flex:1;text-align:center}
+.method{
+  width:76px;height:76px;padding:0;border-radius:50%;
+  border:3px solid #334155;background:#151f30;color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;
+  cursor:pointer;overflow:hidden;transition:.18s;
+  font-weight:800;font-size:13px;
+}
+.method span{display:block;line-height:1.05}
+.method.bkash{background:#e2136e;border-color:#ff5a9d}
+.method.nagad{background:#f58220;border-color:#ffb05d}
+.method.rocket{background:#7b2cbf;border-color:#b56cff}
+.method.active{transform:scale(1.07);box-shadow:0 0 0 4px rgba(255,255,255,.08),0 0 22px rgba(255,255,255,.16)}
+.method-label{display:block;margin-top:7px;color:#e5e7eb;font-weight:700}
+.pay-box{
+  margin-top:17px;padding:15px;border-radius:16px;
+  background:linear-gradient(135deg,rgba(0,229,255,.08),rgba(255,60,172,.08));
+  border:1px solid rgba(148,163,184,.25);
+}
+.num{font-size:22px;font-weight:800;letter-spacing:1px;margin:0 0 11px}
+.copy{
+  border:0;border-radius:12px;padding:11px 15px;
+  background:linear-gradient(135deg,#2563eb,#7c3aed);
+  color:#fff;font-weight:700;cursor:pointer;
+}
+.muted{color:#aebbd0;line-height:1.55}
+label{display:block;font-weight:700;margin:12px 0 5px}
+input{
+  width:100%;padding:14px;margin:4px 0 8px;border-radius:13px;
+  border:1px solid #334155;background:#080f1d;color:#fff;
+  outline:none;font-size:16px;
+}
+input:focus{border-color:#00d4ff;box-shadow:0 0 0 3px rgba(0,212,255,.09)}
+button.submit{
+  width:100%;border:0;border-radius:14px;padding:14px;
+  background:linear-gradient(90deg,#00b85a,#00d4ff);
+  color:#fff;font-size:17px;font-weight:800;cursor:pointer;
+  box-shadow:0 8px 22px rgba(0,212,255,.16);
+}
+.msg{padding:12px;border-radius:12px;background:#0a1220;margin-top:12px;color:#dbeafe}
+.history-item{
+  padding:10px 0;border-bottom:1px solid rgba(148,163,184,.15)
+}
+@media(max-width:430px){
+  .wrap{padding:12px 10px 25px}
+  .card{padding:17px;border-radius:19px}
+  .method{width:68px;height:68px}
+  h3{font-size:19px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="card plan-card">
+  <h3 class="section-title"><span class="dot"></span>1. Plan নির্বাচন করুন</h3>
+  <div id="plans">Loading...</div>
+</div>
+
+<div class="card method-card">
+  <h3 class="section-title"><span class="dot" style="background:#ff3cac;box-shadow:0 0 14px #ff3cac"></span>2. Send Money</h3>
+  <div id="methods" class="methods"></div>
+  <div class="pay-box">
+    <p id="payNumber" class="num">—</p>
+    <button class="copy" onclick="copyNumber()">📋 Copy Number</button>
+    <p class="muted">আপনার নির্বাচিত plan-এর ঠিক amount Send Money করুন।</p>
+  </div>
+</div>
+
+<div class="card form-card">
+  <h3 class="section-title"><span class="dot" style="background:#22c55e;box-shadow:0 0 14px #22c55e"></span>3. Payment তথ্য দিন</h3>
+  <label>যে নম্বর থেকে টাকা পাঠিয়েছেন</label>
+  <input id="sender" inputmode="tel" placeholder="01XXXXXXXXX">
+  <label>Transaction ID</label>
+  <input id="txn" autocomplete="off" placeholder="Transaction ID">
+  <button class="submit" onclick="submitPayment()">✓ Submit Payment</button>
+  <div id="msg"></div>
+</div>
+
+<div class="card">
+  <h3 class="section-title"><span class="dot" style="background:#a855f7;box-shadow:0 0 14px #a855f7"></span>Payment Status</h3>
+  <div id="history" class="muted">Loading...</div>
+</div>
+
+</div>
+
+<script>
 let cfg=null,plan=null,method='';
 const $=id=>document.getElementById(id);
-async function load(){try{const r=await fetch('/api/payment/config',{cache:'no-store'});const d=await r.json();cfg=d.config;render();loadHistory()}catch(e){$('msg').textContent='Payment configuration load হয়নি।'}}
-function render(){
- $('plans').innerHTML=(cfg.plans||[]).map((p,i)=>`<div class="plan ${i===0?'active':''}" onclick="selectPlan('${esc(p.id)}',this)"><b>${esc(p.name)}</b><br>৳${Number(p.amount).toFixed(0)} · ${p.days} days</div>`).join('');
- plan=cfg.plans?.[0];
- $('methods').innerHTML=['bkash','nagad','rocket'].filter(k=>cfg.methods?.[k]?.enabled).map((k,i)=>`<button class="method ${i===0?'active':''}" onclick="selectMethod('${k}',this)">${esc(cfg.methods[k].label||k)}</button>`).join('');
- method=['bkash','nagad','rocket'].find(k=>cfg.methods?.[k]?.enabled)||'';
- updateNumber();
+
+async function load(){
+  try{
+    const r=await fetch('/api/payment/config',{cache:'no-store'});
+    const d=await r.json();
+    cfg=d.config;
+    render();
+    loadHistory();
+  }catch(e){
+    $('msg').textContent='Payment configuration load হয়নি।';
+  }
 }
-function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-function selectPlan(id,el){plan=cfg.plans.find(x=>x.id===id);document.querySelectorAll('.plan').forEach(x=>x.classList.remove('active'));el.classList.add('active')}
-function selectMethod(k,el){method=k;document.querySelectorAll('.method').forEach(x=>x.classList.remove('active'));el.classList.add('active');updateNumber()}
-function updateNumber(){$('payNumber').textContent=cfg?.methods?.[method]?.number||'Admin payment number not set'}
-async function copyNumber(){try{await navigator.clipboard.writeText(cfg.methods[method].number||'');$('msg').textContent='Number copied.'}catch{}}
-async function submitPayment(){if(!plan||!method)return;const sender=$('sender').value.trim(),txn=$('txn').value.trim();if(!sender||!txn){$('msg').textContent='Sender number ও Transaction ID দিন।';return}
-$('msg').textContent='Submitting...';try{const r=await fetch('/api/payment/submit',{method:'POST',headers:{'content-type':'application/json'},credentials:'include',body:JSON.stringify({planId:plan.id,method,senderNumber:sender,transactionId:txn})});const d=await r.json();$('msg').textContent=d.ok?'Payment submitted. Admin approval-এর পর access চালু হবে।':(d.error||'Submit failed');if(d.ok){$('txn').value='';loadHistory()}}catch(e){$('msg').textContent='Network error'}}
-async function loadHistory(){try{const r=await fetch('/api/payment/my',{credentials:'include',cache:'no-store'});if(!r.ok){$('history').textContent='আগে website-এ login করুন।';return}const d=await r.json();$('history').innerHTML=(d.payments||[]).map(x=>`${esc(x.planName)} — ৳${x.amount} — <b>${esc(x.status)}</b> — ${esc(x.transactionId)}`).join('<br>')||'কোনো payment নেই।'}catch{}}
+
+function render(){
+  $('plans').innerHTML=(cfg.plans||[]).map((p,i)=>
+    `<div class="plan ${i===0?'active':''}" onclick="selectPlan('${esc(p.id)}',this)">
+      <b>${esc(p.name)}</b>
+      <div class="price">৳${Number(p.amount).toFixed(0)} · ${p.days} days</div>
+    </div>`
+  ).join('');
+
+  plan=cfg.plans?.[0];
+
+  const info={
+    bkash:{label:'bKash',cls:'bkash',icon:'bKash'},
+    nagad:{label:'Nagad',cls:'nagad',icon:'Nagad'},
+    rocket:{label:'Rocket',cls:'rocket',icon:'Rocket'}
+  };
+
+  $('methods').innerHTML=['bkash','nagad','rocket']
+    .filter(k=>cfg.methods?.[k]?.enabled)
+    .map((k,i)=>`
+      <div class="method-wrap">
+        <button class="method ${info[k].cls} ${i===0?'active':''}" onclick="selectMethod('${k}',this)" aria-label="${info[k].label}">
+          <span>${info[k].icon}</span>
+        </button>
+        <span class="method-label">${info[k].label}</span>
+      </div>`
+    ).join('');
+
+  method=['bkash','nagad','rocket'].find(k=>cfg.methods?.[k]?.enabled)||'';
+  updateNumber();
+}
+
+function esc(s){
+  return String(s??'').replace(/[&<>"']/g,m=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+
+function selectPlan(id,el){
+  plan=cfg.plans.find(x=>x.id===id);
+  document.querySelectorAll('.plan').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function selectMethod(k,el){
+  method=k;
+  document.querySelectorAll('.method').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  updateNumber();
+}
+
+function updateNumber(){
+  $('payNumber').textContent=cfg?.methods?.[method]?.number||'Admin payment number not set';
+}
+
+async function copyNumber(){
+  try{
+    await navigator.clipboard.writeText(cfg.methods[method].number||'');
+    $('msg').textContent='Number copied.';
+  }catch{}
+}
+
+async function submitPayment(){
+  if(!plan||!method)return;
+  const sender=$('sender').value.trim(),txn=$('txn').value.trim();
+  if(!sender||!txn){
+    $('msg').textContent='Sender number ও Transaction ID দিন।';
+    return;
+  }
+  $('msg').textContent='Submitting...';
+  try{
+    const r=await fetch('/api/payment/submit',{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      credentials:'include',
+      body:JSON.stringify({
+        planId:plan.id,method,
+        senderNumber:sender,
+        transactionId:txn
+      })
+    });
+    const d=await r.json();
+    $('msg').textContent=d.ok
+      ?'Payment submitted. Admin approval-এর পর access চালু হবে।'
+      :(d.error||'Submit failed');
+    if(d.ok){
+      $('txn').value='';
+      loadHistory();
+    }
+  }catch(e){
+    $('msg').textContent='Network error';
+  }
+}
+
+async function loadHistory(){
+  try{
+    const r=await fetch('/api/payment/my',{credentials:'include',cache:'no-store'});
+    if(!r.ok){
+      $('history').textContent='আগে website-এ login করুন।';
+      return;
+    }
+    const d=await r.json();
+    $('history').innerHTML=(d.payments||[]).map(x=>
+      `<div class="history-item">${esc(x.planName)} — ৳${x.amount} — <b>${esc(x.status)}</b> — ${esc(x.transactionId)}</div>`
+    ).join('')||'কোনো payment নেই।';
+  }catch{}
+}
+
 load();
-</script></body></html>
+</script>
+</body>
+</html>
