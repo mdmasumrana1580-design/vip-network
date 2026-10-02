@@ -386,6 +386,46 @@ async function handle(r, e) {
   if (p === '/api/admin/payments' && r.method === 'GET') {
     return withCors(json({ok:true,payments:await readPayments(e),config:paymentConfig(await readSettings(e))}));
   }
+  if (p === '/api/admin/payments' && r.method === 'DELETE') {
+    const id = String(u.searchParams.get('id') || '');
+    if (!id) return withCors(json({ok:false,error:'Payment id required'},400));
+    const payments = await readPayments(e), item = payments.find(x => x.id === id);
+    if (!item) return withCors(json({ok:false,error:'Payment not found'},404));
+
+    // Delete the account/device tied to this payment and remove its subscription,
+    // session and payment history. On the next visit the normal guest registration
+    // creates a fresh account, so the payment gate appears again.
+    const devices = await readDevices(e);
+    const users = await readUsers(e);
+    const deviceIds = new Set();
+    if (item.deviceId) deviceIds.add(String(item.deviceId));
+    if (item.userId) {
+      for (const d of devices) if (d.userId === item.userId) deviceIds.add(String(d.deviceId || ''));
+    }
+    const user = item.userId ? users.find(x => x.id === item.userId) : null;
+
+    for (const d of devices) {
+      if (deviceIds.has(String(d.deviceId || '')) && d.activeSessionToken) {
+        await kv(e).delete(USER_SESSION_PREFIX + d.activeSessionToken);
+      }
+    }
+    if (user?.activeSessionToken) await kv(e).delete(USER_SESSION_PREFIX + user.activeSessionToken);
+
+    const keptDevices = devices.filter(d => !deviceIds.has(String(d.deviceId || '')));
+    const keptUsers = item.userId ? users.filter(x => x.id !== item.userId) : users;
+    const keptPayments = payments.filter(x => {
+      if (item.userId && x.userId === item.userId) return false;
+      if (item.deviceId && x.deviceId === item.deviceId) return false;
+      return x.id !== id;
+    });
+
+    await saveDevices(e, keptDevices);
+    await saveUsers(e, keptUsers);
+    await savePayments(e, keptPayments);
+
+    return withCors(json({ok:true,removed:true,accountDeleted:true,deviceId:item.deviceId||'',userId:item.userId||null},200,{headers:{'Set-Cookie':'VIP_USER_SESSION=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax'}}));
+  }
+
   if (p === '/api/admin/payments' && r.method === 'PUT') {
     const b=await r.json().catch(()=>({})), payments=await readPayments(e);
     const id=String(b.id||''), action=String(b.action||'').toLowerCase();
