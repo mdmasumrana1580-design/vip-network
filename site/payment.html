@@ -46,11 +46,16 @@ h3{margin:0 0 16px;font-size:21px}
 .methods{display:flex;gap:12px;justify-content:space-between}
 .method-wrap{flex:1;text-align:center}
 .method{
-  width:76px;height:76px;padding:0;border-radius:50%;
+  width:78px;height:78px;padding:0;border-radius:50%;
   border:3px solid #334155;background:#151f30;color:#fff;
   display:inline-flex;align-items:center;justify-content:center;
   cursor:pointer;overflow:hidden;transition:.18s;
   font-weight:800;font-size:13px;
+  box-shadow:0 5px 16px rgba(0,0,0,.28);
+}
+.method img{
+  width:100%;height:100%;display:block;
+  object-fit:cover;border-radius:50%;
 }
 .method span{display:block;line-height:1.05}
 .method.bkash{background:#e2136e;border-color:#ff5a9d}
@@ -161,7 +166,7 @@ function render(){
     .map((k,i)=>`
       <div class="method-wrap">
         <button class="method ${info[k].cls} ${i===0?'active':''}" onclick="selectMethod('${k}',this)" aria-label="${info[k].label}">
-          <span>${info[k].icon}</span>
+          <img src="/assets/payment/${k === 'bkash' ? 'bkash.jpg' : k + '.png'}" alt="${info[k].label}">
         </button>
         <span class="method-label">${info[k].label}</span>
       </div>`
