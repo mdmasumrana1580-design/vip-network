@@ -123,11 +123,6 @@ button.submit{
   <div id="msg"></div>
 </div>
 
-<div class="card">
-  <h3 class="section-title"><span class="dot" style="background:#a855f7;box-shadow:0 0 14px #a855f7"></span>Payment Status</h3>
-  <div id="history" class="muted">Loading...</div>
-</div>
-
 </div>
 
 <script>
@@ -140,8 +135,7 @@ async function load(){
     const d=await r.json();
     cfg=d.config;
     render();
-    loadHistory();
-  }catch(e){
+}catch(e){
     $('msg').textContent='Payment configuration load হয়নি।';
   }
 }
@@ -232,25 +226,10 @@ async function submitPayment(){
       :(d.error||'Submit failed');
     if(d.ok){
       $('txn').value='';
-      loadHistory();
-    }
+}
   }catch(e){
     $('msg').textContent='Network error';
   }
-}
-
-async function loadHistory(){
-  try{
-    const r=await fetch('/api/payment/my',{credentials:'include',cache:'no-store'});
-    if(!r.ok){
-      $('history').textContent='আগে website-এ login করুন।';
-      return;
-    }
-    const d=await r.json();
-    $('history').innerHTML=(d.payments||[]).map(x=>
-      `<div class="history-item">${esc(x.planName)} — ৳${x.amount} — <b>${esc(x.status)}</b> — ${esc(x.transactionId)}</div>`
-    ).join('')||'কোনো payment নেই।';
-  }catch{}
 }
 
 load();
