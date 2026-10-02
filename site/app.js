@@ -372,7 +372,25 @@ function isNativeVideoUrl(url) {
   return /\.(mp4|m4v|webm|ogv|ogg)(?:[?#]|$)/i.test(String(url || ''));
 }
 
-function play(c, clickedCard, retryOriginal) {
+
+async function vipPaymentGate(channel){
+  try{
+    const base=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');
+    const r=await fetch(base+'/api/payment/access',{cache:'no-store',credentials:'include'});
+    if(r.ok){
+      const d=await r.json();
+      if(d.active) return true;
+    }
+  }catch(e){ console.warn('Payment access check failed',e); }
+  try{
+    localStorage.setItem('vip_pending_channel',JSON.stringify({name:channel?.name||'',url:channel?.url||'',time:Date.now()}));
+  }catch(e){}
+  location.href='/payment.html';
+  return false;
+}
+
+async function play(c, clickedCard, retryOriginal) {
+  if(!(await vipPaymentGate(c))) return;
   currentChannelIndex = visibleChannels.indexOf(c);
   const isMovieSeries = String(c && c.cat || "").toUpperCase() === "MOVIE & SERIES";
   if (videoBox) videoBox.classList.toggle("movie-series-player", isMovieSeries);

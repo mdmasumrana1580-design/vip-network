@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Payment — MsM.Tv</title><style>
+body{margin:0;background:#080b12;color:#fff;font-family:Arial,sans-serif}.wrap{max-width:620px;margin:auto;padding:22px}
+.card{background:#111827;border:1px solid #273449;border-radius:18px;padding:18px;margin:14px 0}h1{margin:4px 0 8px}.muted{color:#9ca9bb}.row{display:flex;gap:10px;flex-wrap:wrap}.method{flex:1;min-width:120px;padding:13px;border:1px solid #34445b;border-radius:12px;background:#151f30;color:#fff}.method.active{border-color:#22c55e}.plan{padding:14px;border:1px solid #34445b;border-radius:12px;margin:8px 0;cursor:pointer}.plan.active{border-color:#22c55e}.num{font-size:20px;font-weight:bold}.copy,button{border:0;border-radius:10px;padding:11px 14px;cursor:pointer}.copy{background:#26354b;color:#fff}input{width:100%;box-sizing:border-box;padding:13px;margin:7px 0 12px;border-radius:10px;border:1px solid #34445b;background:#0b1220;color:#fff}button.submit{width:100%;background:#16a34a;color:#fff;font-size:16px}.msg{padding:12px;border-radius:10px;background:#0b1220;margin-top:12px}.back{display:inline-block;color:#9ed0ff;margin-bottom:15px;text-decoration:none}
+</style></head><body><div class="wrap">
+<a class="back" href="/">← Back to MsM.Tv</a><h1>🔐 Channel Access</h1><div class="muted">চ্যানেল Play করতে subscription প্রয়োজন। Payment সম্পন্ন করে Transaction ID দিন।</div>
+<div class="card"><h3>1. Plan নির্বাচন করুন</h3><div id="plans">Loading...</div></div>
+<div class="card"><h3>2. Send Money</h3><div id="methods" class="row"></div><p id="payNumber" class="num">—</p><button class="copy" onclick="copyNumber()">Copy Number</button><p class="muted">আপনার নির্বাচিত plan-এর ঠিক amount Send Money করুন।</p></div>
+<div class="card"><h3>3. Payment তথ্য দিন</h3><label>যে নম্বর থেকে টাকা পাঠিয়েছেন<input id="sender" inputmode="tel" placeholder="01XXXXXXXXX"></label>
+<label>Transaction ID<input id="txn" autocomplete="off" placeholder="Transaction ID"></label><button class="submit" onclick="submitPayment()">Submit Payment</button><div id="msg"></div></div>
+<div class="card"><h3>Payment Status</h3><div id="history" class="muted">Loading...</div></div>
+</div><script>
+let cfg=null,plan=null,method='';
+const $=id=>document.getElementById(id);
+async function load(){try{const r=await fetch('/api/payment/config',{cache:'no-store'});const d=await r.json();cfg=d.config;render();loadHistory()}catch(e){$('msg').textContent='Payment configuration load হয়নি।'}}
+function render(){
+ $('plans').innerHTML=(cfg.plans||[]).map((p,i)=>`<div class="plan ${i===0?'active':''}" onclick="selectPlan('${esc(p.id)}',this)"><b>${esc(p.name)}</b><br>৳${Number(p.amount).toFixed(0)} · ${p.days} days</div>`).join('');
+ plan=cfg.plans?.[0];
+ $('methods').innerHTML=['bkash','nagad','rocket'].filter(k=>cfg.methods?.[k]?.enabled).map((k,i)=>`<button class="method ${i===0?'active':''}" onclick="selectMethod('${k}',this)">${esc(cfg.methods[k].label||k)}</button>`).join('');
+ method=['bkash','nagad','rocket'].find(k=>cfg.methods?.[k]?.enabled)||'';
+ updateNumber();
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function selectPlan(id,el){plan=cfg.plans.find(x=>x.id===id);document.querySelectorAll('.plan').forEach(x=>x.classList.remove('active'));el.classList.add('active')}
+function selectMethod(k,el){method=k;document.querySelectorAll('.method').forEach(x=>x.classList.remove('active'));el.classList.add('active');updateNumber()}
+function updateNumber(){$('payNumber').textContent=cfg?.methods?.[method]?.number||'Admin payment number not set'}
+async function copyNumber(){try{await navigator.clipboard.writeText(cfg.methods[method].number||'');$('msg').textContent='Number copied.'}catch{}}
+async function submitPayment(){if(!plan||!method)return;const sender=$('sender').value.trim(),txn=$('txn').value.trim();if(!sender||!txn){$('msg').textContent='Sender number ও Transaction ID দিন।';return}
+$('msg').textContent='Submitting...';try{const r=await fetch('/api/payment/submit',{method:'POST',headers:{'content-type':'application/json'},credentials:'include',body:JSON.stringify({planId:plan.id,method,senderNumber:sender,transactionId:txn})});const d=await r.json();$('msg').textContent=d.ok?'Payment submitted. Admin approval-এর পর access চালু হবে।':(d.error||'Submit failed');if(d.ok){$('txn').value='';loadHistory()}}catch(e){$('msg').textContent='Network error'}}
+async function loadHistory(){try{const r=await fetch('/api/payment/my',{credentials:'include',cache:'no-store'});if(!r.ok){$('history').textContent='আগে website-এ login করুন।';return}const d=await r.json();$('history').innerHTML=(d.payments||[]).map(x=>`${esc(x.planName)} — ৳${x.amount} — <b>${esc(x.status)}</b> — ${esc(x.transactionId)}`).join('<br>')||'কোনো payment নেই।'}catch{}}
+load();
+</script></body></html>
