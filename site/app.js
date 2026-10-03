@@ -277,14 +277,6 @@ function parseM3U(text) {
   return out;
 }
 
-
-let iptvOrgChannelsPromise = null;
-const iptvOrgLogoCache = Object.create(null);
-function logoKey(v){return String(v||"").toLowerCase().replace(/&/g,"and").replace(/[^a-z0-9]+/g," ").trim();}
-function iptvLogo(id){return id ? "https://iptv-org.github.io/iptv/logos/"+encodeURIComponent(id)+".png" : "";}
-function loadIptvOrg(){if(iptvOrgChannelsPromise)return iptvOrgChannelsPromise;iptvOrgChannelsPromise=fetch("https://iptv-org.github.io/api/channels.json",{cache:"force-cache"}).then(r=>r.ok?r.json():[]).catch(()=>[]);return iptvOrgChannelsPromise;}
-async function findChannelLogo(name){const key=logoKey(name);if(!key)return "";if(key in iptvOrgLogoCache)return iptvOrgLogoCache[key];const list=await loadIptvOrg();let best=null,score=0;for(const x of(Array.isArray(list)?list:[])){const n=logoKey(x.name);let s=n===key?100:(n.includes(key)||key.includes(n)?80:0);if(!s){const a=key.split(" "),b=n.split(" ");s=b.filter(v=>v.length>2&&a.includes(v)).length*10;}if(s>score){score=s;best=x;}}const u=best&&score>=20?iptvLogo(best.id):"";iptvOrgLogoCache[key]=u;return u;}
-
 function render() {
   const q = "";
 
@@ -306,25 +298,18 @@ function render() {
     const el = document.createElement("article");
     el.className = "card";
 
-    const initials = String(c.name || "TV").trim().split(/\s+/).filter(Boolean).slice(0,2).map(function(x){return x.charAt(0)}).join("").toUpperCase() || "TV";
-    const fallbackLogo = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect width="160" height="160" rx="42" fill="#222"/><text x="80" y="98" text-anchor="middle" font-family="Arial" font-size="52" font-weight="700" fill="white">' + initials + '</text></svg>');
-    const icon = '<img src="' + esc(c.logo || fallbackLogo) + '" alt="" loading="lazy" data-fallback="' + esc(fallbackLogo) + '">';
+    const icon = c.logo
+      ? '<img src="' + esc(c.logo) + '" alt="" loading="lazy">'
+      : "<span>TV</span>";
 
     el.innerHTML =
       '<div class="circle">' + icon + '</div>' +
       '<div class="label">' + esc(c.name) + '</div>';
 
-    const img = el.querySelector("img");
-    if (img) {
-      img.addEventListener("error", async function(){
-        if (img.dataset.trying === "1") { img.src = img.dataset.fallback; return; }
-        img.dataset.trying = "1";
-        const u = await findChannelLogo(c.name);
-        img.src = u || img.dataset.fallback;
-      });
-      if (!c.logo) findChannelLogo(c.name).then(function(u){ if(u && img.isConnected && img.dataset.trying !== "1") img.src=u; });
-    }
-    el.addEventListener("click", function () { play(c, el); });
+    el.addEventListener("click", function () {
+      play(c, el);
+    });
+
     grid.appendChild(el);
   });
 }
@@ -387,7 +372,25 @@ function isNativeVideoUrl(url) {
   return /\.(mp4|m4v|webm|ogv|ogg)(?:[?#]|$)/i.test(String(url || ''));
 }
 
-function play(c, clickedCard, retryOriginal) {
+
+async function vipPaymentGate(channel){
+  try{
+    const base=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');
+    const r=await fetch(base+'/api/payment/access',{cache:'no-store',credentials:'include'});
+    if(r.ok){
+      const d=await r.json();
+      if(d.active) return true;
+    }
+  }catch(e){ console.warn('Payment access check failed',e); }
+  try{
+    localStorage.setItem('vip_pending_channel',JSON.stringify({name:channel?.name||'',url:channel?.url||'',time:Date.now()}));
+  }catch(e){}
+  location.href='/payment.html';
+  return false;
+}
+
+async function play(c, clickedCard, retryOriginal) {
+  if(!(await vipPaymentGate(c))) return;
   currentChannelIndex = visibleChannels.indexOf(c);
   const isMovieSeries = String(c && c.cat || "").toUpperCase() === "MOVIE & SERIES";
   if (videoBox) videoBox.classList.toggle("movie-series-player", isMovieSeries);
@@ -730,7 +733,7 @@ async function fetchPlaylistFromWorker() {
   const data = await r.json();
   const list = Array.isArray(data?.tvChannels) ? data.tvChannels : [];
   return list.map(function(c){
-    return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||c.tvgLogo||c["tvg-logo"]||c.logoUrl||c.icon||c.image||""};
+    return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||""};
   }).filter(function(c){return c.url;});
 }
 
