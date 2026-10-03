@@ -240,7 +240,7 @@ function parseM3U(text) {
           name: meta.name,
           cat: catFor(meta.name, meta.group),
           url: line,
-          logo: meta.logo
+          logo: meta.logo || ''
         });
       }
       meta = null;

@@ -3,7 +3,6 @@ const DEVICES_KEY = 'vip_devices_v1';
 const SETTINGS_KEY = 'vip_settings_v1';
 const USERS_KEY = 'vip_users_v1';
 const ONLINE_KEY = 'vip_online_v1';
-const PAYMENTS_KEY = 'vip_payments_v1';
 const ADMIN_SESSION_PREFIX = 'vip_admin_session:';
 const USER_SESSION_PREFIX = 'vip_user_session:';
 
@@ -48,7 +47,7 @@ function norm(c = {}) {
   return {
     name: String(c.name || c.title || 'Unnamed'),
     category: String(c.category || c.group || c.groupTitle || 'Other'),
-    logo: String(c.logo || c.tvgLogo || c['tvg-logo'] || ''),
+    logo: String(c.logo || c.tvgLogo || c['tvg-logo'] || c.logoUrl || c.icon || c.image || ''),
     url: String(c.url || c.stream || c.streamUrl || ''),
     status: String(c.status || 'Unknown')
   };
@@ -74,18 +73,6 @@ async function readUsers(e) { try { return JSON.parse((await kv(e).get(USERS_KEY
 async function saveUsers(e, x) { await kv(e).put(USERS_KEY, JSON.stringify(x)); }
 async function readOnline(e) { try { return JSON.parse((await kv(e).get(ONLINE_KEY)) || '{}'); } catch { return {}; } }
 async function saveOnline(e, x) { await kv(e).put(ONLINE_KEY, JSON.stringify(x), { expirationTtl: 120 }); }
-async function readPayments(e) { try { return JSON.parse((await kv(e).get(PAYMENTS_KEY)) || '[]'); } catch { return []; } }
-async function savePayments(e, x) { await kv(e).put(PAYMENTS_KEY, JSON.stringify(x)); }
-function paymentConfig(s = {}) {
-  return { enabled: s.paymentEnabled !== false, currency: 'BDT', methods: s.paymentMethods || {
-    bkash: { enabled:true, number:'', label:'bKash' },
-    nagad: { enabled:true, number:'', label:'Nagad' },
-    rocket: { enabled:true, number:'', label:'Rocket' }
-  }, plans: Array.isArray(s.paymentPlans) && s.paymentPlans.length ? s.paymentPlans : [
-    {id:'30d', name:'30 Days', amount:100, days:30},
-    {id:'90d', name:'90 Days', amount:250, days:90},
-    {id:'365d', name:'1 Year', amount:800, days:365}
-  ] }; }
 
 function cleanOnline(x, now = Date.now()) {
   const out = {};
@@ -334,129 +321,8 @@ async function handle(r, e) {
     return withCors(json({ ok: true, approved: !!d?.approved, device: d || null, settings: await readSettings(e) }));
   }
 
-
-  // Payment configuration is public so users can see where to Send Money.
-  if (p === '/api/payment/config' && r.method === 'GET') {
-    return withCors(json({ ok:true, config:paymentConfig(await readSettings(e)) }));
-  }
-
-  if (p === '/api/payment/access' && r.method === 'GET') {
-    const s = await userSession(r, e);
-    if (!s) return withCors(json({ ok:false, active:false, error:'Unauthorized' },401));
-    if (s.deviceId && await deviceBlocked(e, s.deviceId)) return withCors(json({ok:false,active:false,blocked:true},403));
-    const devices = await readDevices(e), d = s.deviceId ? devices.find(x => x.deviceId === s.deviceId) : null;
-    const users = await readUsers(e), u0 = s.userId ? users.find(x => x.id === s.userId) : null;
-    const until = Math.max(Number(d?.subscriptionExpiresAt || 0), Number(u0?.subscriptionExpiresAt || 0));
-    return withCors(json({ok:true, active:until > Date.now(), expiresAt:until || 0, username:s.username || d?.username || 'Guest'}));
-  }
-
-  if (p === '/api/payment/submit' && r.method === 'POST') {
-    const s = await userSession(r, e);
-    if (!s) return withCors(json({ok:false,error:'Please login first'},401));
-    if (s.deviceId && await deviceBlocked(e, s.deviceId)) return withCors(json({ok:false,error:'Blocked',blocked:true},403));
-    const b = await r.json().catch(()=>({}));
-    const cfg = paymentConfig(await readSettings(e));
-    const plan = cfg.plans.find(x => String(x.id) === String(b.planId));
-    const method = String(b.method || '').toLowerCase();
-    if (!plan || !cfg.methods[method]?.enabled) return withCors(json({ok:false,error:'Invalid payment plan or method'},400));
-    const txnId = String(b.transactionId || b.txnId || '').trim().slice(0,100);
-    const sender = String(b.senderNumber || b.number || '').trim().slice(0,30);
-    if (txnId.length < 4 || sender.length < 5) return withCors(json({ok:false,error:'Sender number and Transaction ID are required'},400));
-    const payments = await readPayments(e);
-    if (payments.some(x => String(x.transactionId).toLowerCase() === txnId.toLowerCase() && x.status !== 'rejected')) {
-      return withCors(json({ok:false,error:'এই Transaction ID আগে জমা দেওয়া হয়েছে।'},409));
-    }
-    const now=Date.now();
-    const item={id:crypto.randomUUID(),userId:s.userId||null,deviceId:s.deviceId||'',username:s.username||'Guest',method,planId:plan.id,planName:plan.name,amount:Number(plan.amount)||0,days:Number(plan.days)||0,senderNumber:sender,transactionId:txnId,status:'pending',createdAt:now,createdAtISO:new Date(now).toISOString(),reviewedAt:0};
-    payments.unshift(item); await savePayments(e,payments);
-    return withCors(json({ok:true,payment:item}));
-  }
-
-  if (p === '/api/payment/my' && r.method === 'GET') {
-    const s=await userSession(r,e); if(!s) return withCors(json({ok:false,error:'Unauthorized'},401));
-    const payments=await readPayments(e);
-    const mine=payments.filter(x => (s.userId && x.userId===s.userId) || (s.deviceId && x.deviceId===s.deviceId)).slice(0,20);
-    return withCors(json({ok:true,payments:mine}));
-  }
-
   const g = await requireAdmin(r, e);
   if (g) return withCors(g);
-
-
-  if (p === '/api/admin/payments' && r.method === 'GET') {
-    return withCors(json({ok:true,payments:await readPayments(e),config:paymentConfig(await readSettings(e))}));
-  }
-  if (p === '/api/admin/payments' && r.method === 'DELETE') {
-    const id = String(u.searchParams.get('id') || '');
-    if (!id) return withCors(json({ok:false,error:'Payment id required'},400));
-    const payments = await readPayments(e), item = payments.find(x => x.id === id);
-    if (!item) return withCors(json({ok:false,error:'Payment not found'},404));
-
-    // Delete the account/device tied to this payment and remove its subscription,
-    // session and payment history. On the next visit the normal guest registration
-    // creates a fresh account, so the payment gate appears again.
-    const devices = await readDevices(e);
-    const users = await readUsers(e);
-    const deviceIds = new Set();
-    if (item.deviceId) deviceIds.add(String(item.deviceId));
-    if (item.userId) {
-      for (const d of devices) if (d.userId === item.userId) deviceIds.add(String(d.deviceId || ''));
-    }
-    const user = item.userId ? users.find(x => x.id === item.userId) : null;
-
-    for (const d of devices) {
-      if (deviceIds.has(String(d.deviceId || '')) && d.activeSessionToken) {
-        await kv(e).delete(USER_SESSION_PREFIX + d.activeSessionToken);
-      }
-    }
-    if (user?.activeSessionToken) await kv(e).delete(USER_SESSION_PREFIX + user.activeSessionToken);
-
-    const keptDevices = devices.filter(d => !deviceIds.has(String(d.deviceId || '')));
-    const keptUsers = item.userId ? users.filter(x => x.id !== item.userId) : users;
-    const keptPayments = payments.filter(x => {
-      if (item.userId && x.userId === item.userId) return false;
-      if (item.deviceId && x.deviceId === item.deviceId) return false;
-      return x.id !== id;
-    });
-
-    await saveDevices(e, keptDevices);
-    await saveUsers(e, keptUsers);
-    await savePayments(e, keptPayments);
-
-    return withCors(json({ok:true,removed:true,accountDeleted:true,deviceId:item.deviceId||'',userId:item.userId||null},200,{headers:{'Set-Cookie':'VIP_USER_SESSION=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax'}}));
-  }
-
-  if (p === '/api/admin/payments' && r.method === 'PUT') {
-    const b=await r.json().catch(()=>({})), payments=await readPayments(e);
-    const id=String(b.id||''), action=String(b.action||'').toLowerCase();
-    const item=payments.find(x=>x.id===id);
-    if(!item) return withCors(json({ok:false,error:'Payment not found'},404));
-    if(item.status!=='pending') return withCors(json({ok:false,error:'Payment already reviewed'},409));
-    if(action==='reject'){ item.status='rejected'; item.reviewedAt=Date.now(); item.reviewNote=String(b.note||'').slice(0,300); await savePayments(e,payments); return withCors(json({ok:true,payment:item})); }
-    if(action!=='approve') return withCors(json({ok:false,error:'Invalid action'},400));
-    const days=Math.max(1,Number(item.days)||30), now=Date.now();
-    const devices=await readDevices(e), d=item.deviceId ? devices.find(x=>x.deviceId===item.deviceId) : null;
-    const users=await readUsers(e), u0=item.userId ? users.find(x=>x.id===item.userId) : null;
-    const old=Math.max(Number(d?.subscriptionExpiresAt||0),Number(u0?.subscriptionExpiresAt||0),now);
-    const until=old+days*86400000;
-    if(d){d.subscriptionExpiresAt=until; d.subscriptionUpdatedAt=now; d.subscriptionPlan=item.planName;}
-    if(u0){u0.subscriptionExpiresAt=until; u0.subscriptionUpdatedAt=now; u0.subscriptionPlan=item.planName;}
-    if(d) await saveDevices(e,devices); if(u0) await saveUsers(e,users);
-    item.status='approved'; item.reviewedAt=now; item.approvedUntil=until;
-    await savePayments(e,payments);
-    return withCors(json({ok:true,payment:item,expiresAt:until}));
-  }
-  if (p === '/api/admin/payment-config' && r.method === 'PUT') {
-    const b=await r.json().catch(()=>({})), s=await readSettings(e);
-    if(typeof b.paymentEnabled==='boolean') s.paymentEnabled=b.paymentEnabled;
-    if(Array.isArray(b.paymentPlans)) s.paymentPlans=b.paymentPlans.slice(0,20).map(x=>({id:String(x.id||crypto.randomUUID()).slice(0,50),name:String(x.name||'Plan').slice(0,80),amount:Math.max(0,Number(x.amount)||0),days:Math.max(1,Number(x.days)||1)}));
-    if(b.paymentMethods && typeof b.paymentMethods==='object'){
-      s.paymentMethods={...(s.paymentMethods||{})};
-      for(const k of ['bkash','nagad','rocket']) if(b.paymentMethods[k]) s.paymentMethods[k]={...(s.paymentMethods[k]||{}),enabled:b.paymentMethods[k].enabled!==false,number:String(b.paymentMethods[k].number||'').slice(0,30),label:String(b.paymentMethods[k].label||k).slice(0,30)};
-    }
-    await kv(e).put(SETTINGS_KEY,JSON.stringify(s));
-    return withCors(json({ok:true,config:paymentConfig(s)}));
-  }
 
   if (p === '/api/admin/ping' && r.method === 'GET') return withCors(json({ ok: true, connected: true }));
   if (p === '/api/admin/state' && r.method === 'GET') return withCors(json({ ok: true, state: await readState(e) }));
