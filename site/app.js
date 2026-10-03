@@ -5,7 +5,7 @@ const STREAM_FALLBACK_URL = "https://mp3tourl.com/videos/1789615987340-af8196aa-
 const VIP_WORKER_API = window.VIP_WORKER_API || "";
 
 let channels = [];
-let current = "All";
+let current = "ALL";
 let hls = null;
 let currentChannelIndex = -1;
 let visibleChannels = [];
@@ -113,10 +113,37 @@ async function initVisitorCounter() {
   };
 
   refreshOnline();
-  setInterval(refreshOnline, 20000);
+  setInterval(refreshOnline, 5*60*1000);
 }
 
 initVisitorCounter();
+// Login-free guest identification: a browser gets a persistent random Visitor ID.
+// This identifies the browser/device, not the real-world person.
+async function initGuestTracker(){
+  try{
+    const key='vip-guest-visitor-id';
+    let visitorId=localStorage.getItem(key);
+    if(!visitorId){visitorId=(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now());localStorage.setItem(key,visitorId)}
+    const api=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');
+    const deviceName=(navigator.userAgentData?.platform||navigator.platform||'Guest Browser')+' / '+(navigator.userAgentData?.mobile?'Mobile':'Browser');
+    const send=async()=>{
+      try{
+        const r=await fetch(api+'/api/guest/ping',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceId:window.VIP_DEVICE_ID||'',deviceName,category:current,channel:document.title}),cache:'no-store'});
+        if(r.status===403){
+          console.warn('Guest visitor is blocked');
+          // Keep the persistent visitor/device IDs intact while blocked so the same visitor cannot bypass the block by receiving a new ID.
+          if(typeof window.VIP_SHOW_BLOCKED_PAGE==='function') window.VIP_SHOW_BLOCKED_PAGE();
+          return false
+        }
+      }catch(e){console.warn('Guest tracker unavailable',e)}
+      return true;
+    };
+    await fetch(api+'/api/guest/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceName}),cache:'no-store'}).catch(()=>{});
+    send(); setInterval(send,5*60*1000);
+  }catch(e){console.warn('Guest ID unavailable',e)}
+}
+initGuestTracker();
+
 
 // Premium overlay controls: click/tap the video to show, tap again to hide.
 const vipVideoBox = document.getElementById("vipVideoBox");
@@ -189,26 +216,26 @@ function esc(value) {
 }
 
 function catFor(name, group) {
-  const text = ((name || "") + " " + (group || "")).toLowerCase();
+  const n = String(name || "").trim().toLowerCase();
+  const g = String(group || "").trim().toLowerCase();
 
-  // SPORTS comes first, so sports channels stay together even if they are BD/India.
-  if (/sport|cricket|football|fifa|eurosport|willow|ten\s*cricket|ptv\s*sports|tsn|espn|bein|wwe|golf|nfl|nba/.test(text)) {
-    return "Sports";
-  }
+  // Explicit playlist/group category always wins over name-based detection.
+  // This prevents live Indian channels such as Zee Cinema/Jalsha Movies/B4U Movie
+  // from being moved into MOVIE & SERIES just because their channel name contains
+  // words like "movie" or "cinema".
+  if (/^movie\s*&?\s*series$|^movies?\s*(and|&)\s*series$|^movie|^series$/.test(g)) return "MOVIE & SERIES";
+  if (/india|indian/.test(g)) return "INDIA";
+  if (/sport|cricket|football|fifa|espn|bein|wwe|golf|nfl|nba/.test(g)) return "SPORTS";
+  if (/bangladesh|\bbd\b|bangla/.test(g)) return "BD";
+  if (/^other(s)?$/.test(g)) return "OTHER";
 
-  // Bangladesh channels
-  if (/bangla|bangladesh|bd\b|somoy|jamuna|ekattor|ekattor tv|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi tv|gtv|b tv|bengal|duronto|deepto|nagorik|mohona|asian tv|desh tv|bijoy tv|mytv|satv|ekushey|bishwa|bangla tv|btv/.test(text)) {
-    return "BD";
-  }
-
-  // India channels
-  if (/india|indian|sony|zee|star|colors|set\b|sab\b|aaj tak|ndtv|republic|news18|times now|india tv|dd national|dd sports|sun tv|asianet|vijay|jaya|starplus|star gold|sony max|sony pix|sony wah|sony yay|sony pal|&pictures|b4u|movies now|mnx|hbo india/.test(text)) {
-    return "India";
-  }
-
-  return "Others";
+  const text = n + " " + g;
+  if (/sport|cricket|football|fifa|espn|bein|wwe|golf|nfl|nba|ten\s*cricket|ptv\s*sports/.test(text)) return "SPORTS";
+  if (/bangladesh|\bbd\b|bangla|somoy|jamuna|ekattor|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi\s*tv|btv|duronto|deepto|nagorik|mohona|asian\s*tv|desh\s*tv|bijoy\s*tv|mytv|satv|ekushey/.test(text)) return "BD";
+  if (/india|indian|sony|zee|star|colors|set\b|sab\b|aaj\s*tak|ndtv|republic|news18|times\s*now|india\s*tv|dd\s*(national|sports)|sun\s*tv|asianet|vijay|jaya|starplus|star\s*gold|sony\s*(max|pix|wah|yay|pal)|&pictures|b4u|movies\s*now|mnx|hbo\s*india/.test(text)) return "INDIA";
+  if (/movie|movies|film|series|web\s*series|ott|cinema|flix/.test(n)) return "MOVIE & SERIES";
+  return "OTHER";
 }
-
 function parseM3U(text) {
   const lines = String(text || "").replace(/\r/g, "").split("\n");
   const out = [];
@@ -240,7 +267,7 @@ function parseM3U(text) {
           name: meta.name,
           cat: catFor(meta.name, meta.group),
           url: line,
-          logo: meta.logo || ''
+          logo: meta.logo
         });
       }
       meta = null;
@@ -250,13 +277,21 @@ function parseM3U(text) {
   return out;
 }
 
+
+let iptvOrgChannelsPromise = null;
+const iptvOrgLogoCache = Object.create(null);
+function logoKey(v){return String(v||"").toLowerCase().replace(/&/g,"and").replace(/[^a-z0-9]+/g," ").trim();}
+function iptvLogo(id){return id ? "https://iptv-org.github.io/iptv/logos/"+encodeURIComponent(id)+".png" : "";}
+function loadIptvOrg(){if(iptvOrgChannelsPromise)return iptvOrgChannelsPromise;iptvOrgChannelsPromise=fetch("https://iptv-org.github.io/api/channels.json",{cache:"force-cache"}).then(r=>r.ok?r.json():[]).catch(()=>[]);return iptvOrgChannelsPromise;}
+async function findChannelLogo(name){const key=logoKey(name);if(!key)return "";if(key in iptvOrgLogoCache)return iptvOrgLogoCache[key];const list=await loadIptvOrg();let best=null,score=0;for(const x of(Array.isArray(list)?list:[])){const n=logoKey(x.name);let s=n===key?100:(n.includes(key)||key.includes(n)?80:0);if(!s){const a=key.split(" "),b=n.split(" ");s=b.filter(v=>v.length>2&&a.includes(v)).length*10;}if(s>score){score=s;best=x;}}const u=best&&score>=20?iptvLogo(best.id):"";iptvOrgLogoCache[key]=u;return u;}
+
 function render() {
   const q = "";
 
   grid.innerHTML = "";
 
   const list = channels.filter(function (c) {
-    const categoryOk = current === "All" || c.cat === current;
+    const categoryOk = current === "ALL" || c.cat === current;
     const searchOk = c.name.toLowerCase().includes(q);
     return categoryOk && searchOk;
   });
@@ -271,30 +306,99 @@ function render() {
     const el = document.createElement("article");
     el.className = "card";
 
-    const icon = c.logo
-      ? '<img src="' + esc(c.logo) + '" alt="" loading="lazy">'
-      : "<span>TV</span>";
+    const initials = String(c.name || "TV").trim().split(/\s+/).filter(Boolean).slice(0,2).map(function(x){return x.charAt(0)}).join("").toUpperCase() || "TV";
+    const fallbackLogo = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect width="160" height="160" rx="42" fill="#222"/><text x="80" y="98" text-anchor="middle" font-family="Arial" font-size="52" font-weight="700" fill="white">' + initials + '</text></svg>');
+    const icon = '<img src="' + esc(c.logo || fallbackLogo) + '" alt="" loading="lazy" data-fallback="' + esc(fallbackLogo) + '">';
 
     el.innerHTML =
       '<div class="circle">' + icon + '</div>' +
       '<div class="label">' + esc(c.name) + '</div>';
 
-    el.addEventListener("click", function () {
-      play(c, el);
-    });
-
+    const img = el.querySelector("img");
+    if (img) {
+      img.addEventListener("error", async function(){
+        if (img.dataset.trying === "1") { img.src = img.dataset.fallback; return; }
+        img.dataset.trying = "1";
+        const u = await findChannelLogo(c.name);
+        img.src = u || img.dataset.fallback;
+      });
+      if (!c.logo) findChannelLogo(c.name).then(function(u){ if(u && img.isConnected && img.dataset.trying !== "1") img.src=u; });
+    }
+    el.addEventListener("click", function () { play(c, el); });
     grid.appendChild(el);
   });
 }
 
+let vipPlayerHistoryActive = false;
+function pushVipPlayerHistory(){
+  if (vipPlayerHistoryActive) return;
+  vipPlayerHistoryActive = true;
+  try { history.pushState({vipPlayer:true}, "", location.href); } catch(e) {}
+}
+
+function restoreWelcomeAfterBack(){
+  try {
+    if (hls) { hls.destroy(); hls = null; }
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+  } catch(e) {}
+  currentChannelIndex = -1;
+  if (welcomeVideo) welcomeVideo.classList.remove("welcome-hidden");
+  if (videoBox) videoBox.classList.add("welcome-active");
+  const liveBadge = document.getElementById("liveBadge");
+  if (liveBadge) liveBadge.style.display = "none";
+  const title = document.getElementById("playerTitle");
+  if (title) title.textContent = "Live Player";
+  const note = document.getElementById("note");
+  if (note) note.style.display = "none";
+  showVipControls();
+}
+
+
+function loadDashJs() {
+  return new Promise(function(resolve, reject) {
+    if (window.dashjs) return resolve(window.dashjs);
+    const existing = document.querySelector('script[data-msm-dashjs]');
+    if (existing) {
+      existing.addEventListener('load', function(){ resolve(window.dashjs); }, {once:true});
+      existing.addEventListener('error', reject, {once:true});
+      return;
+    }
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/dashjs@latest/dist/dash.all.min.js';
+    s.async = true;
+    s.dataset.msmDashjs = '1';
+    s.onload = function(){ window.dashjs ? resolve(window.dashjs) : reject(new Error('dash.js unavailable')); };
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+function isHlsUrl(url) {
+  return /\.m3u8(?:[?#]|$)/i.test(String(url || ''));
+}
+
+function isDashUrl(url) {
+  return /\.mpd(?:[?#]|$)/i.test(String(url || ''));
+}
+
+function isNativeVideoUrl(url) {
+  return /\.(mp4|m4v|webm|ogv|ogg)(?:[?#]|$)/i.test(String(url || ''));
+}
+
 function play(c, clickedCard, retryOriginal) {
   currentChannelIndex = visibleChannels.indexOf(c);
+  const isMovieSeries = String(c && c.cat || "").toUpperCase() === "MOVIE & SERIES";
+  if (videoBox) videoBox.classList.toggle("movie-series-player", isMovieSeries);
+  video.controls = isMovieSeries;
   if (welcomeVideo) welcomeVideo.classList.add("welcome-hidden");
   if (videoBox) videoBox.classList.remove("welcome-active");
   const liveBadge = document.getElementById("liveBadge");
   if (liveBadge) liveBadge.style.display = "flex";
 
   section.hidden = false;
+  pushVipPlayerHistory();
   document.getElementById("playerTitle").textContent = c.name;
   document.getElementById("note").style.display = "none";
 
@@ -349,15 +453,20 @@ function play(c, clickedCard, retryOriginal) {
     });
   }
 
-  if (/\.m3u8(\?|$)/i.test(sourceUrl) && window.Hls && Hls.isSupported()) {
+  const onNativeError = function () {
+    if (!fallbackUsed) switchToFallback();
+    else showPlaybackError();
+  };
+
+  // HLS: use hls.js where needed, otherwise let Safari/compatible browsers
+  // use their native HLS implementation.
+  if (isHlsUrl(sourceUrl) && window.Hls && Hls.isSupported()) {
     hls = new Hls({ enableWorker:true, lowLatencyMode:true, backBufferLength:30 });
     hls.attachMedia(video);
     hls.on(Hls.Events.MEDIA_ATTACHED, function () {
       if (hls) hls.loadSource(sourceUrl);
     });
     hls.on(Hls.Events.MANIFEST_PARSED, function () {
-      video.muted = false;
-      video.volume = 1;
       startPlayback();
     });
     hls.on(Hls.Events.ERROR, function (_event, data) {
@@ -370,16 +479,106 @@ function play(c, clickedCard, retryOriginal) {
         switchToFallback();
       }
     });
+  } else if (isDashUrl(sourceUrl)) {
+    // MPEG-DASH (.mpd) support. dash.js is loaded only when needed.
+    loadDashJs().then(function (dashjs) {
+      try {
+        const player = dashjs.MediaPlayer().create();
+        c._dashPlayer = player;
+        player.initialize(video, sourceUrl, false);
+        player.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, startPlayback);
+        player.on(dashjs.MediaPlayer.events.ERROR, function () {
+          if (c._dashPlayer) {
+            try { c._dashPlayer.reset(); } catch (e) {}
+            c._dashPlayer = null;
+          }
+          if (!fallbackUsed) switchToFallback();
+          else showPlaybackError();
+        });
+        startPlayback();
+      } catch (e) {
+        if (!fallbackUsed) switchToFallback();
+        else showPlaybackError();
+      }
+    }).catch(function () {
+      if (!fallbackUsed) switchToFallback();
+      else showPlaybackError();
+    });
   } else {
+    // Native browser video formats such as MP4, WebM and OGG.
     video.src = sourceUrl;
     video.addEventListener("loadedmetadata", startPlayback, {once:true});
     video.addEventListener("canplay", startPlayback, {once:true});
-    video.addEventListener("error", function () {
-      if (!fallbackUsed) switchToFallback();
-      else showPlaybackError();
-    }, {once:true});
+    video.addEventListener("error", onNativeError, {once:true});
     startPlayback();
   }
+}
+
+function isMovieSeriesPlayer() {
+  return !!(videoBox && videoBox.classList.contains("movie-series-player"));
+}
+
+function isMovieSeriesVideoFullscreen() {
+  return isMovieSeriesPlayer() && !!(document.fullscreenElement === video || document.webkitFullscreenElement === video);
+}
+
+async function requestNativeFullscreen() {
+  if (!videoBox) return;
+
+  // Movie & Series uses the browser's native video controls. Fullscreen the
+  // actual <video> element so Android/Chrome can restore the exact inline
+  // player geometry when Back/Exit Fullscreen is pressed. TV keeps the
+  // existing container-fullscreen implementation below unchanged.
+  if (isMovieSeriesPlayer()) {
+    try {
+      if (video.requestFullscreen) {
+        await video.requestFullscreen({navigationUI:"hide"});
+      } else if (video.webkitRequestFullscreen) {
+        video.webkitRequestFullscreen();
+      }
+    } catch (e) {}
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        await screen.orientation.lock("landscape");
+      }
+    } catch (e) {}
+    return;
+  }
+
+  try {
+    if (videoBox.requestFullscreen) {
+      await videoBox.requestFullscreen({navigationUI:"hide"});
+    } else if (videoBox.webkitRequestFullscreen) {
+      videoBox.webkitRequestFullscreen();
+    } else {
+      videoBox.classList.add("vip-css-fullscreen");
+    }
+  } catch (e) {
+    videoBox.classList.add("vip-css-fullscreen");
+  }
+  try {
+    if (screen.orientation && screen.orientation.lock) {
+      await screen.orientation.lock("landscape");
+    }
+  } catch (e) {
+    // Orientation locking is browser-dependent; keep normal fullscreen if unavailable.
+  }
+}
+
+async function exitNativeFullscreen() {
+  try {
+    if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
+    else if (document.webkitFullscreenElement && document.webkitExitFullscreen) document.webkitExitFullscreen();
+  } catch (e) {}
+
+  // Native Movie & Series fullscreen owns the video element, so do not force
+  // the TV/container fullscreen classes onto it during the exit transition.
+  if (videoBox && !isMovieSeriesVideoFullscreen()) {
+    videoBox.classList.remove("vip-css-fullscreen","vip-fullscreen","is-fullscreen","vip-orientation-fallback");
+  }
+  try {
+    if (screen.orientation && screen.orientation.unlock) await screen.orientation.unlock();
+  } catch (e) {}
 }
 
 function isNativeFullscreen() {
@@ -399,12 +598,19 @@ async function toggleNativeFullscreen() {
 
 function setFullscreenButtonState() {
   const isFs = isNativeFullscreen();
+  const movieNativeFs = isMovieSeriesVideoFullscreen();
   if (videoBox) {
-    videoBox.classList.toggle("vip-fullscreen", isFs);
-    videoBox.classList.toggle("is-fullscreen", isFs);
-    videoBox.classList.toggle("vip-css-fullscreen", isFs);
+    // For Movie & Series native video fullscreen, the browser owns the
+    // fullscreen viewport. Do not mirror that state onto the parent container.
+    if (!movieNativeFs) {
+      videoBox.classList.toggle("vip-fullscreen", isFs);
+      videoBox.classList.toggle("is-fullscreen", isFs);
+      videoBox.classList.toggle("vip-css-fullscreen", isFs);
+    } else {
+      videoBox.classList.remove("vip-fullscreen","is-fullscreen","vip-css-fullscreen","vip-orientation-fallback");
+    }
   }
-  document.body.classList.toggle("vip-player-fullscreen", isFs);
+  document.body.classList.toggle("vip-player-fullscreen", isFs && !movieNativeFs);
   const controls = document.getElementById("landscapeChannelControls");
   if (controls) controls.setAttribute("aria-hidden", isFs ? "false" : "true");
 }
@@ -435,9 +641,32 @@ document.getElementById("nextChannel").addEventListener("click", function(e) {
   e.preventDefault(); e.stopPropagation(); changeChannel(1); showVipControls();
 });
 
+window.addEventListener("popstate", function(){
+  // Android back: leave fullscreen/player view in one press, keep the
+  // currently playing channel alive, and return to the home/player area.
+  if (isNativeFullscreen()) {
+    exitNativeFullscreen();
+    setTimeout(function(){
+      try {
+        const home = document.querySelector('.header') || document.getElementById('playerSection');
+        if (home) home.scrollIntoView({behavior:'smooth', block:'start'});
+      } catch(e) {}
+    }, 80);
+    return;
+  }
+  if (vipPlayerHistoryActive) {
+    vipPlayerHistoryActive = false;
+    // Do not destroy the current stream. Keep the same channel playing.
+    try {
+      const home = document.querySelector('.header') || document.getElementById('playerSection');
+      if (home) home.scrollIntoView({behavior:'smooth', block:'start'});
+    } catch(e) {}
+  }
+});
+
 window.addEventListener("orientationchange", syncFullscreenState);
-document.addEventListener("fullscreenchange", syncFullscreenState);
-document.addEventListener("webkitfullscreenchange", syncFullscreenState);
+document.addEventListener("fullscreenchange", function(){ if(!document.fullscreenElement){ try{screen.orientation?.unlock?.()}catch(e){} } syncFullscreenState(); });
+document.addEventListener("webkitfullscreenchange", function(){ syncFullscreenState(); });
 syncFullscreenState();
 
 function closePlayer() {
@@ -447,13 +676,21 @@ function closePlayer() {
     hls.destroy();
     hls = null;
   }
-
+  try { if (video && video._dashPlayer) video._dashPlayer.reset(); } catch(e) {}
   video.pause();
   video.removeAttribute("src");
+  video.removeAttribute("controls");
+  if (videoBox) videoBox.classList.remove("movie-series-player");
   video.load();
 }
 
-document.getElementById("closePlayer").addEventListener("click", closePlayer);
+document.getElementById("closePlayer").addEventListener("click", function(){
+  closePlayer();
+  if (vipPlayerHistoryActive) {
+    vipPlayerHistoryActive = false;
+    try { history.back(); } catch(e) {}
+  }
+});
 
 document.querySelectorAll("#cats button").forEach(function (button) {
   button.addEventListener("click", function () {
@@ -480,6 +717,23 @@ function currentChannelName() {
   return c && c.name ? c.name : "";
 }
 
+async function fetchMoviePlaylistFromWorker(){const apiBase=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');const r=await fetch(apiBase+'/api/movie-playlist',{cache:'no-store'});if(!r.ok)throw new Error('Movie playlist load failed: '+r.status);const data=await r.json();return (Array.isArray(data?.channels)?data.channels:[]).map(c=>({name:c.name||'Movie',cat:'MOVIE & SERIES',url:c.url||'',logo:c.logo||''})).filter(c=>c.url);}
+
+async function fetchPlaylistFromWorker() {
+  const apiBase = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/, "");
+  if (!apiBase) return [];
+  // Read the dedicated TV list from the Worker state.
+  // Do not use /api/playlist here because that endpoint may also contain
+  // the separate Movie & Series list. TV and Movie playlists must stay isolated.
+  const r = await fetch(apiBase + "/api/state", {cache:"no-store"});
+  if (!r.ok) throw new Error("Worker state load failed: " + r.status);
+  const data = await r.json();
+  const list = Array.isArray(data?.tvChannels) ? data.tvChannels : [];
+  return list.map(function(c){
+    return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||c.tvgLogo||c["tvg-logo"]||c.logoUrl||c.icon||c.image||""};
+  }).filter(function(c){return c.url;});
+}
+
 async function fetchPlaylistFromGithub() {
   const response = await fetch(PLAYLIST_URL, {
     cache: "no-store",
@@ -488,7 +742,7 @@ async function fetchPlaylistFromGithub() {
   if (!response.ok) throw new Error("GitHub playlist load failed: " + response.status);
   const parsed = parseM3U(await response.text());
   if (!parsed.length) throw new Error("GitHub playlist is empty or invalid");
-  return parsed;
+  return parsed.filter(function(c){return c.cat !== 'MOVIE & SERIES';});
 }
 
 function saveLastGoodPlaylist(list) {
@@ -507,65 +761,55 @@ function loadLastGoodPlaylist() {
     const raw = localStorage.getItem(PLAYLIST_CACHE_KEY);
     if (!raw) return [];
     const data = JSON.parse(raw);
-    return Array.isArray(data && data.channels) ? data.channels : [];
+    return Array.isArray(data && data.channels) ? data.channels.filter(function(c){return !c || c.cat !== 'MOVIE & SERIES';}) : [];
   } catch (e) {
     return [];
   }
 }
 
 async function loadVipPlaylist() {
+  const apiBase = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/, "");
+  if (apiBase) {
+    try {
+      let managed = await fetchPlaylistFromWorker();
+      try { const movies=await fetchMoviePlaylistFromWorker(); managed=managed.concat(movies); } catch(e) { console.warn('Movie playlist unavailable',e); }
+      if (managed.length) {
+        saveLastGoodPlaylist(managed);
+        return managed;
+      }
+    } catch (e) {
+      console.warn("Worker playlist unavailable; trying GitHub.", e);
+    }
+  }
+
   try {
     const fresh = await fetchPlaylistFromGithub();
     saveLastGoodPlaylist(fresh);
     return fresh;
   } catch (githubError) {
-    console.warn("GitHub playlist unavailable; using last successful playlist.", githubError);
+    console.warn("GitHub playlist load failed; using last successful playlist.", githubError);
   }
 
   const cached = loadLastGoodPlaylist();
   if (cached.length) return cached;
-
-  const apiBase = (window.VIP_WORKER_API || "").replace(/\/$/, "");
-  if (apiBase) {
-    try {
-      const r = await fetch(apiBase + "/api/playlist", {cache:"no-store"});
-      if (r.ok) {
-        const data = await r.json();
-        const list = Array.isArray(data?.channels) ? data.channels : [];
-        if (list.length) {
-          return list.map(function(c){
-            return {
-              name:c.name||"Live Channel",
-              cat:catFor(c.name,c.category),
-              url:c.url||"",
-              logo:c.logo||""
-            };
-          }).filter(c=>c.url);
-        }
-      }
-    } catch (e) {
-      console.warn("Worker playlist bootstrap unavailable.", e);
-    }
-  }
-
   throw new Error("Playlist load failed");
 }
 
 async function refreshVipPlaylist() {
   try {
-    const fresh = await fetchPlaylistFromGithub();
+    let fresh = [];
+    try { fresh = await fetchPlaylistFromWorker(); } catch (e) {}
+    if (!fresh.length) fresh = await fetchPlaylistFromGithub();
+    try { fresh = fresh.concat(await fetchMoviePlaylistFromWorker()); } catch(e) { console.warn('Movie playlist refresh unavailable',e); }
     const oldCurrentName = currentChannelName ? currentChannelName() : "";
     const oldWasFallback = currentChannelUrl ? currentChannelUrl() === STREAM_FALLBACK_URL : false;
-
     channels = fresh;
     saveLastGoodPlaylist(fresh);
     render();
-
     if (oldCurrentName && oldWasFallback) {
       const updated = channels.find(function(c){ return c.name === oldCurrentName; });
       if (updated) play(updated, null, true);
     }
-
     console.log("VIP playlist auto-refreshed:", channels.length);
     return true;
   } catch (e) {
