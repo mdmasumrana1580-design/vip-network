@@ -236,4 +236,3 @@ body.light{--text:#162535;--muted:#5f7182;background:#eef4f9}body.light .sidebar
   .tv-workspace .channel-scroll th:nth-child(6),.tv-workspace .channel-scroll td:nth-child(6){width:96px !important;}
   .tv-workspace .channel-scroll .actions button{width:27px !important;height:27px !important;flex-basis:27px !important;font-size:11px !important;}
 }
-.access-toggle{border:0;border-radius:8px;padding:6px 10px;font-weight:800;cursor:pointer}.access-toggle.free{background:#dcfce7;color:#166534}.access-toggle.paid{background:#fef3c7;color:#92400e}
