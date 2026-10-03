@@ -145,6 +145,81 @@ async function initGuestTracker(){
 initGuestTracker();
 
 
+// MsM.Tv Share & Earn offer: show immediately when an unpaid visitor enters the TV site.
+// Closing the offer only dismisses it; channel clicks continue to use the existing payment gateway flow.
+(function initShareOfferOnEntry(){
+  const base=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');
+
+  function injectShareOffer(){
+    if(document.getElementById('msmShareOfferOverlay')) return;
+    const style=document.createElement('style');
+    style.id='msmShareOfferStyle';
+    style.textContent=`
+      #msmShareOfferOverlay{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(2,5,20,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-family:inherit;}
+      #msmShareOfferCard{position:relative;width:min(520px,94vw);max-height:90vh;overflow:auto;border:1px solid rgba(54,220,255,.8);border-radius:26px;padding:24px 18px 22px;background:linear-gradient(145deg,#07132e 0%,#11102c 48%,#190725 100%);box-shadow:0 0 14px rgba(0,212,255,.45),0 0 42px rgba(255,0,177,.28),inset 0 0 28px rgba(37,112,255,.08);color:#fff;text-align:center;}
+      #msmShareOfferCard:before{content:"";position:absolute;inset:0;border-radius:26px;pointer-events:none;background:linear-gradient(120deg,rgba(0,229,255,.12),transparent 35%,rgba(255,0,190,.12));}
+      #msmShareOfferClose{position:absolute;right:12px;top:10px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(10,15,35,.8);color:#fff;font-size:25px;line-height:34px;cursor:pointer;z-index:2;box-shadow:0 0 12px rgba(255,0,180,.45);}
+      #msmShareOfferClose:active{transform:scale(.94);}
+      #msmShareOfferLogo{width:76px;height:76px;margin:0 auto 8px;border-radius:50%;object-fit:cover;box-shadow:0 0 12px rgba(255,0,187,.8),0 0 28px rgba(0,210,255,.35);border:2px solid rgba(255,255,255,.28);}
+      #msmShareOfferTitle{margin:2px 40px 4px;font-size:27px;font-weight:900;letter-spacing:.2px;text-shadow:0 0 12px rgba(0,220,255,.45);}
+      #msmShareOfferSub{margin:0 28px 18px;color:#d7e8ff;font-size:15px;line-height:1.55;}
+      .msmShareOfferRow{display:flex;align-items:center;gap:12px;text-align:left;margin:11px 0;padding:13px 14px;border-radius:18px;background:linear-gradient(100deg,rgba(9,25,55,.96),rgba(18,12,43,.94));border:1px solid rgba(68,183,255,.35);box-shadow:0 0 13px rgba(0,120,255,.12);}
+      .msmShareOfferRow:nth-of-type(2){border-color:rgba(255,0,190,.42);box-shadow:0 0 13px rgba(255,0,190,.13);}
+      .msmShareOfferRow:nth-of-type(3){border-color:rgba(255,174,0,.42);box-shadow:0 0 13px rgba(255,174,0,.13);}
+      .msmShareOfferIcon{width:48px;height:48px;flex:0 0 48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:23px;background:linear-gradient(145deg,#08cfff,#4935ff);box-shadow:0 0 14px rgba(0,210,255,.45);}
+      .msmShareOfferRow:nth-of-type(2) .msmShareOfferIcon{background:linear-gradient(145deg,#ff159d,#702cff);box-shadow:0 0 14px rgba(255,21,157,.42);}
+      .msmShareOfferRow:nth-of-type(3) .msmShareOfferIcon{background:linear-gradient(145deg,#ffbd18,#ff4b19);box-shadow:0 0 14px rgba(255,170,20,.42);}
+      .msmShareOfferRow b{display:block;font-size:18px;margin-bottom:2px;}
+      .msmShareOfferRow span{display:block;color:#d5def0;font-size:14px;line-height:1.4;}
+      #msmShareOfferHint{margin:16px 2px 0;color:#aebbd4;font-size:12px;line-height:1.45;}
+      #msmShareOfferContinue{display:block;width:100%;margin-top:15px;padding:13px 16px;border:0;border-radius:15px;background:linear-gradient(90deg,#ff0aa8,#7140ff,#00c9ff);color:#fff;font-weight:900;font-size:16px;box-shadow:0 0 18px rgba(255,0,170,.3);cursor:pointer;}
+      @media(max-width:420px){#msmShareOfferCard{padding:21px 14px 18px;border-radius:22px}#msmShareOfferTitle{font-size:24px}.msmShareOfferRow{padding:11px 10px}.msmShareOfferRow b{font-size:16px}.msmShareOfferRow span{font-size:13px}}
+    `;
+    document.head.appendChild(style);
+
+    const overlay=document.createElement('div');
+    overlay.id='msmShareOfferOverlay';
+    overlay.innerHTML=`
+      <div id="msmShareOfferCard" role="dialog" aria-modal="true" aria-label="MsM.Tv Share Offer">
+        <button id="msmShareOfferClose" aria-label="Close">×</button>
+        <div id="msmShareOfferLogo" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#ff159d,#5535ff);font-size:35px;font-weight:900;">M</div>
+        <div id="msmShareOfferTitle">🎁 MsM.Tv বিশেষ অফার</div>
+        <p id="msmShareOfferSub">বন্ধুদের সাথে MsM.Tv শেয়ার করুন এবং পান ফ্রি Subscription!</p>
+        <div class="msmShareOfferRow"><div class="msmShareOfferIcon">👥</div><div><b>৮ জনের কাছে শেয়ার</b><span>পান ১ মাসের Subscription 🎉</span></div></div>
+        <div class="msmShareOfferRow"><div class="msmShareOfferIcon">🔥</div><div><b>২০ জনের কাছে শেয়ার</b><span>পান ৩ মাসের Subscription 🚀</span></div></div>
+        <div class="msmShareOfferRow"><div class="msmShareOfferIcon">👑</div><div><b>৫০ জনের কাছে শেয়ার</b><span>পান ১ বছরের Subscription 🏆</span></div></div>
+        <div id="msmShareOfferHint">অফারটি ব্যবহার করতে শেয়ারের প্রমাণ/নির্ধারিত যাচাই প্রক্রিয়া প্রযোজ্য হতে পারে।</div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const closeOffer=()=>{
+      if(overlay.dataset.closed==='1') return;
+      overlay.dataset.closed='1';
+      overlay.remove();
+      const style=document.getElementById('msmShareOfferStyle');
+      if(style) style.remove();
+    };
+    document.getElementById('msmShareOfferClose').addEventListener('click',closeOffer);
+    overlay.addEventListener('click',function(e){ if(e.target===overlay) closeOffer(); });
+    // If the user does not close the offer manually, automatically dismiss it after 5 seconds.
+    setTimeout(closeOffer,5000);
+  }
+
+  async function showIfUnpaid(){
+    try{
+      const r=await fetch(base+'/api/payment/access',{cache:'no-store',credentials:'include'});
+      if(r.ok){
+        const d=await r.json();
+        if(d.active) return;
+      }
+    }catch(e){ console.warn('Share offer access check failed',e); }
+    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',injectShareOffer,{once:true});
+    else injectShareOffer();
+  }
+  // Delay only until the page has rendered its main UI; the offer is still shown on entry.
+  setTimeout(showIfUnpaid,120);
+})();
+
 // Premium overlay controls: click/tap the video to show, tap again to hide.
 const vipVideoBox = document.getElementById("vipVideoBox");
 const vipBottomControls = document.getElementById("vipBottomControls");
@@ -385,6 +460,7 @@ async function vipPaymentGate(channel){
   try{
     localStorage.setItem('vip_pending_channel',JSON.stringify({name:channel?.name||'',url:channel?.url||'',time:Date.now()}));
   }catch(e){}
+  // Keep the existing payment gateway flow when a channel is clicked.
   location.href='/payment.html';
   return false;
 }
