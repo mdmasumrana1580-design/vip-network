@@ -50,7 +50,8 @@ function norm(c = {}) {
     category: String(c.category || c.group || c.groupTitle || 'Other'),
     logo: String(c.logo || c.tvgLogo || c['tvg-logo'] || ''),
     url: String(c.url || c.stream || c.streamUrl || ''),
-    status: String(c.status || 'Unknown')
+    status: String(c.status || 'Unknown'),
+    accessType: String(c.accessType || 'paid').toLowerCase() === 'free' ? 'free' : 'paid'
   };
 }
 
@@ -341,6 +342,12 @@ async function handle(r, e) {
   }
 
   if (p === '/api/payment/access' && r.method === 'GET') {
+    const channelName = String(u.searchParams.get('channel') || '').trim().toLowerCase();
+    if (channelName) {
+      const state = await readState(e);
+      const channel = (state.channels || []).find(c => String(c.name || '').trim().toLowerCase() === channelName);
+      if (channel && channel.accessType === 'free') return withCors(json({ok:true, active:true, free:true, expiresAt:0}));
+    }
     const s = await userSession(r, e);
     if (!s) return withCors(json({ ok:false, active:false, error:'Unauthorized' },401));
     if (s.deviceId && await deviceBlocked(e, s.deviceId)) return withCors(json({ok:false,active:false,blocked:true},403));
