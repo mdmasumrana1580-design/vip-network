@@ -12,7 +12,7 @@ function showLogin(show=true){document.getElementById('loginModal').classList.to
 function loginStatus(t,bad=false){const x=document.getElementById('loginStatus');x.textContent=t;x.style.color=bad?'#ff7b8d':'#76d7ff'}
 async function loginWorker(){const p=document.getElementById('workerPassword').value;if(!p)return loginStatus('Enter Admin Password.',true);const b=document.getElementById('loginBtn');b.disabled=true;loginStatus('Connecting...');try{await api('/api/admin/login',{method:'POST',body:JSON.stringify({password:p})});setBackend(true);showLogin(false);document.getElementById('workerPassword').value='';await loadRemoteState();await loadDevices();logAction('Admin logged in');toast('Connected')}catch(e){loginStatus('Login failed: '+e.message,true)}finally{b.disabled=false}}
 async function logoutWorker(){try{await api('/api/admin/logout',{method:'POST'})}catch{}setBackend(false);showLogin(true);logAction('Admin logged out')}
-function norm(c){return {name:c.name||c.title||'Unnamed',category:c.category||c.group||'OTHERS',logo:c.logo||c.tvgLogo||'',url:c.url||c.stream||'',status:c.status||'Unknown'}}
+function norm(c){return {name:c.name||c.title||'Unnamed',category:c.category||c.group||'OTHERS',logo:c.logo||c.tvgLogo||c['tvg-logo']||c.logoUrl||c.icon||c.image||'',url:c.url||c.stream||'',status:c.status||'Unknown'}}
 function rebuildChannels(){channels=[...tvChannels,...movieSeries]}
 async function checkAllStatuses(showToast=true){
   try{
