@@ -298,13 +298,25 @@ function render() {
     const el = document.createElement("article");
     el.className = "card";
 
-    const icon = c.logo
-      ? '<img src="' + esc(c.logo) + '" alt="" loading="lazy">'
+    const logo = String(c.logo || c.tvgLogo || c["tvg-logo"] || c.logoUrl || c.icon || c.image || "").trim();
+    const icon = logo
+      ? '<img src="' + esc(logo) + '" alt="" loading="lazy">'
       : "<span>TV</span>";
 
     el.innerHTML =
       '<div class="circle">' + icon + '</div>' +
       '<div class="label">' + esc(c.name) + '</div>';
+
+    const logoImg = el.querySelector(".circle img");
+    if (logoImg) {
+      logoImg.addEventListener("error", function () {
+        const circle = logoImg.parentElement;
+        if (circle && !circle.dataset.logoFailed) {
+          circle.dataset.logoFailed = "1";
+          circle.innerHTML = "<span>TV</span>";
+        }
+      }, {once:true});
+    }
 
     el.addEventListener("click", function () {
       play(c, el);
@@ -372,25 +384,7 @@ function isNativeVideoUrl(url) {
   return /\.(mp4|m4v|webm|ogv|ogg)(?:[?#]|$)/i.test(String(url || ''));
 }
 
-
-async function vipPaymentGate(channel){
-  try{
-    const base=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');
-    const r=await fetch(base+'/api/payment/access',{cache:'no-store',credentials:'include'});
-    if(r.ok){
-      const d=await r.json();
-      if(d.active) return true;
-    }
-  }catch(e){ console.warn('Payment access check failed',e); }
-  try{
-    localStorage.setItem('vip_pending_channel',JSON.stringify({name:channel?.name||'',url:channel?.url||'',time:Date.now()}));
-  }catch(e){}
-  location.href='/payment.html';
-  return false;
-}
-
-async function play(c, clickedCard, retryOriginal) {
-  if(!(await vipPaymentGate(c))) return;
+function play(c, clickedCard, retryOriginal) {
   currentChannelIndex = visibleChannels.indexOf(c);
   const isMovieSeries = String(c && c.cat || "").toUpperCase() === "MOVIE & SERIES";
   if (videoBox) videoBox.classList.toggle("movie-series-player", isMovieSeries);
@@ -733,7 +727,7 @@ async function fetchPlaylistFromWorker() {
   const data = await r.json();
   const list = Array.isArray(data?.tvChannels) ? data.tvChannels : [];
   return list.map(function(c){
-    return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||""};
+    return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||c.tvgLogo||c['tvg-logo']||c.logoUrl||c.icon||c.image||""};
   }).filter(function(c){return c.url;});
 }
 
