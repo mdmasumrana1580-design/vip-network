@@ -30,7 +30,6 @@
     </div>
     <button class="nav-item" data-section="categories">▤ <span>Categories</span></button>
 
-    <button class="nav-item" type="button" onclick="location.href='payments.html'">💳 <span>Payments</span></button>
     <button class="nav-item" data-section="notice">⚑ <span>Notice / Banner</span></button>
     <button class="nav-item" data-section="security">♜ <span>Security</span></button>
     <button class="nav-item" data-section="activity">◷ <span>Activity Logs</span></button>
@@ -85,7 +84,7 @@
       </section>
 
       <section id="channels" class="section">
-        <div class="page-head"><div><h1>Channel Management</h1><p>Add, edit, delete and control your TV channels.</p></div><button class="primary" onclick="showSection('add')">＋ Add Channel</button></div>
+        <div class="page-head"><div><h1>Channel Management</h1><p>Add, edit, delete and control your TV channels.</p></div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="primary" onclick="showSection('add')">＋ Add Channel</button><button type="button" onclick="location.href='payments.html'" style="border:0;border-radius:12px;padding:11px 16px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(37,99,235,.25)">💳 Payments</button></div></div>
         <div class="panel"><div class="filters"><input id="managerSearch" placeholder="Search channel..."><select id="managerCat"></select><select id="managerStatus"><option>All Status</option><option>Active</option><option>Dead</option><option>Disabled</option></select></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Logo</th><th>Name</th><th>Category</th><th>Status</th><th>Stream URL</th><th>Action</th></tr></thead><tbody id="managerRows"></tbody></table></div></div>
       </section>
 
