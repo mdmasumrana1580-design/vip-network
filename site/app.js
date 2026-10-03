@@ -304,7 +304,7 @@ function render() {
 
     el.innerHTML =
       '<div class="circle">' + icon + '</div>' +
-      '<div class="label">' + esc(c.name) + '</div>';
+      '<div class="label">' + esc(c.name) + '</div>' + '<span class="channel-access '+(c.accessType==='free'?'free':'paid')+'">'+(c.accessType==='free'?'FREE':'VIP 🔒')+'</span>';
 
     el.addEventListener("click", function () {
       play(c, el);
@@ -376,7 +376,7 @@ function isNativeVideoUrl(url) {
 async function vipPaymentGate(channel){
   try{
     const base=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');
-    const r=await fetch(base+'/api/payment/access',{cache:'no-store',credentials:'include'});
+    const r=await fetch(base+'/api/payment/access?channel='+encodeURIComponent(channel?.name||''),{cache:'no-store',credentials:'include'});
     if(r.ok){
       const d=await r.json();
       if(d.active) return true;
@@ -733,7 +733,7 @@ async function fetchPlaylistFromWorker() {
   const data = await r.json();
   const list = Array.isArray(data?.tvChannels) ? data.tvChannels : [];
   return list.map(function(c){
-    return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||""};
+    return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||"",accessType:String(c.accessType||"paid").toLowerCase()==="free"?"free":"paid"};
   }).filter(function(c){return c.url;});
 }
 
