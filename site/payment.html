@@ -36,59 +36,72 @@ h3{margin:0 0 14px;font-size:24px;line-height:1.2;font-weight:900}.section-title
 </style>
 
 <style id="msm-mobile-fit-fix">
-/* MsM.Tv compact mobile layout: keep the complete payment gateway visible without page scrolling. */
-html,body{width:100%;min-height:100%;overflow:hidden!important;}
+/* MsM.Tv final mobile layout: matches the supplied premium reference and fills a phone viewport without page scrolling. */
+html,body{width:100%;height:100%;margin:0;overflow:hidden!important;}
+body{overscroll-behavior:none;}
 @media (max-width:700px){
-  body{height:100dvh;overflow:hidden!important;}
-  .wrap{width:100%;height:100dvh;overflow:hidden;padding:5px 7px 6px;zoom:.88;}
-  .hero{height:96px;margin:-5px -7px 8px;padding:9px 11px;gap:8px;border-radius:0 0 22px 22px;}
-  .logoMark{width:56px;height:56px;flex-basis:56px;border-width:2px;}
-  .logoMark:before{width:43px;height:43px;font-size:29px;}
-  .brand .name{font-size:31px;letter-spacing:-1.5px;}
-  .brand .tag{font-size:10px;margin-top:5px;}
-  .heroLine{height:42px;}
-  .heroMsg{font-size:12px;}
-  .card{padding:11px;border-radius:18px;margin:7px 0;}
-  h3{font-size:19px;margin-bottom:8px;}
-  .titleIcon{font-size:21px;}
-  .section-pill{font-size:10px;padding:5px 8px;border-width:1px;}
+  .wrap{width:100%;height:100dvh;overflow:hidden;padding:4px 8px 5px;margin:0;}
+  .hero{height:125px;margin:-4px -8px 7px;padding:10px 12px;gap:9px;border-radius:0 0 24px 24px;}
+  .logoMark{width:64px;height:64px;flex-basis:64px;border-width:2px;}
+  .logoMark:before{width:49px;height:49px;font-size:33px;}
+  .brand .name{font-size:34px;letter-spacing:-1.5px;}
+  .brand .tag{font-size:11px;margin-top:5px;}
+  .heroLine{height:54px;margin-left:2px;}
+  .heroMsg{font-size:12px;line-height:1.2;}
+
+  .card{padding:11px;border-radius:20px;margin:7px 0;}
+  h3{font-size:21px;margin:0 0 9px;line-height:1.15;}
+  .section-title{gap:8px;}
+  .titleIcon{font-size:23px;}
+  .section-pill{font-size:10px;padding:6px 9px;border-width:1.5px;}
+
   #plans{gap:6px;}
-  .plan{min-height:62px;padding:8px 11px;border-radius:15px;border-width:1px;gap:9px;}
-  .plan:before{width:37px;height:37px;font-size:21px;}
-  .plan b{font-size:18px;}
-  .plan .price{font-size:13px;margin-top:2px;}
-  .plan .check{width:28px;height:28px;border-width:2px;font-size:17px;}
-  .methods{gap:5px;margin:5px 0 7px;}
-  .method{width:76px;height:76px;border-width:2px;}
-  .method-label{font-size:14px;margin-top:4px;}
-  .pay-box{margin-top:7px;padding:8px 10px;border-radius:14px;gap:8px;}
-  .phoneIcon{width:38px;height:38px;font-size:21px;}
-  .num{font-size:21px;letter-spacing:.5px;}
-  .payHint{font-size:11px;line-height:1.2;}
-  .copy{padding:9px 12px;font-size:13px;}
-  label{font-size:13px;margin:5px 0 3px;}
-  input{padding:10px 11px;border-radius:11px;font-size:14px;border-width:1px;}
-  .fieldIcon{left:11px;font-size:18px;}
-  .field input{padding-left:38px;}
-  button.submit{padding:11px;border-radius:13px;font-size:16px;margin-top:3px;}
-  .whatsapp-btn{margin-top:6px;padding:10px 11px;border-radius:13px;font-size:14px;}
-  .waIcon{font-size:21px;}
-  .whatsapp-note{font-size:10px;margin-top:4px;}
-  .msg{font-size:11px;margin-top:5px;}
-  .bottomNav{margin-top:6px;padding:6px 2px 4px;border-radius:15px;border-width:1px;}
-  .navItem{font-size:9px;}
-  .navIcon{font-size:18px;margin-bottom:1px;}
-  .footer{font-size:10px;padding-top:4px;}
+  .plan{min-height:78px;padding:9px 12px;border-radius:17px;border-width:2px;gap:10px;}
+  .plan:before{width:43px;height:43px;font-size:24px;}
+  .plan b{font-size:20px;}
+  .plan .price{font-size:14px;margin-top:3px;}
+  .plan .check{width:31px;height:31px;border-width:2px;font-size:18px;}
+
+  .methods{gap:4px;margin:7px 0 9px;}
+  .method{width:88px;height:88px;border-width:3px;}
+  .method-label{font-size:16px;margin-top:5px;}
+  .pay-box{margin-top:8px;padding:10px 12px;border-radius:17px;gap:9px;display:grid;grid-template-columns:44px 1fr auto;}
+  .phoneIcon{width:44px;height:44px;font-size:25px;grid-row:1 / span 2;}
+  .num{font-size:23px;letter-spacing:.5px;}
+  .payHint{font-size:12px;line-height:1.2;}
+  .copy{padding:11px 15px;font-size:14px;border-radius:22px;grid-column:3;grid-row:1 / span 2;}
+
+  label{font-size:16px;margin:7px 0 4px;}
+  input{padding:13px 12px 13px 45px;border-radius:14px;font-size:16px;height:52px;}
+  .fieldIcon{left:13px;font-size:22px;}
+  button.submit{padding:14px;border-radius:16px;font-size:19px;margin-top:7px;height:55px;}
+  .whatsapp-btn{margin-top:8px;padding:13px 12px;border-radius:16px;font-size:17px;height:53px;}
+  .waIcon{font-size:25px;}
+  .whatsapp-note{font-size:12px;margin-top:6px;}
+  .msg{font-size:12px;margin-top:5px;}
+
+  .bottomNav{margin:7px 0 0;padding:9px 3px 7px;border-radius:18px;height:67px;}
+  .navItem{font-size:10px;}
+  .navIcon{font-size:22px;margin-bottom:2px;}
+  .footer{font-size:12px;padding:6px 0 0;}
 }
 @media (max-width:390px){
-  .wrap{zoom:.82;}
-  .heroMsg{display:none;}
-  .heroLine{margin-left:auto;}
-  .method{width:68px;height:68px;}
-  .method-label{font-size:13px;}
-}
-@media (max-height:720px) and (max-width:700px){
-  .wrap{zoom:.78;}
+  .hero{height:116px;}
+  .logoMark{width:58px;height:58px;flex-basis:58px;}
+  .logoMark:before{width:44px;height:44px;font-size:29px;}
+  .brand .name{font-size:30px;}
+  .brand .tag{font-size:9px;}
+  .heroMsg{font-size:10px;}
+  .plan{min-height:72px;}
+  .plan b{font-size:18px;}
+  .plan .price{font-size:13px;}
+  .method{width:78px;height:78px;}
+  .method-label{font-size:14px;}
+  .num{font-size:20px;}
+  .payHint{font-size:11px;}
+  .copy{padding:10px 12px;font-size:13px;}
+  button.submit{font-size:17px;}
+  .whatsapp-btn{font-size:15px;}
 }
 </style>
 </head>
