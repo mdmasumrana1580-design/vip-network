@@ -48,7 +48,7 @@
 
     <section class="content">
       <section id="dashboard" class="section active-section">
-        <div class="page-head"><div><h1>Dashboard</h1><p>MsM.Tv administration overview</p></div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="primary" onclick="showSection('add')">＋ Add Channel</button><button type="button" class="primary" onclick="location.href='payments.html'">💳 Payments</button></div></div>
+        <div class="page-head"><div><h1>Dashboard</h1><p>MsM.Tv administration overview</p></div><button class="primary" onclick="showSection('add')">＋ Add Channel</button></div>
         <div class="stats">
           <div class="stat"><span>▣</span><div><small>Total Channels</small><strong id="totalStat">0</strong></div></div>
           <div class="stat green"><span>●</span><div><small>Active</small><strong id="activeStat">0</strong></div></div>
@@ -84,12 +84,12 @@
       </section>
 
       <section id="channels" class="section">
-        <div class="page-head"><div><h1>Channel Management</h1><p>Add, edit, delete and control your TV channels.</p></div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="primary" onclick="showSection('add')">＋ Add Channel</button><button type="button" class="primary" onclick="location.href='payments.html'">💳 Payments</button></div></div>
+        <div class="page-head"><div><h1>Channel Management</h1><p>Add, edit, delete and control your TV channels.</p></div><button class="primary" onclick="showSection('add')">＋ Add Channel</button></div>
         <div class="panel"><div class="filters"><input id="managerSearch" placeholder="Search channel..."><select id="managerCat"></select><select id="managerStatus"><option>All Status</option><option>Active</option><option>Dead</option><option>Disabled</option></select></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Logo</th><th>Name</th><th>Category</th><th>Status</th><th>Stream URL</th><th>Action</th></tr></thead><tbody id="managerRows"></tbody></table></div></div>
       </section>
 
       <section id="add" class="section"><div class="page-head"><div><h1>Add Channel</h1><p>Add one channel manually.</p></div></div>
-        <form class="form-card" id="channelForm"><label>Channel Name<input name="name" required></label><label>Category<select name="category" id="addCategory"></select></label><label>Logo URL<input name="logo"></label><label>Stream URL<input name="url" required></label><label>Status<select name="status"><option>Active</option><option>Dead</option><option>Disabled</option></select></label><label>Channel Position<input name="position" type="number" min="1" step="1" placeholder="শেষে যোগ করতে খালি রাখুন"><small>যেমন 1 দিলে ১ নম্বরে, 5 দিলে ৫ নম্বরে।</small></label><button class="primary">＋ Save Channel</button></form>
+        <form class="form-card" id="channelForm"><label>Channel Name<input name="name" required></label><label>Category<select name="category" id="addCategory"></select></label><label>Logo URL<input name="logo"></label><label>Stream URL<input name="url" required></label><label>Status<select name="status"><option>Active</option><option>Dead</option><option>Disabled</option></select></label><button class="primary">＋ Save Channel</button></form>
       </section>
 
       <section id="tv-playlist" class="section"><div class="page-head"><div><h1>Live TV / Playlist</h1><p>শুধু Live TV channel playlist আপলোড বা আপডেট করুন। Movie &amp; Series playlist এতে পরিবর্তন হবে না।</p></div></div>
