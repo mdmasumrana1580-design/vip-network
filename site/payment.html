@@ -89,6 +89,18 @@ button.submit{
   box-shadow:0 8px 22px rgba(0,212,255,.16);
 }
 .msg{padding:12px;border-radius:12px;background:#0a1220;margin-top:12px;color:#dbeafe}
+.whatsapp-btn{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+  margin-top:11px;padding:13px 16px;border-radius:14px;
+  background:linear-gradient(90deg,#16a34a,#25d366);
+  color:#fff;text-decoration:none;font-size:16px;font-weight:800;
+  box-shadow:0 8px 22px rgba(37,211,102,.20);
+  border:1px solid rgba(255,255,255,.16);
+  transition:.18s;
+}
+.whatsapp-btn:active{transform:scale(.98)}
+.whatsapp-note{margin:8px 0 0;text-align:center;color:#aebbd0;font-size:13px;line-height:1.45}
+
 .history-item{
   padding:10px 0;border-bottom:1px solid rgba(148,163,184,.15)
 }
@@ -125,6 +137,8 @@ button.submit{
   <label>Transaction ID</label>
   <input id="txn" autocomplete="off" placeholder="Transaction ID">
   <button class="submit" onclick="submitPayment()">✓ Submit Payment</button>
+  <a class="whatsapp-btn" href="https://wa.me/8801315808273?text=Assalamu%20Alaikum%20MsM.Tv%2C%20ami%20payment%20korechi.%20Payment%20screenshot%20pathacchi.%20Amar%20Transaction%20ID%3A%20" target="_blank" rel="noopener">📸 WhatsApp-এ Payment Screenshot দিন</a>
+  <p class="whatsapp-note">Payment submit করার পর screenshot সহ WhatsApp-এ পাঠাতে পারেন।</p>
   <div id="msg"></div>
 </div>
 
