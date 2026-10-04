@@ -1,7 +1,6 @@
 const PLAYLIST_URL = "https://raw.githubusercontent.com/mdmasumrana1580-design/Playlist-/refs/heads/main/Playlist";
 const PLAYLIST_CACHE_KEY = "vip-network-last-good-playlist-v1";
 const PLAYLIST_REFRESH_MS = 10 * 60 * 1000;
-const STREAM_FALLBACK_URL = "https://mp3tourl.com/videos/1789615987340-af8196aa-b471-46d6-b1a6-ce56f31a1da8.mp4";
 const VIP_WORKER_API = window.VIP_WORKER_API || "";
 
 let channels = [];
@@ -347,6 +346,21 @@ function restoreWelcomeAfterBack(){
   showVipControls();
 }
 
+
+const STREAM_PROXY_PATH = "/api/stream-proxy?url=";
+function streamProxyUrl(url){
+  const s = String(url || "").trim();
+  if (!/^https?:\/\//i.test(s)) return s;
+  return STREAM_PROXY_PATH + encodeURIComponent(s);
+}
+function streamSourceUrl(url){
+  const s = String(url || "").trim();
+  // Browser pages served over HTTPS cannot load HTTP media directly.
+  // Route HTTP/HTTPS streams through the Worker proxy so HLS/DASH and
+  // direct video files get a consistent CORS-safe URL.
+  return streamProxyUrl(s);
+}
+
 function play(c, clickedCard, retryOriginal) {
   currentChannelIndex = visibleChannels.indexOf(c);
   if (welcomeVideo) welcomeVideo.classList.add("welcome-hidden");
@@ -372,9 +386,8 @@ function play(c, clickedCard, retryOriginal) {
   video.muted = false;
   video.volume = 1;
 
-  const originalUrl = c.url;
-  let fallbackUsed = !retryOriginal && c._usingFallback === true;
-  const sourceUrl = fallbackUsed ? STREAM_FALLBACK_URL : originalUrl;
+  const originalUrl = String(c.url || '').trim();
+  const sourceUrl = streamSourceUrl(originalUrl);
 
   function showPlaybackError() {
     const note = document.getElementById("note");
@@ -382,35 +395,21 @@ function play(c, clickedCard, retryOriginal) {
     note.style.display = "block";
   }
 
-  function switchToFallback() {
-    if (fallbackUsed) {
-      showPlaybackError();
-      return;
-    }
-    fallbackUsed = true;
-    c._usingFallback = true;
-    if (hls) {
-      try { hls.destroy(); } catch (e) {}
-      hls = null;
-    }
-    video.pause();
-    video.removeAttribute("src");
-    video.load();
-    video.src = STREAM_FALLBACK_URL;
-    video.addEventListener("loadedmetadata", startPlayback, {once:true});
-    video.addEventListener("canplay", startPlayback, {once:true});
-    startPlayback();
-  }
-
   function startPlayback() {
     const p = video.play();
-    if (p && p.catch) p.catch(function () {
-      if (!fallbackUsed) switchToFallback();
-      else showPlaybackError();
-    });
+    if (p && p.catch) p.catch(function () { showPlaybackError(); });
   }
 
-  if (/\.m3u8(\?|$)/i.test(sourceUrl) && window.Hls && Hls.isSupported()) {
+  const isHlsSource = /\.m3u8(?:\?|$)/i.test(originalUrl) || /\.m3u8(?:\?|$)/i.test(sourceUrl);
+  const isDashSource = /\.mpd(?:\?|$)/i.test(originalUrl) || /\.mpd(?:\?|$)/i.test(sourceUrl);
+  const isUnsupportedBrowserProtocol = /^(?:rtmp|rtsp|hls):\/\//i.test(originalUrl);
+  if (isUnsupportedBrowserProtocol) {
+    document.getElementById("note").textContent = "এই stream protocol browser-এ সরাসরি চলে না (RTMP/RTSP)। HLS/DASH/HTTP/HTTPS link ব্যবহার করুন।";
+    document.getElementById("note").style.display = "block";
+    return;
+  }
+
+  if (isHlsSource && window.Hls && Hls.isSupported()) {
     hls = new Hls({ enableWorker:true, lowLatencyMode:true, backBufferLength:30 });
     hls.attachMedia(video);
     hls.on(Hls.Events.MEDIA_ATTACHED, function () {
@@ -428,16 +427,34 @@ function play(c, clickedCard, retryOriginal) {
       } else {
         try { hls.destroy(); } catch (e) {}
         hls = null;
-        switchToFallback();
+        showPlaybackError();
       }
     });
+  } else if (isDashSource && window.dashjs && dashjs.MediaPlayer.isSupported()) {
+    try {
+      const player = dashjs.MediaPlayer().create();
+      window.vipDashPlayer = player;
+      player.initialize(video, sourceUrl, true);
+      player.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, startPlayback);
+      player.on(dashjs.MediaPlayer.events.ERROR, function () {
+        try { player.reset(); } catch (e) {}
+        window.vipDashPlayer = null;
+        showPlaybackError();
+      });
+    } catch (e) {
+      video.src = sourceUrl;
+      video.addEventListener("loadedmetadata", startPlayback, {once:true});
+      video.addEventListener("error", function () {
+        showPlaybackError();
+      }, {once:true});
+      startPlayback();
+    }
   } else {
     video.src = sourceUrl;
     video.addEventListener("loadedmetadata", startPlayback, {once:true});
     video.addEventListener("canplay", startPlayback, {once:true});
     video.addEventListener("error", function () {
-      if (!fallbackUsed) switchToFallback();
-      else showPlaybackError();
+      showPlaybackError();
     }, {once:true});
     startPlayback();
   }
@@ -687,14 +704,9 @@ async function refreshVipPlaylist() {
     if (!fresh.length) fresh = await fetchPlaylistFromGithub();
     try { fresh = fresh.concat(await fetchMoviePlaylistFromWorker()); } catch(e) { console.warn('Movie playlist refresh unavailable',e); }
     const oldCurrentName = currentChannelName ? currentChannelName() : "";
-    const oldWasFallback = currentChannelUrl ? currentChannelUrl() === STREAM_FALLBACK_URL : false;
     channels = fresh;
     saveLastGoodPlaylist(fresh);
     render();
-    if (oldCurrentName && oldWasFallback) {
-      const updated = channels.find(function(c){ return c.name === oldCurrentName; });
-      if (updated) play(updated, null, true);
-    }
     console.log("VIP playlist auto-refreshed:", channels.length);
     return true;
   } catch (e) {
