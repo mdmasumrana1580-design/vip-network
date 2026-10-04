@@ -1,7 +1,6 @@
 const PLAYLIST_URL = "https://raw.githubusercontent.com/mdmasumrana1580-design/Playlist-/refs/heads/main/Playlist";
 const PLAYLIST_CACHE_KEY = "vip-network-last-good-playlist-v1";
 const PLAYLIST_REFRESH_MS = 10 * 60 * 1000;
-const STREAM_FALLBACK_URL = "https://mp3tourl.com/videos/1789615987340-af8196aa-b471-46d6-b1a6-ce56f31a1da8.mp4";
 const VIP_WORKER_API = window.VIP_WORKER_API || "";
 
 let channels = [];
@@ -287,21 +286,30 @@ function render() {
   });
 }
 
+const STREAM_PROXY_PATH = "/api/stream-proxy?url=";
+function streamProxyUrl(url){
+  const s = String(url || "").trim();
+  if (!/^https?:\/\//i.test(s)) return s;
+  return STREAM_PROXY_PATH + encodeURIComponent(s);
+}
+function streamSourceUrl(url){
+  const s = String(url || "").trim();
+  return streamProxyUrl(s);
+}
+
 function play(c, clickedCard, retryOriginal) {
   currentChannelIndex = visibleChannels.indexOf(c);
   if (welcomeVideo) welcomeVideo.classList.add("welcome-hidden");
   if (videoBox) videoBox.classList.remove("welcome-active");
   const liveBadge = document.getElementById("liveBadge");
   if (liveBadge) liveBadge.style.display = "flex";
-
   section.hidden = false;
+  pushVipPlayerHistory();
   document.getElementById("playerTitle").textContent = c.name;
   document.getElementById("note").style.display = "none";
 
-  if (hls) {
-    try { hls.destroy(); } catch (e) {}
-    hls = null;
-  }
+  if (hls) { try { hls.destroy(); } catch (e) {} hls = null; }
+  if (window.vipDashPlayer) { try { window.vipDashPlayer.reset(); } catch (e) {} window.vipDashPlayer = null; }
 
   video.pause();
   video.removeAttribute("src");
@@ -311,55 +319,32 @@ function play(c, clickedCard, retryOriginal) {
   video.muted = false;
   video.volume = 1;
 
-  const originalUrl = c.url;
-  let fallbackUsed = !retryOriginal && c._usingFallback === true;
-  const sourceUrl = fallbackUsed ? STREAM_FALLBACK_URL : originalUrl;
-
-  function showPlaybackError() {
-    const note = document.getElementById("note");
-    note.textContent = "ভিডিও চালু করা যাচ্ছে না।";
+  const originalUrl = String(c.url || "").trim();
+  const sourceUrl = streamSourceUrl(originalUrl);
+  const note = document.getElementById("note");
+  function showPlaybackError(msg) {
+    note.textContent = msg || "ভিডিও চালু করা যাচ্ছে না।";
     note.style.display = "block";
   }
-
-  function switchToFallback() {
-    if (fallbackUsed) {
-      showPlaybackError();
-      return;
-    }
-    fallbackUsed = true;
-    c._usingFallback = true;
-    if (hls) {
-      try { hls.destroy(); } catch (e) {}
-      hls = null;
-    }
-    video.pause();
-    video.removeAttribute("src");
-    video.load();
-    video.src = STREAM_FALLBACK_URL;
-    video.addEventListener("loadedmetadata", startPlayback, {once:true});
-    video.addEventListener("canplay", startPlayback, {once:true});
-    startPlayback();
-  }
-
   function startPlayback() {
     const p = video.play();
-    if (p && p.catch) p.catch(function () {
-      if (!fallbackUsed) switchToFallback();
-      else showPlaybackError();
-    });
+    if (p && p.catch) p.catch(function () { showPlaybackError("ভিডিও চালু করা যাচ্ছে না।"); });
   }
 
-  if (/\.m3u8(\?|$)/i.test(sourceUrl) && window.Hls && Hls.isSupported()) {
+  if (!originalUrl) { showPlaybackError("Stream link নেই।"); return; }
+  if (/^(?:rtmp|rtsp|hls):\/\//i.test(originalUrl)) {
+    showPlaybackError("এই stream protocol browser-এ সরাসরি চলে না। HLS (.m3u8), DASH (.mpd), HTTP/HTTPS video link ব্যবহার করুন।");
+    return;
+  }
+
+  const isHlsSource = /\.m3u8(?:\?|$)/i.test(originalUrl);
+  const isDashSource = /\.mpd(?:\?|$)/i.test(originalUrl);
+
+  if (isHlsSource && window.Hls && Hls.isSupported()) {
     hls = new Hls({ enableWorker:true, lowLatencyMode:true, backBufferLength:30 });
     hls.attachMedia(video);
-    hls.on(Hls.Events.MEDIA_ATTACHED, function () {
-      if (hls) hls.loadSource(sourceUrl);
-    });
-    hls.on(Hls.Events.MANIFEST_PARSED, function () {
-      video.muted = false;
-      video.volume = 1;
-      startPlayback();
-    });
+    hls.on(Hls.Events.MEDIA_ATTACHED, function () { if (hls) hls.loadSource(sourceUrl); });
+    hls.on(Hls.Events.MANIFEST_PARSED, function () { startPlayback(); });
     hls.on(Hls.Events.ERROR, function (_event, data) {
       if (!data || !data.fatal || !hls) return;
       if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
@@ -367,19 +352,33 @@ function play(c, clickedCard, retryOriginal) {
       } else {
         try { hls.destroy(); } catch (e) {}
         hls = null;
-        switchToFallback();
+        showPlaybackError();
       }
     });
-  } else {
-    video.src = sourceUrl;
-    video.addEventListener("loadedmetadata", startPlayback, {once:true});
-    video.addEventListener("canplay", startPlayback, {once:true});
-    video.addEventListener("error", function () {
-      if (!fallbackUsed) switchToFallback();
-      else showPlaybackError();
-    }, {once:true});
-    startPlayback();
+    return;
   }
+
+  if (isDashSource && window.dashjs && dashjs.MediaPlayer.isSupported()) {
+    try {
+      const player = dashjs.MediaPlayer().create();
+      window.vipDashPlayer = player;
+      player.initialize(video, sourceUrl, true);
+      player.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, startPlayback);
+      player.on(dashjs.MediaPlayer.events.ERROR, function () {
+        try { player.reset(); } catch (e) {}
+        window.vipDashPlayer = null;
+        showPlaybackError();
+      });
+    } catch (e) { showPlaybackError(); }
+    return;
+  }
+
+  // Direct MP4/WebM/TS and other HTTP(S) media go through the Worker proxy.
+  video.src = sourceUrl;
+  video.addEventListener("loadedmetadata", startPlayback, {once:true});
+  video.addEventListener("canplay", startPlayback, {once:true});
+  video.addEventListener("error", function () { showPlaybackError(); }, {once:true});
+  startPlayback();
 }
 
 function isNativeFullscreen() {
@@ -555,16 +554,11 @@ async function refreshVipPlaylist() {
   try {
     const fresh = await fetchPlaylistFromGithub();
     const oldCurrentName = currentChannelName ? currentChannelName() : "";
-    const oldWasFallback = currentChannelUrl ? currentChannelUrl() === STREAM_FALLBACK_URL : false;
 
     channels = fresh;
     saveLastGoodPlaylist(fresh);
     render();
 
-    if (oldCurrentName && oldWasFallback) {
-      const updated = channels.find(function(c){ return c.name === oldCurrentName; });
-      if (updated) play(updated, null, true);
-    }
 
     console.log("VIP playlist auto-refreshed:", channels.length);
     return true;
