@@ -139,18 +139,6 @@ async function initGuestTracker(){
       return true;
     };
     const guestRegister = await fetch(api+'/api/guest/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceName}),cache:'no-store'}).catch(()=>null);
-    if (guestRegister && guestRegister.ok) {
-      try {
-        const access = await fetch(api+'/api/payment/access',{credentials:'include',cache:'no-store'}).then(r=>r.json());
-        if (access && access.ok && access.active === false && access.blocked !== true) {
-          const here = location.pathname.replace(/\/$/,'');
-          if (here !== '/payment.html') {
-            location.replace('/payment.html');
-            return;
-          }
-        }
-      } catch(e) { console.warn('Payment access check unavailable',e); }
-    }
     send(); setInterval(send,5*60*1000);
   }catch(e){console.warn('Guest ID unavailable',e)}
 }
@@ -305,8 +293,28 @@ function render() {
       '<div class="circle">' + icon + '</div>' +
       '<div class="label">' + esc(c.name) + '</div>';
 
-    el.addEventListener("click", function () {
-      play(c, el);
+    el.addEventListener("click", async function () {
+      if (el.dataset.paymentChecking === "1") return;
+      el.dataset.paymentChecking = "1";
+      try {
+        const api = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/,"");
+        const accessRes = await fetch(api + "/api/payment/access", {credentials:"include", cache:"no-store"});
+        const access = await accessRes.json().catch(function(){ return null; });
+        if (access && access.ok && access.blocked === true) {
+          if (typeof window.VIP_SHOW_BLOCKED_PAGE === "function") window.VIP_SHOW_BLOCKED_PAGE();
+          return;
+        }
+        if (access && access.ok && access.active === false) {
+          location.href = "/payment.html";
+          return;
+        }
+        play(c, el);
+      } catch (e) {
+        console.warn("Payment access check unavailable", e);
+        play(c, el);
+      } finally {
+        el.dataset.paymentChecking = "0";
+      }
     });
 
     grid.appendChild(el);
