@@ -349,7 +349,15 @@ function play(c, clickedCard, retryOriginal) {
     });
   }
 
-  if (/\.m3u8(\?|$)/i.test(sourceUrl) && window.Hls && Hls.isSupported()) {
+  if (/\.m3u8(\?|$)/i.test(sourceUrl) && video.canPlayType && video.canPlayType("application/vnd.apple.mpegurl")) {
+    video.src = sourceUrl;
+    video.addEventListener("loadedmetadata", startPlayback, {once:true});
+    video.addEventListener("error", function () {
+      if (!fallbackUsed) switchToFallback();
+      else showPlaybackError();
+    }, {once:true});
+    startPlayback();
+  } else if (/\.m3u8(\?|$)/i.test(sourceUrl) && window.Hls && Hls.isSupported()) {
     hls = new Hls({ enableWorker:true, lowLatencyMode:true, backBufferLength:30 });
     hls.attachMedia(video);
     hls.on(Hls.Events.MEDIA_ATTACHED, function () {
