@@ -138,7 +138,19 @@ async function initGuestTracker(){
       }catch(e){console.warn('Guest tracker unavailable',e)}
       return true;
     };
-    await fetch(api+'/api/guest/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceName}),cache:'no-store'}).catch(()=>{});
+    const guestRegister = await fetch(api+'/api/guest/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceName}),cache:'no-store'}).catch(()=>null);
+    if (guestRegister && guestRegister.ok) {
+      try {
+        const access = await fetch(api+'/api/payment/access',{credentials:'include',cache:'no-store'}).then(r=>r.json());
+        if (access && access.ok && access.active === false && access.blocked !== true) {
+          const here = location.pathname.replace(/\/$/,'');
+          if (here !== '/payment.html') {
+            location.replace('/payment.html');
+            return;
+          }
+        }
+      } catch(e) { console.warn('Payment access check unavailable',e); }
+    }
     send(); setInterval(send,5*60*1000);
   }catch(e){console.warn('Guest ID unavailable',e)}
 }
