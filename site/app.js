@@ -216,24 +216,11 @@ function esc(value) {
 }
 
 function catFor(name, group) {
-  const n = String(name || "").trim().toLowerCase();
-  const g = String(group || "").trim().toLowerCase();
-
-  // Explicit playlist/group category always wins over name-based detection.
-  // This prevents live Indian channels such as Zee Cinema/Jalsha Movies/B4U Movie
-  // from being moved into MOVIE & SERIES just because their channel name contains
-  // words like "movie" or "cinema".
-  if (/^movie\s*&?\s*series$|^movies?\s*(and|&)\s*series$|^movie|^series$/.test(g)) return "MOVIE & SERIES";
-  if (/india|indian/.test(g)) return "INDIA";
-  if (/sport|cricket|football|fifa|espn|bein|wwe|golf|nfl|nba/.test(g)) return "SPORTS";
-  if (/bangladesh|\bbd\b|bangla/.test(g)) return "BD";
-  if (/^other(s)?$/.test(g)) return "OTHER";
-
-  const text = n + " " + g;
+  const text = ((name || "") + " " + (group || "")).toLowerCase();
+    if (/movie|movies|film|series|web\s*series|ott|cinema|flix/.test(text)) return "MOVIE & SERIES";
   if (/sport|cricket|football|fifa|espn|bein|wwe|golf|nfl|nba|ten\s*cricket|ptv\s*sports/.test(text)) return "SPORTS";
   if (/bangladesh|\bbd\b|bangla|somoy|jamuna|ekattor|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi\s*tv|btv|duronto|deepto|nagorik|mohona|asian\s*tv|desh\s*tv|bijoy\s*tv|mytv|satv|ekushey/.test(text)) return "BD";
   if (/india|indian|sony|zee|star|colors|set\b|sab\b|aaj\s*tak|ndtv|republic|news18|times\s*now|india\s*tv|dd\s*(national|sports)|sun\s*tv|asianet|vijay|jaya|starplus|star\s*gold|sony\s*(max|pix|wah|yay|pal)|&pictures|b4u|movies\s*now|mnx|hbo\s*india/.test(text)) return "INDIA";
-  if (/movie|movies|film|series|web\s*series|ott|cinema|flix/.test(n)) return "MOVIE & SERIES";
   return "OTHER";
 }
 function parseM3U(text) {
@@ -340,61 +327,8 @@ function restoreWelcomeAfterBack(){
   showVipControls();
 }
 
-
-function loadDashJs() {
-  return new Promise(function(resolve, reject) {
-    if (window.dashjs) return resolve(window.dashjs);
-    const existing = document.querySelector('script[data-msm-dashjs]');
-    if (existing) {
-      existing.addEventListener('load', function(){ resolve(window.dashjs); }, {once:true});
-      existing.addEventListener('error', reject, {once:true});
-      return;
-    }
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/dashjs@latest/dist/dash.all.min.js';
-    s.async = true;
-    s.dataset.msmDashjs = '1';
-    s.onload = function(){ window.dashjs ? resolve(window.dashjs) : reject(new Error('dash.js unavailable')); };
-    s.onerror = reject;
-    document.head.appendChild(s);
-  });
-}
-
-function isHlsUrl(url) {
-  return /\.m3u8(?:[?#]|$)/i.test(String(url || ''));
-}
-
-function isDashUrl(url) {
-  return /\.mpd(?:[?#]|$)/i.test(String(url || ''));
-}
-
-function isNativeVideoUrl(url) {
-  return /\.(mp4|m4v|webm|ogv|ogg)(?:[?#]|$)/i.test(String(url || ''));
-}
-
-
-async function vipPaymentGate(channel){
-  try{
-    const base=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');
-    const r=await fetch(base+'/api/payment/access',{cache:'no-store',credentials:'include'});
-    if(r.ok){
-      const d=await r.json();
-      if(d.active) return true;
-    }
-  }catch(e){ console.warn('Payment access check failed',e); }
-  try{
-    localStorage.setItem('vip_pending_channel',JSON.stringify({name:channel?.name||'',url:channel?.url||'',time:Date.now()}));
-  }catch(e){}
-  location.href='/payment.html';
-  return false;
-}
-
-async function play(c, clickedCard, retryOriginal) {
-  if(!(await vipPaymentGate(c))) return;
+function play(c, clickedCard, retryOriginal) {
   currentChannelIndex = visibleChannels.indexOf(c);
-  const isMovieSeries = String(c && c.cat || "").toUpperCase() === "MOVIE & SERIES";
-  if (videoBox) videoBox.classList.toggle("movie-series-player", isMovieSeries);
-  video.controls = isMovieSeries;
   if (welcomeVideo) welcomeVideo.classList.add("welcome-hidden");
   if (videoBox) videoBox.classList.remove("welcome-active");
   const liveBadge = document.getElementById("liveBadge");
@@ -456,20 +390,15 @@ async function play(c, clickedCard, retryOriginal) {
     });
   }
 
-  const onNativeError = function () {
-    if (!fallbackUsed) switchToFallback();
-    else showPlaybackError();
-  };
-
-  // HLS: use hls.js where needed, otherwise let Safari/compatible browsers
-  // use their native HLS implementation.
-  if (isHlsUrl(sourceUrl) && window.Hls && Hls.isSupported()) {
+  if (/\.m3u8(\?|$)/i.test(sourceUrl) && window.Hls && Hls.isSupported()) {
     hls = new Hls({ enableWorker:true, lowLatencyMode:true, backBufferLength:30 });
     hls.attachMedia(video);
     hls.on(Hls.Events.MEDIA_ATTACHED, function () {
       if (hls) hls.loadSource(sourceUrl);
     });
     hls.on(Hls.Events.MANIFEST_PARSED, function () {
+      video.muted = false;
+      video.volume = 1;
       startPlayback();
     });
     hls.on(Hls.Events.ERROR, function (_event, data) {
@@ -482,72 +411,20 @@ async function play(c, clickedCard, retryOriginal) {
         switchToFallback();
       }
     });
-  } else if (isDashUrl(sourceUrl)) {
-    // MPEG-DASH (.mpd) support. dash.js is loaded only when needed.
-    loadDashJs().then(function (dashjs) {
-      try {
-        const player = dashjs.MediaPlayer().create();
-        c._dashPlayer = player;
-        player.initialize(video, sourceUrl, false);
-        player.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, startPlayback);
-        player.on(dashjs.MediaPlayer.events.ERROR, function () {
-          if (c._dashPlayer) {
-            try { c._dashPlayer.reset(); } catch (e) {}
-            c._dashPlayer = null;
-          }
-          if (!fallbackUsed) switchToFallback();
-          else showPlaybackError();
-        });
-        startPlayback();
-      } catch (e) {
-        if (!fallbackUsed) switchToFallback();
-        else showPlaybackError();
-      }
-    }).catch(function () {
-      if (!fallbackUsed) switchToFallback();
-      else showPlaybackError();
-    });
   } else {
-    // Native browser video formats such as MP4, WebM and OGG.
     video.src = sourceUrl;
     video.addEventListener("loadedmetadata", startPlayback, {once:true});
     video.addEventListener("canplay", startPlayback, {once:true});
-    video.addEventListener("error", onNativeError, {once:true});
+    video.addEventListener("error", function () {
+      if (!fallbackUsed) switchToFallback();
+      else showPlaybackError();
+    }, {once:true});
     startPlayback();
   }
 }
 
-function isMovieSeriesPlayer() {
-  return !!(videoBox && videoBox.classList.contains("movie-series-player"));
-}
-
-function isMovieSeriesVideoFullscreen() {
-  return isMovieSeriesPlayer() && !!(document.fullscreenElement === video || document.webkitFullscreenElement === video);
-}
-
 async function requestNativeFullscreen() {
   if (!videoBox) return;
-
-  // Movie & Series uses the browser's native video controls. Fullscreen the
-  // actual <video> element so Android/Chrome can restore the exact inline
-  // player geometry when Back/Exit Fullscreen is pressed. TV keeps the
-  // existing container-fullscreen implementation below unchanged.
-  if (isMovieSeriesPlayer()) {
-    try {
-      if (video.requestFullscreen) {
-        await video.requestFullscreen({navigationUI:"hide"});
-      } else if (video.webkitRequestFullscreen) {
-        video.webkitRequestFullscreen();
-      }
-    } catch (e) {}
-    try {
-      if (screen.orientation && screen.orientation.lock) {
-        await screen.orientation.lock("landscape");
-      }
-    } catch (e) {}
-    return;
-  }
-
   try {
     if (videoBox.requestFullscreen) {
       await videoBox.requestFullscreen({navigationUI:"hide"});
@@ -573,14 +450,11 @@ async function exitNativeFullscreen() {
     if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
     else if (document.webkitFullscreenElement && document.webkitExitFullscreen) document.webkitExitFullscreen();
   } catch (e) {}
-
-  // Native Movie & Series fullscreen owns the video element, so do not force
-  // the TV/container fullscreen classes onto it during the exit transition.
-  if (videoBox && !isMovieSeriesVideoFullscreen()) {
+  if (videoBox) {
     videoBox.classList.remove("vip-css-fullscreen","vip-fullscreen","is-fullscreen","vip-orientation-fallback");
   }
   try {
-    if (screen.orientation && screen.orientation.unlock) await screen.orientation.unlock();
+    if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
   } catch (e) {}
 }
 
@@ -601,19 +475,12 @@ async function toggleNativeFullscreen() {
 
 function setFullscreenButtonState() {
   const isFs = isNativeFullscreen();
-  const movieNativeFs = isMovieSeriesVideoFullscreen();
   if (videoBox) {
-    // For Movie & Series native video fullscreen, the browser owns the
-    // fullscreen viewport. Do not mirror that state onto the parent container.
-    if (!movieNativeFs) {
-      videoBox.classList.toggle("vip-fullscreen", isFs);
-      videoBox.classList.toggle("is-fullscreen", isFs);
-      videoBox.classList.toggle("vip-css-fullscreen", isFs);
-    } else {
-      videoBox.classList.remove("vip-fullscreen","is-fullscreen","vip-css-fullscreen","vip-orientation-fallback");
-    }
+    videoBox.classList.toggle("vip-fullscreen", isFs);
+    videoBox.classList.toggle("is-fullscreen", isFs);
+    videoBox.classList.toggle("vip-css-fullscreen", isFs);
   }
-  document.body.classList.toggle("vip-player-fullscreen", isFs && !movieNativeFs);
+  document.body.classList.toggle("vip-player-fullscreen", isFs);
   const controls = document.getElementById("landscapeChannelControls");
   if (controls) controls.setAttribute("aria-hidden", isFs ? "false" : "true");
 }
@@ -679,11 +546,9 @@ function closePlayer() {
     hls.destroy();
     hls = null;
   }
-  try { if (video && video._dashPlayer) video._dashPlayer.reset(); } catch(e) {}
+
   video.pause();
   video.removeAttribute("src");
-  video.removeAttribute("controls");
-  if (videoBox) videoBox.classList.remove("movie-series-player");
   video.load();
 }
 
@@ -725,13 +590,10 @@ async function fetchMoviePlaylistFromWorker(){const apiBase=(window.VIP_WORKER_A
 async function fetchPlaylistFromWorker() {
   const apiBase = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/, "");
   if (!apiBase) return [];
-  // Read the dedicated TV list from the Worker state.
-  // Do not use /api/playlist here because that endpoint may also contain
-  // the separate Movie & Series list. TV and Movie playlists must stay isolated.
-  const r = await fetch(apiBase + "/api/state", {cache:"no-store"});
-  if (!r.ok) throw new Error("Worker state load failed: " + r.status);
+  const r = await fetch(apiBase + "/api/playlist", {cache:"no-store"});
+  if (!r.ok) throw new Error("Worker playlist load failed: " + r.status);
   const data = await r.json();
-  const list = Array.isArray(data?.tvChannels) ? data.tvChannels : [];
+  const list = Array.isArray(data?.channels) ? data.channels : [];
   return list.map(function(c){
     return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||""};
   }).filter(function(c){return c.url;});
@@ -908,4 +770,34 @@ document.addEventListener("DOMContentLoaded", function(){
     touchStartAt = 0;
     touchMoved = false;
   }, {passive:true});
+})();
+
+
+// VIP-Network: Disable Android/Chrome long-press image menu on channel logos.
+// Keeps normal single-tap channel selection working because the handler only
+// cancels browser image actions, not the card click handler.
+(function preventChannelLogoLongPressMenu(){
+  function isChannelLogo(target){
+    return !!(target && target.closest && target.closest('.card img'));
+  }
+
+  function blockImageAction(e){
+    if (!isChannelLogo(e.target)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }
+
+  ['contextmenu', 'selectstart', 'dragstart'].forEach(function(type){
+    document.addEventListener(type, blockImageAction, true);
+  });
+
+  document.addEventListener('touchstart', function(e){
+    var img = e.target && e.target.closest ? e.target.closest('.card img') : null;
+    if (!img) return;
+    img.style.webkitTouchCallout = 'none';
+    img.style.webkitUserSelect = 'none';
+    img.style.userSelect = 'none';
+    img.style.webkitUserDrag = 'none';
+  }, {capture:true, passive:true});
 })();
