@@ -411,24 +411,30 @@ async function handle(r, e) {
     }
     if (user?.activeSessionToken) await kv(e).delete(USER_SESSION_PREFIX + user.activeSessionToken);
 
-    // Keep the physical device record so the same browser/device can immediately
-    // return as Guest and see the payment gate again. Only remove account ownership
-    // and subscription data; do not delete the device itself.
-    const keptDevices = devices.map(d => {
+    // Keep the physical device records so the same browser/device can immediately
+    // re-enter as Guest after the account is deleted. Removing the device record
+    // can race with the site's guest-registration flow and leave the old session
+    // without a device record, which can hide the payment gate.
+    const resetDevices = devices.map(d => {
       if (!deviceIds.has(String(d.deviceId || ''))) return d;
-      const next = { ...d };
-      delete next.userId;
-      delete next.subscriptionExpiresAt;
-      delete next.subscriptionUpdatedAt;
-      delete next.subscriptionPlan;
-      delete next.activeSessionToken;
-      next.userName = 'Guest';
-      next.username = 'Guest';
-      next.number = '';
-      next.status = 'Logged in';
-      next.approved = true;
-      next.blocked = false;
-      return next;
+      const now = new Date().toISOString();
+      return {
+        ...d,
+        userId: null,
+        userName: 'Guest',
+        username: 'Guest',
+        number: '',
+        subscriptionExpiresAt: 0,
+        subscriptionUpdatedAt: 0,
+        subscriptionPlan: '',
+        activeSessionToken: '',
+        approved: true,
+        blocked: !!d.blocked,
+        status: d.blocked ? 'Blocked' : 'Guest',
+        lastSeen: now,
+        lastLoginAt: now,
+        lastLoginBD: bangladeshTime(now)
+      };
     });
     const keptUsers = item.userId ? users.filter(x => x.id !== item.userId) : users;
     const keptPayments = payments.filter(x => {
@@ -437,7 +443,7 @@ async function handle(r, e) {
       return x.id !== id;
     });
 
-    await saveDevices(e, keptDevices);
+    await saveDevices(e, resetDevices);
     await saveUsers(e, keptUsers);
     await savePayments(e, keptPayments);
 
