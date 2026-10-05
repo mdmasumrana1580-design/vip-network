@@ -118,6 +118,19 @@ async function initVisitorCounter() {
 
 initVisitorCounter();
 
+// Login-free guest identification: creates the user session required by the payment flow.
+async function initGuestTracker(){
+  try{
+    const key='vip-guest-visitor-id';
+    let visitorId=localStorage.getItem(key);
+    if(!visitorId){visitorId=(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now());localStorage.setItem(key,visitorId)}
+    const api=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');
+    const deviceName=(navigator.userAgentData?.platform||navigator.platform||'Guest Browser')+' / '+(navigator.userAgentData?.mobile?'Mobile':'Browser');
+    await fetch(api+'/api/guest/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceId:window.VIP_DEVICE_ID||visitorId,deviceName}),credentials:'include',cache:'no-store'});
+  }catch(e){console.warn('Guest session unavailable',e)}
+}
+initGuestTracker();
+
 // Premium overlay controls: click/tap the video to show, tap again to hide.
 const vipVideoBox = document.getElementById("vipVideoBox");
 const vipBottomControls = document.getElementById("vipBottomControls");
@@ -274,13 +287,22 @@ function render() {
     const icon = c.logo
       ? '<img src="' + esc(c.logo) + '" alt="" loading="lazy">'
       : "<span>TV</span>";
+    const paidBadge = c.paid === true && window.vipPaymentActive !== true ? '<img class="paid-badge" src="paid-badge.png" alt="Paid">' : '';
 
     el.innerHTML =
-      '<div class="circle">' + icon + '</div>' +
+      '<div class="circle">' + icon + paidBadge + '</div>' +
       '<div class="label">' + esc(c.name) + '</div>';
 
-    el.addEventListener("click", function () {
-      play(c, el);
+    el.addEventListener("click", async function () {
+      if(c.paid!==true){ play(c,el); return; }
+      try{
+        const api=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,"");
+        const r=await fetch(api+"/api/payment/access",{credentials:"include",cache:"no-store"});
+        const a=await r.json().catch(()=>null);
+        if(a&&a.ok&&a.blocked){ if(typeof window.VIP_SHOW_BLOCKED_PAGE==="function") window.VIP_SHOW_BLOCKED_PAGE(); return; }
+        if(!a||a.active!==true){ location.href="payment.html?channel="+encodeURIComponent(c.name); return; }
+        window.vipPaymentActive=true; play(c,el);
+      }catch(e){ location.href="payment.html?channel="+encodeURIComponent(c.name); }
     });
 
     grid.appendChild(el);
@@ -514,18 +536,7 @@ function loadLastGoodPlaylist() {
 }
 
 async function loadVipPlaylist() {
-  try {
-    const fresh = await fetchPlaylistFromGithub();
-    saveLastGoodPlaylist(fresh);
-    return fresh;
-  } catch (githubError) {
-    console.warn("GitHub playlist unavailable; using last successful playlist.", githubError);
-  }
-
-  const cached = loadLastGoodPlaylist();
-  if (cached.length) return cached;
-
-  const apiBase = (window.VIP_WORKER_API || "").replace(/\/$/, "");
+  const apiBase = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/, "");
   if (apiBase) {
     try {
       const r = await fetch(apiBase + "/api/playlist", {cache:"no-store"});
@@ -533,39 +544,48 @@ async function loadVipPlaylist() {
         const data = await r.json();
         const list = Array.isArray(data?.channels) ? data.channels : [];
         if (list.length) {
-          return list.map(function(c){
-            return {
-              name:c.name||"Live Channel",
-              cat:catFor(c.name,c.category),
-              url:c.url||"",
-              logo:c.logo||""
-            };
+          const managed = list.map(function(c){
+            return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||"",paid:c.paid===true};
           }).filter(c=>c.url);
+          if (managed.length) { saveLastGoodPlaylist(managed); return managed; }
         }
       }
-    } catch (e) {
-      console.warn("Worker playlist bootstrap unavailable.", e);
-    }
+    } catch (e) { console.warn("Worker playlist unavailable; trying GitHub.", e); }
   }
-
+  try {
+    const fresh = await fetchPlaylistFromGithub();
+    saveLastGoodPlaylist(fresh);
+    return fresh;
+  } catch (githubError) {
+    console.warn("GitHub playlist unavailable; using last successful playlist.", githubError);
+  }
+  const cached = loadLastGoodPlaylist();
+  if (cached.length) return cached;
   throw new Error("Playlist load failed");
 }
 
 async function refreshVipPlaylist() {
   try {
-    const fresh = await fetchPlaylistFromGithub();
+    const apiBase = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/, "");
+    let fresh = [];
+    try {
+      const r = await fetch(apiBase + "/api/playlist", {cache:"no-store"});
+      if (r.ok) {
+        const data = await r.json();
+        const list = Array.isArray(data?.channels) ? data.channels : [];
+        fresh = list.map(function(c){ return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||"",paid:c.paid===true}; }).filter(c=>c.url);
+      }
+    } catch (e) {}
+    if (!fresh.length) fresh = await fetchPlaylistFromGithub();
     const oldCurrentName = currentChannelName ? currentChannelName() : "";
     const oldWasFallback = currentChannelUrl ? currentChannelUrl() === STREAM_FALLBACK_URL : false;
-
     channels = fresh;
     saveLastGoodPlaylist(fresh);
     render();
-
     if (oldCurrentName && oldWasFallback) {
       const updated = channels.find(function(c){ return c.name === oldCurrentName; });
       if (updated) play(updated, null, true);
     }
-
     console.log("VIP playlist auto-refreshed:", channels.length);
     return true;
   } catch (e) {
@@ -662,3 +682,5 @@ document.addEventListener("DOMContentLoaded", function(){
     touchMoved = false;
   }, {passive:true});
 })();
+
+async function refreshVipPaymentAccess(){try{const api=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,"");const r=await fetch(api+"/api/payment/access",{credentials:"include",cache:"no-store"});const a=await r.json().catch(()=>null);window.vipPaymentActive=!!(a&&a.ok&&a.active===true);if(window.vipPaymentActive)render();}catch(e){window.vipPaymentActive=false}}setTimeout(refreshVipPaymentAccess,300);setInterval(refreshVipPaymentAccess,60000);

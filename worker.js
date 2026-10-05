@@ -50,7 +50,8 @@ function norm(c = {}) {
     category: String(c.category || c.group || c.groupTitle || 'Other'),
     logo: String(c.logo || c.tvgLogo || c['tvg-logo'] || ''),
     url: String(c.url || c.stream || c.streamUrl || ''),
-    status: String(c.status || 'Unknown')
+    status: String(c.status || 'Unknown'),
+    paid: c.paid === true
   };
 }
 
