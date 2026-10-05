@@ -216,8 +216,22 @@ function esc(value) {
 }
 
 function catFor(name, group) {
-  const text = ((name || "") + " " + (group || "")).toLowerCase();
-    if (/movie|movies|film|series|web\s*series|ott|cinema|flix/.test(text)) return "MOVIE & SERIES";
+  // Admin Panel category is authoritative. Never reclassify a channel by its name
+  // when the Admin Panel/Worker already supplied a category.
+  const rawGroup = String(group || "").trim();
+  if (rawGroup) {
+    const g = rawGroup.toUpperCase();
+    if (g === "OTHERS") return "OTHER";
+    if (g === "OTHER") return "OTHER";
+    if (g === "MOVIE&SERIES" || g === "MOVIES & SERIES" || g === "MOVIE SERIES") return "MOVIE & SERIES";
+    if (g === "SPORT" || g === "SPORTS") return "SPORTS";
+    if (g === "BANGLADESH" || g === "BANGLA" || g === "BD") return "BD";
+    if (g === "INDIA" || g === "INDIAN") return "INDIA";
+    return g;
+  }
+
+  // Only use name-based detection when no Admin Panel category exists.
+  const text = String(name || "").toLowerCase();
   if (/sport|cricket|football|fifa|espn|bein|wwe|golf|nfl|nba|ten\s*cricket|ptv\s*sports/.test(text)) return "SPORTS";
   if (/bangladesh|\bbd\b|bangla|somoy|jamuna|ekattor|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi\s*tv|btv|duronto|deepto|nagorik|mohona|asian\s*tv|desh\s*tv|bijoy\s*tv|mytv|satv|ekushey/.test(text)) return "BD";
   if (/india|indian|sony|zee|star|colors|set\b|sab\b|aaj\s*tak|ndtv|republic|news18|times\s*now|india\s*tv|dd\s*(national|sports)|sun\s*tv|asianet|vijay|jaya|starplus|star\s*gold|sony\s*(max|pix|wah|yay|pal)|&pictures|b4u|movies\s*now|mnx|hbo\s*india/.test(text)) return "INDIA";
