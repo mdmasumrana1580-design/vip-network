@@ -278,6 +278,16 @@ function parseM3U(text) {
   return out;
 }
 
+async function refreshVipPaymentAccess(){
+  try{
+    const api=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,"");
+    const r=await fetch(api+"/api/payment/access",{credentials:"include",cache:"no-store"});
+    const a=await r.json().catch(()=>null);
+    window.vipPaymentActive=!!(a&&a.ok&&a.active===true);
+    if(window.vipPaymentActive) render();
+  }catch(e){ window.vipPaymentActive=false; }
+}
+
 function render() {
   const q = "";
 
@@ -315,12 +325,14 @@ function render() {
     const icon = c.logo
       ? '<img src="' + esc(c.logo) + '" alt="" loading="lazy">'
       : "<span>TV</span>";
+    const paidBadge = c.paid === true && window.vipPaymentActive !== true ? '<img class="paid-badge" src="paid-badge.png" alt="Paid">' : '';
 
     el.innerHTML =
-      '<div class="circle">' + icon + '</div>' +
+      '<div class="circle">' + icon + paidBadge + '</div>' +
       '<div class="label"><span class="label-text">' + esc(c.name) + '</span></div>';
 
     el.addEventListener("click", async function () {
+      if (c.paid !== true) { play(c, el); return; }
       if (el.dataset.paymentChecking === "1") return;
       el.dataset.paymentChecking = "1";
       try {
@@ -331,17 +343,13 @@ function render() {
           if (typeof window.VIP_SHOW_BLOCKED_PAGE === "function") window.VIP_SHOW_BLOCKED_PAGE();
           return;
         }
-        if (access && access.ok && access.active === false) {
-          location.href = "/payment.html";
-          return;
-        }
+        if (!access || access.active !== true) { location.href = "payment.html?channel=" + encodeURIComponent(c.name); return; }
+        window.vipPaymentActive = true;
         play(c, el);
       } catch (e) {
         console.warn("Payment access check unavailable", e);
-        play(c, el);
-      } finally {
-        el.dataset.paymentChecking = "0";
-      }
+        location.href = "payment.html?channel=" + encodeURIComponent(c.name);
+      } finally { el.dataset.paymentChecking = "0"; }
     });
 
     grid.appendChild(el);
@@ -632,7 +640,7 @@ function currentChannelName() {
   return c && c.name ? c.name : "";
 }
 
-async function fetchMoviePlaylistFromWorker(){const apiBase=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');const r=await fetch(apiBase+'/api/movie-playlist',{cache:'no-store'});if(!r.ok)throw new Error('Movie playlist load failed: '+r.status);const data=await r.json();return (Array.isArray(data?.channels)?data.channels:[]).map(c=>({name:c.name||'Movie',cat:'MOVIE & SERIES',url:c.url||'',logo:c.logo||''})).filter(c=>c.url);}
+async function fetchMoviePlaylistFromWorker(){const apiBase=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');const r=await fetch(apiBase+'/api/movie-playlist',{cache:'no-store'});if(!r.ok)throw new Error('Movie playlist load failed: '+r.status);const data=await r.json();return (Array.isArray(data?.channels)?data.channels:[]).map(c=>({name:c.name||'Movie',cat:'MOVIE & SERIES',url:c.url||'',logo:c.logo||'',paid:c.paid===true})).filter(c=>c.url);}
 
 async function fetchPlaylistFromWorker() {
   const apiBase = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/, "");
@@ -642,7 +650,7 @@ async function fetchPlaylistFromWorker() {
   const data = await r.json();
   const list = Array.isArray(data?.channels) ? data.channels : [];
   return list.map(function(c){
-    return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||""};
+    return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||"",paid:c.paid===true};
   }).filter(function(c){return c.url;});
 }
 
@@ -848,3 +856,6 @@ document.addEventListener("DOMContentLoaded", function(){
     img.style.webkitUserDrag = 'none';
   }, {capture:true, passive:true});
 })();
+
+setTimeout(refreshVipPaymentAccess, 300);
+setInterval(refreshVipPaymentAccess, 60000);
