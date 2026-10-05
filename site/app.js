@@ -276,6 +276,19 @@ function render() {
   });
   visibleChannels = list;
 
+  // V22: keep every name badge the same size and shrink only the text when needed.
+  requestAnimationFrame(function () {
+    grid.querySelectorAll(".label").forEach(function (label) {
+      var size = window.innerWidth <= 420 ? 10 : 11;
+      label.style.fontSize = size + "px";
+      label.style.letterSpacing = "0.05px";
+      while (label.scrollWidth > label.clientWidth && size > 7) {
+        size -= 0.25;
+        label.style.fontSize = size.toFixed(2) + "px";
+      }
+    });
+  });
+
   empty.hidden = list.length > 0;
   if (!list.length) {
     empty.textContent = channels.length ? "No channels found" : "Loading channels...";

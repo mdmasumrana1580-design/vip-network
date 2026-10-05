@@ -3366,16 +3366,21 @@ video{
   user-drag:none;
 }
 
-/* V21: compact channel-name badge — border hugs the text */
+/* V22: same-size channel-name badge with auto-fitting text */
 .label{
   left:50% !important;
   right:auto !important;
   bottom:4px !important;
   transform:translateX(-50%) !important;
-  width:max-content !important;
-  max-width:calc(100% - 10px) !important;
-  min-height:0 !important;
-  padding:2px 7px 3px !important;
+  width:calc(100% - 12px) !important;
+  max-width:calc(100% - 12px) !important;
+  min-height:18px !important;
+  height:20px !important;
+  box-sizing:border-box !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:2px 5px !important;
   border:1.2px solid transparent !important;
   border-radius:6px !important;
   background:
@@ -3386,11 +3391,12 @@ video{
   font-size:11px !important;
   font-weight:900 !important;
   font-style:italic !important;
-  letter-spacing:.15px !important;
+  letter-spacing:.1px !important;
   line-height:1 !important;
   white-space:nowrap !important;
   overflow:hidden !important;
-  text-overflow:ellipsis !important;
+  text-overflow:clip !important;
+  text-align:center !important;
   box-shadow:0 0 4px #ff202022,0 0 5px #00d86622,inset 0 0 4px #0009 !important;
   text-shadow:0 1px 2px #000,0 0 1px #fff4 !important;
   z-index:5 !important;
@@ -3398,11 +3404,14 @@ video{
 @media(max-width:420px){
   .label{
     bottom:3px !important;
-    max-width:calc(100% - 8px) !important;
-    padding:2px 6px 3px !important;
+    width:calc(100% - 10px) !important;
+    max-width:calc(100% - 10px) !important;
+    height:19px !important;
+    min-height:19px !important;
+    padding:2px 4px !important;
     border-width:1.1px !important;
     border-radius:6px !important;
     font-size:10px !important;
-    letter-spacing:.1px !important;
+    letter-spacing:.05px !important;
   }
 }
