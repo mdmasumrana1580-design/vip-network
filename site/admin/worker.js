@@ -43,8 +43,7 @@ function norm(c={}){
     logo:String(c.logo||c.tvgLogo||c['tvg-logo']||''),
     url:String(c.url||c.stream||c.streamUrl||''),
     status:String(c.status||'Unknown'),
-    enabled:c.enabled!==false,
-    paid:c.paid===true
+    enabled:c.enabled!==false
   };
 }
 function normalizeState(s={}){
