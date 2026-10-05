@@ -5,7 +5,7 @@ const STREAM_FALLBACK_URL = "https://mp3tourl.com/videos/1789615987340-af8196aa-
 const VIP_WORKER_API = window.VIP_WORKER_API || "";
 
 let channels = [];
-let current = "ALL";
+let current = "All";
 let hls = null;
 let currentChannelIndex = -1;
 let visibleChannels = [];
@@ -113,12 +113,12 @@ async function initVisitorCounter() {
   };
 
   refreshOnline();
-  setInterval(refreshOnline, 5*60*1000);
+  setInterval(refreshOnline, 20000);
 }
 
 initVisitorCounter();
-// Login-free guest identification: a browser gets a persistent random Visitor ID.
-// This identifies the browser/device, not the real-world person.
+
+// Login-free guest identification: creates the user session required by the payment flow.
 async function initGuestTracker(){
   try{
     const key='vip-guest-visitor-id';
@@ -126,24 +126,10 @@ async function initGuestTracker(){
     if(!visitorId){visitorId=(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now());localStorage.setItem(key,visitorId)}
     const api=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');
     const deviceName=(navigator.userAgentData?.platform||navigator.platform||'Guest Browser')+' / '+(navigator.userAgentData?.mobile?'Mobile':'Browser');
-    const send=async()=>{
-      try{
-        const r=await fetch(api+'/api/guest/ping',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceId:window.VIP_DEVICE_ID||'',deviceName,category:current,channel:document.title}),cache:'no-store'});
-        if(r.status===403){
-          console.warn('Guest visitor is blocked');
-          // Keep the persistent visitor/device IDs intact while blocked so the same visitor cannot bypass the block by receiving a new ID.
-          if(typeof window.VIP_SHOW_BLOCKED_PAGE==='function') window.VIP_SHOW_BLOCKED_PAGE();
-          return false
-        }
-      }catch(e){console.warn('Guest tracker unavailable',e)}
-      return true;
-    };
-    const guestRegister = await fetch(api+'/api/guest/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceName}),cache:'no-store'}).catch(()=>null);
-    send(); setInterval(send,5*60*1000);
-  }catch(e){console.warn('Guest ID unavailable',e)}
+    await fetch(api+'/api/guest/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceId:window.VIP_DEVICE_ID||visitorId,deviceName}),credentials:'include',cache:'no-store'});
+  }catch(e){console.warn('Guest session unavailable',e)}
 }
 initGuestTracker();
-
 
 // Premium overlay controls: click/tap the video to show, tap again to hide.
 const vipVideoBox = document.getElementById("vipVideoBox");
@@ -216,27 +202,26 @@ function esc(value) {
 }
 
 function catFor(name, group) {
-  // Admin Panel category is authoritative. Never reclassify a channel by its name
-  // when the Admin Panel/Worker already supplied a category.
-  const rawGroup = String(group || "").trim();
-  if (rawGroup) {
-    const g = rawGroup.toUpperCase();
-    if (g === "OTHERS") return "OTHER";
-    if (g === "OTHER") return "OTHER";
-    if (g === "MOVIE&SERIES" || g === "MOVIES & SERIES" || g === "MOVIE SERIES") return "MOVIE & SERIES";
-    if (g === "SPORT" || g === "SPORTS") return "SPORTS";
-    if (g === "BANGLADESH" || g === "BANGLA" || g === "BD") return "BD";
-    if (g === "INDIA" || g === "INDIAN") return "INDIA";
-    return g;
+  const text = ((name || "") + " " + (group || "")).toLowerCase();
+
+  // SPORTS comes first, so sports channels stay together even if they are BD/India.
+  if (/sport|cricket|football|fifa|eurosport|willow|ten\s*cricket|ptv\s*sports|tsn|espn|bein|wwe|golf|nfl|nba/.test(text)) {
+    return "Sports";
   }
 
-  // Only use name-based detection when no Admin Panel category exists.
-  const text = String(name || "").toLowerCase();
-  if (/sport|cricket|football|fifa|espn|bein|wwe|golf|nfl|nba|ten\s*cricket|ptv\s*sports/.test(text)) return "SPORTS";
-  if (/bangladesh|\bbd\b|bangla|somoy|jamuna|ekattor|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi\s*tv|btv|duronto|deepto|nagorik|mohona|asian\s*tv|desh\s*tv|bijoy\s*tv|mytv|satv|ekushey/.test(text)) return "BD";
-  if (/india|indian|sony|zee|star|colors|set\b|sab\b|aaj\s*tak|ndtv|republic|news18|times\s*now|india\s*tv|dd\s*(national|sports)|sun\s*tv|asianet|vijay|jaya|starplus|star\s*gold|sony\s*(max|pix|wah|yay|pal)|&pictures|b4u|movies\s*now|mnx|hbo\s*india/.test(text)) return "INDIA";
-  return "OTHER";
+  // Bangladesh channels
+  if (/bangla|bangladesh|bd\b|somoy|jamuna|ekattor|ekattor tv|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi tv|gtv|b tv|bengal|duronto|deepto|nagorik|mohona|asian tv|desh tv|bijoy tv|mytv|satv|ekushey|bishwa|bangla tv|btv/.test(text)) {
+    return "BD";
+  }
+
+  // India channels
+  if (/india|indian|sony|zee|star|colors|set\b|sab\b|aaj tak|ndtv|republic|news18|times now|india tv|dd national|dd sports|sun tv|asianet|vijay|jaya|starplus|star gold|sony max|sony pix|sony wah|sony yay|sony pal|&pictures|b4u|movies now|mnx|hbo india/.test(text)) {
+    return "India";
+  }
+
+  return "Others";
 }
+
 function parseM3U(text) {
   const lines = String(text || "").replace(/\r/g, "").split("\n");
   const out = [];
@@ -278,40 +263,17 @@ function parseM3U(text) {
   return out;
 }
 
-async function refreshVipPaymentAccess(){
-  try{
-    const api=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,"");
-    const r=await fetch(api+"/api/payment/access",{credentials:"include",cache:"no-store"});
-    const a=await r.json().catch(()=>null);
-    window.vipPaymentActive=!!(a&&a.ok&&a.active===true);
-    if(window.vipPaymentActive) render();
-  }catch(e){ window.vipPaymentActive=false; }
-}
-
 function render() {
   const q = "";
 
   grid.innerHTML = "";
 
   const list = channels.filter(function (c) {
-    const categoryOk = current === "ALL" || c.cat === current;
+    const categoryOk = current === "All" || c.cat === current;
     const searchOk = c.name.toLowerCase().includes(q);
     return categoryOk && searchOk;
   });
   visibleChannels = list;
-
-  // V23: keep every name badge the same size; scale only the text so long names never clip.
-  requestAnimationFrame(function () {
-    grid.querySelectorAll(".label").forEach(function (label) {
-      var text = label.querySelector(".label-text");
-      if (!text) return;
-      text.style.transform = "scaleX(1)";
-      var available = Math.max(1, label.clientWidth - 8);
-      var needed = text.scrollWidth;
-      var scale = needed > available ? Math.max(0.58, available / needed) : 1;
-      text.style.transform = "scaleX(" + scale.toFixed(3) + ")";
-    });
-  });
 
   empty.hidden = list.length > 0;
   if (!list.length) {
@@ -329,57 +291,22 @@ function render() {
 
     el.innerHTML =
       '<div class="circle">' + icon + paidBadge + '</div>' +
-      '<div class="label"><span class="label-text">' + esc(c.name) + '</span></div>';
+      '<div class="label">' + esc(c.name) + '</div>';
 
     el.addEventListener("click", async function () {
-      if (c.paid !== true) { play(c, el); return; }
-      if (el.dataset.paymentChecking === "1") return;
-      el.dataset.paymentChecking = "1";
-      try {
-        const api = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/,"");
-        const accessRes = await fetch(api + "/api/payment/access", {credentials:"include", cache:"no-store"});
-        const access = await accessRes.json().catch(function(){ return null; });
-        if (access && access.ok && access.blocked === true) {
-          if (typeof window.VIP_SHOW_BLOCKED_PAGE === "function") window.VIP_SHOW_BLOCKED_PAGE();
-          return;
-        }
-        if (!access || access.active !== true) { location.href = "payment.html?channel=" + encodeURIComponent(c.name); return; }
-        window.vipPaymentActive = true;
-        play(c, el);
-      } catch (e) {
-        console.warn("Payment access check unavailable", e);
-        location.href = "payment.html?channel=" + encodeURIComponent(c.name);
-      } finally { el.dataset.paymentChecking = "0"; }
+      if(c.paid!==true){ play(c,el); return; }
+      try{
+        const api=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,"");
+        const r=await fetch(api+"/api/payment/access",{credentials:"include",cache:"no-store"});
+        const a=await r.json().catch(()=>null);
+        if(a&&a.ok&&a.blocked){ if(typeof window.VIP_SHOW_BLOCKED_PAGE==="function") window.VIP_SHOW_BLOCKED_PAGE(); return; }
+        if(!a||a.active!==true){ location.href="payment.html?channel="+encodeURIComponent(c.name); return; }
+        window.vipPaymentActive=true; play(c,el);
+      }catch(e){ location.href="payment.html?channel="+encodeURIComponent(c.name); }
     });
 
     grid.appendChild(el);
   });
-}
-
-let vipPlayerHistoryActive = false;
-function pushVipPlayerHistory(){
-  if (vipPlayerHistoryActive) return;
-  vipPlayerHistoryActive = true;
-  try { history.pushState({vipPlayer:true}, "", location.href); } catch(e) {}
-}
-
-function restoreWelcomeAfterBack(){
-  try {
-    if (hls) { hls.destroy(); hls = null; }
-    video.pause();
-    video.removeAttribute("src");
-    video.load();
-  } catch(e) {}
-  currentChannelIndex = -1;
-  if (welcomeVideo) welcomeVideo.classList.remove("welcome-hidden");
-  if (videoBox) videoBox.classList.add("welcome-active");
-  const liveBadge = document.getElementById("liveBadge");
-  if (liveBadge) liveBadge.style.display = "none";
-  const title = document.getElementById("playerTitle");
-  if (title) title.textContent = "Live Player";
-  const note = document.getElementById("note");
-  if (note) note.style.display = "none";
-  showVipControls();
 }
 
 function play(c, clickedCard, retryOriginal) {
@@ -390,7 +317,6 @@ function play(c, clickedCard, retryOriginal) {
   if (liveBadge) liveBadge.style.display = "flex";
 
   section.hidden = false;
-  pushVipPlayerHistory();
   document.getElementById("playerTitle").textContent = c.name;
   document.getElementById("note").style.display = "none";
 
@@ -478,41 +404,6 @@ function play(c, clickedCard, retryOriginal) {
   }
 }
 
-async function requestNativeFullscreen() {
-  if (!videoBox) return;
-  try {
-    if (videoBox.requestFullscreen) {
-      await videoBox.requestFullscreen({navigationUI:"hide"});
-    } else if (videoBox.webkitRequestFullscreen) {
-      videoBox.webkitRequestFullscreen();
-    } else {
-      videoBox.classList.add("vip-css-fullscreen");
-    }
-  } catch (e) {
-    videoBox.classList.add("vip-css-fullscreen");
-  }
-  try {
-    if (screen.orientation && screen.orientation.lock) {
-      await screen.orientation.lock("landscape");
-    }
-  } catch (e) {
-    // Orientation locking is browser-dependent; keep normal fullscreen if unavailable.
-  }
-}
-
-async function exitNativeFullscreen() {
-  try {
-    if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
-    else if (document.webkitFullscreenElement && document.webkitExitFullscreen) document.webkitExitFullscreen();
-  } catch (e) {}
-  if (videoBox) {
-    videoBox.classList.remove("vip-css-fullscreen","vip-fullscreen","is-fullscreen","vip-orientation-fallback");
-  }
-  try {
-    if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
-  } catch (e) {}
-}
-
 function isNativeFullscreen() {
   return !!(document.fullscreenElement || (videoBox && videoBox.classList.contains("vip-css-fullscreen")));
 }
@@ -566,32 +457,9 @@ document.getElementById("nextChannel").addEventListener("click", function(e) {
   e.preventDefault(); e.stopPropagation(); changeChannel(1); showVipControls();
 });
 
-window.addEventListener("popstate", function(){
-  // Android back: leave fullscreen/player view in one press, keep the
-  // currently playing channel alive, and return to the home/player area.
-  if (isNativeFullscreen()) {
-    exitNativeFullscreen();
-    setTimeout(function(){
-      try {
-        const home = document.querySelector('.header') || document.getElementById('playerSection');
-        if (home) home.scrollIntoView({behavior:'smooth', block:'start'});
-      } catch(e) {}
-    }, 80);
-    return;
-  }
-  if (vipPlayerHistoryActive) {
-    vipPlayerHistoryActive = false;
-    // Do not destroy the current stream. Keep the same channel playing.
-    try {
-      const home = document.querySelector('.header') || document.getElementById('playerSection');
-      if (home) home.scrollIntoView({behavior:'smooth', block:'start'});
-    } catch(e) {}
-  }
-});
-
 window.addEventListener("orientationchange", syncFullscreenState);
-document.addEventListener("fullscreenchange", function(){ if(!document.fullscreenElement){ try{screen.orientation?.unlock?.()}catch(e){} } syncFullscreenState(); });
-document.addEventListener("webkitfullscreenchange", function(){ syncFullscreenState(); });
+document.addEventListener("fullscreenchange", syncFullscreenState);
+document.addEventListener("webkitfullscreenchange", syncFullscreenState);
 syncFullscreenState();
 
 function closePlayer() {
@@ -607,13 +475,7 @@ function closePlayer() {
   video.load();
 }
 
-document.getElementById("closePlayer").addEventListener("click", function(){
-  closePlayer();
-  if (vipPlayerHistoryActive) {
-    vipPlayerHistoryActive = false;
-    try { history.back(); } catch(e) {}
-  }
-});
+document.getElementById("closePlayer").addEventListener("click", closePlayer);
 
 document.querySelectorAll("#cats button").forEach(function (button) {
   button.addEventListener("click", function () {
@@ -640,20 +502,6 @@ function currentChannelName() {
   return c && c.name ? c.name : "";
 }
 
-async function fetchMoviePlaylistFromWorker(){const apiBase=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,'');const r=await fetch(apiBase+'/api/movie-playlist',{cache:'no-store'});if(!r.ok)throw new Error('Movie playlist load failed: '+r.status);const data=await r.json();return (Array.isArray(data?.channels)?data.channels:[]).map(c=>({name:c.name||'Movie',cat:'MOVIE & SERIES',url:c.url||'',logo:c.logo||'',paid:c.paid===true})).filter(c=>c.url);}
-
-async function fetchPlaylistFromWorker() {
-  const apiBase = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/, "");
-  if (!apiBase) return [];
-  const r = await fetch(apiBase + "/api/playlist", {cache:"no-store"});
-  if (!r.ok) throw new Error("Worker playlist load failed: " + r.status);
-  const data = await r.json();
-  const list = Array.isArray(data?.channels) ? data.channels : [];
-  return list.map(function(c){
-    return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||"",paid:c.paid===true};
-  }).filter(function(c){return c.url;});
-}
-
 async function fetchPlaylistFromGithub() {
   const response = await fetch(PLAYLIST_URL, {
     cache: "no-store",
@@ -662,7 +510,7 @@ async function fetchPlaylistFromGithub() {
   if (!response.ok) throw new Error("GitHub playlist load failed: " + response.status);
   const parsed = parseM3U(await response.text());
   if (!parsed.length) throw new Error("GitHub playlist is empty or invalid");
-  return parsed.filter(function(c){return c.cat !== 'MOVIE & SERIES';});
+  return parsed;
 }
 
 function saveLastGoodPlaylist(list) {
@@ -681,7 +529,7 @@ function loadLastGoodPlaylist() {
     const raw = localStorage.getItem(PLAYLIST_CACHE_KEY);
     if (!raw) return [];
     const data = JSON.parse(raw);
-    return Array.isArray(data && data.channels) ? data.channels.filter(function(c){return !c || c.cat !== 'MOVIE & SERIES';}) : [];
+    return Array.isArray(data && data.channels) ? data.channels : [];
   } catch (e) {
     return [];
   }
@@ -691,25 +539,26 @@ async function loadVipPlaylist() {
   const apiBase = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/, "");
   if (apiBase) {
     try {
-      let managed = await fetchPlaylistFromWorker();
-      try { const movies=await fetchMoviePlaylistFromWorker(); managed=managed.concat(movies); } catch(e) { console.warn('Movie playlist unavailable',e); }
-      if (managed.length) {
-        saveLastGoodPlaylist(managed);
-        return managed;
+      const r = await fetch(apiBase + "/api/playlist", {cache:"no-store"});
+      if (r.ok) {
+        const data = await r.json();
+        const list = Array.isArray(data?.channels) ? data.channels : [];
+        if (list.length) {
+          const managed = list.map(function(c){
+            return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||"",paid:c.paid===true};
+          }).filter(c=>c.url);
+          if (managed.length) { saveLastGoodPlaylist(managed); return managed; }
+        }
       }
-    } catch (e) {
-      console.warn("Worker playlist unavailable; trying GitHub.", e);
-    }
+    } catch (e) { console.warn("Worker playlist unavailable; trying GitHub.", e); }
   }
-
   try {
     const fresh = await fetchPlaylistFromGithub();
     saveLastGoodPlaylist(fresh);
     return fresh;
   } catch (githubError) {
-    console.warn("GitHub playlist load failed; using last successful playlist.", githubError);
+    console.warn("GitHub playlist unavailable; using last successful playlist.", githubError);
   }
-
   const cached = loadLastGoodPlaylist();
   if (cached.length) return cached;
   throw new Error("Playlist load failed");
@@ -717,10 +566,17 @@ async function loadVipPlaylist() {
 
 async function refreshVipPlaylist() {
   try {
+    const apiBase = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/, "");
     let fresh = [];
-    try { fresh = await fetchPlaylistFromWorker(); } catch (e) {}
+    try {
+      const r = await fetch(apiBase + "/api/playlist", {cache:"no-store"});
+      if (r.ok) {
+        const data = await r.json();
+        const list = Array.isArray(data?.channels) ? data.channels : [];
+        fresh = list.map(function(c){ return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||"",paid:c.paid===true}; }).filter(c=>c.url);
+      }
+    } catch (e) {}
     if (!fresh.length) fresh = await fetchPlaylistFromGithub();
-    try { fresh = fresh.concat(await fetchMoviePlaylistFromWorker()); } catch(e) { console.warn('Movie playlist refresh unavailable',e); }
     const oldCurrentName = currentChannelName ? currentChannelName() : "";
     const oldWasFallback = currentChannelUrl ? currentChannelUrl() === STREAM_FALLBACK_URL : false;
     channels = fresh;
@@ -827,35 +683,4 @@ document.addEventListener("DOMContentLoaded", function(){
   }, {passive:true});
 })();
 
-
-// VIP-Network: Disable Android/Chrome long-press image menu on channel logos.
-// Keeps normal single-tap channel selection working because the handler only
-// cancels browser image actions, not the card click handler.
-(function preventChannelLogoLongPressMenu(){
-  function isChannelLogo(target){
-    return !!(target && target.closest && target.closest('.card img'));
-  }
-
-  function blockImageAction(e){
-    if (!isChannelLogo(e.target)) return;
-    e.preventDefault();
-    e.stopPropagation();
-    return false;
-  }
-
-  ['contextmenu', 'selectstart', 'dragstart'].forEach(function(type){
-    document.addEventListener(type, blockImageAction, true);
-  });
-
-  document.addEventListener('touchstart', function(e){
-    var img = e.target && e.target.closest ? e.target.closest('.card img') : null;
-    if (!img) return;
-    img.style.webkitTouchCallout = 'none';
-    img.style.webkitUserSelect = 'none';
-    img.style.userSelect = 'none';
-    img.style.webkitUserDrag = 'none';
-  }, {capture:true, passive:true});
-})();
-
-setTimeout(refreshVipPaymentAccess, 300);
-setInterval(refreshVipPaymentAccess, 60000);
+async function refreshVipPaymentAccess(){try{const api=(window.VIP_WORKER_API||window.location.origin).replace(/\/$/,"");const r=await fetch(api+"/api/payment/access",{credentials:"include",cache:"no-store"});const a=await r.json().catch(()=>null);window.vipPaymentActive=!!(a&&a.ok&&a.active===true);if(window.vipPaymentActive)render();}catch(e){window.vipPaymentActive=false}}setTimeout(refreshVipPaymentAccess,300);setInterval(refreshVipPaymentAccess,60000);
