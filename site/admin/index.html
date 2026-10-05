@@ -17,10 +17,8 @@
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="brand"><div class="crown">♛</div><div><strong>VIP <span>NETWORK</span></strong><small>Admin Panel v2.0</small></div></div>
-
     <button class="nav-item active" data-section="dashboard">⌂ <span>Dashboard</span></button>
     <button class="nav-item" data-section="devices">♙ <span>User & Device Management</span></button>
-
     <div class="nav-group">
       <button class="nav-item group-head" id="liveGroup">▣ <span>Live TV / Movie&amp;series</span><b>⌄</b></button>
       <div class="subnav open" id="liveSub">
@@ -29,15 +27,12 @@
       </div>
     </div>
     <button class="nav-item" data-section="categories">▤ <span>Categories</span></button>
-
     <button class="nav-item" data-section="notice">⚑ <span>Notice / Banner</span></button>
     <button class="nav-item" data-section="security">♜ <span>Security</span></button>
     <button class="nav-item" data-section="activity">◷ <span>Activity Logs</span></button>
     <button class="nav-item" data-section="backup">▤ <span>Backup & Export</span></button>
-
     <div class="side-status"><b>♛ MsM.Tv</b><small>Admin Panel v2.0</small><span><i></i> System Online</span></div>
   </aside>
-
   <main class="main">
     <header class="topbar">
       <button id="menuBtn" class="menu-btn">☰</button>
@@ -45,7 +40,6 @@
       <div class="search"><span>⌕</span><input id="globalSearch" placeholder="Search channel..."></div>
       <div class="top-actions"><span class="online"><i></i> Online</span><button id="themeBtn" title="Theme">☾</button><button class="profile" id="profileBtn"><span class="avatar">A</span><span>Admin<small>Super Admin</small></span>⌄</button></div>
     </header>
-
     <section class="content">
       <section id="dashboard" class="section active-section">
         <div class="page-head"><div><h1>Dashboard</h1><p>MsM.Tv administration overview</p></div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="primary" onclick="showSection('add')">＋ Add Channel</button><button type="button" onclick="location.href='payments.html'" style="border:0;border-radius:12px;padding:11px 16px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(37,99,235,.25)">💳 Payments</button></div></div>
@@ -66,7 +60,7 @@
             <div class="panel-title"><h2>▶ Live Player</h2><span class="live-dot">● Ready</span></div>
             <div class="video-box"><video id="player" controls playsinline></video><div id="videoPlaceholder">▶<small>Select a channel</small></div></div>
             <div class="edit-under-player">
-              <div class="edit-title"><h3>✎ Edit Selected Channel</h3><button type="button" class="secondary" onclick="saveSelectedChannel()">Save Changes</button></div>
+              <div class="edit-title"><h3>✎ Edit Selected Channel</h3><button type="button" class="secondary" id="saveEditBtn">Save Changes</button></div>
               <div class="edit-grid">
                 <label>Channel Name<input id="editName" placeholder="Channel name"></label>
                 <label>Category<select id="editCategory"></select></label>
@@ -75,6 +69,7 @@
                 <label class="logo-editor">Logo URL<input id="editLogo" placeholder="https://.../logo.png"></label>
                 <label class="logo-file">Logo File<input id="editLogoFile" type="file" accept="image/*"><small>Choose an image from your phone / file system.</small></label>
               </div>
+              <div id="editAccessBox" style="margin-top:12px"><label style="display:block">👑 Free / Paid Control<select id="editAccess" style="margin-top:6px;width:100%"><option value="free">🆓 FREE</option><option value="paid">👑 PAID</option></select></label></div>
               <div class="logo-preview-row"><img id="editLogoPreview" alt="Logo preview"><span id="editLogoStatus">No logo selected</span></div>
             </div>
             <div class="preview-info"><p>Name <b id="pName">—</b></p><p>Category <b id="pCategory">—</b></p><p>Status <b id="pStatus">—</b></p></div>
@@ -82,16 +77,13 @@
           </div>
         </div>
       </section>
-
       <section id="channels" class="section">
         <div class="page-head"><div><h1>Channel Management</h1><p>Add, edit, delete and control your TV channels.</p></div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="primary" onclick="showSection('add')">＋ Add Channel</button><button type="button" onclick="location.href='payments.html'" style="border:0;border-radius:12px;padding:11px 16px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(37,99,235,.25)">💳 Payments</button></div></div>
         <div class="panel"><div class="filters"><input id="managerSearch" placeholder="Search channel..."><select id="managerCat"></select><select id="managerStatus"><option>All Status</option><option>Active</option><option>Dead</option><option>Disabled</option></select></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Logo</th><th>Name</th><th>Category</th><th>Status</th><th>Stream URL</th><th>Action</th></tr></thead><tbody id="managerRows"></tbody></table></div></div>
       </section>
-
       <section id="add" class="section"><div class="page-head"><div><h1>Add Channel</h1><p>Add one channel manually.</p></div></div>
-        <form class="form-card" id="channelForm"><label>Channel Name<input name="name" required></label><label>Category<select name="category" id="addCategory"></select></label><label>Logo URL<input name="logo"></label><label class="logo-file">Logo File<input name="logoFile" type="file" accept="image/*"><small>Choose an image from your phone / file system.</small></label><label>Channel Position<input name="position" type="number" min="1" step="1" placeholder="শেষে যোগ করতে খালি রাখুন"><small style="display:block;margin-top:6px;opacity:.75">যেমন 1 দিলে ১ নম্বরে, 5 দিলে ৫ নম্বরে চ্যানেলটি বসবে।</small></label><label>Stream URL<input name="url" required></label><label>Status<select name="status"><option>Active</option><option>Dead</option><option>Disabled</option></select></label><button class="primary">＋ Save Channel</button></form>
+        <form class="form-card" id="channelForm"><label>Channel Name<input name="name" required></label><label>Category<select name="category" id="addCategory"></select></label><label>Logo URL<input name="logo"></label><label class="logo-file">Logo File<input name="logoFile" type="file" accept="image/*"><small>Choose an image from your phone / file system.</small></label><label>Channel Position<input name="position" type="number" min="1" step="1" placeholder="শেষে যোগ করতে খালি রাখুন"><small style="display:block;margin-top:6px;opacity:.75">যেমন 1 দিলে ১ নম্বরে, 5 দিলে ৫ নম্বরে চ্যানেলটি বসবে।</small></label><label>Stream URL<input name="url" required></label><label>Status<select name="status"><option>Active</option><option>Dead</option><option>Disabled</option></select></label><label style="margin-top:4px">👑 Free / Paid Control<select name="access" id="addAccess"><option value="free">🆓 FREE</option><option value="paid">👑 PAID</option></select><small style="display:block;margin-top:6px;opacity:.75">FREE হলে ওয়েবসাইটে Crown দেখাবে না। PAID হলে Gold Crown দেখাবে।</small></label><button class="primary">＋ Save Channel</button></form>
       </section>
-
       <section id="tv-playlist" class="section"><div class="page-head"><div><h1>Live TV / Playlist</h1><p>শুধু Live TV channel playlist আপলোড বা আপডেট করুন। Movie &amp; Series playlist এতে পরিবর্তন হবে না।</p></div></div>
         <div class="tabs playlist-tabs" data-tab-scope="tv"><button class="tab active" data-tab="tv-url">M3U URL</button><button class="tab" data-tab="tv-file">M3U File</button><button class="tab" data-tab="tv-xtream">Xtream Codes</button></div>
         <div class="import-grid">
@@ -101,7 +93,6 @@
           <div class="panel guide"><h2>Live TV Playlist</h2><p>এই অংশে শুধু TV channel playlist আপডেট হবে। Category যেমন SPORTS, BD, INDIA, OTHER playlist-এর তথ্য অনুযায়ী থাকবে।</p></div>
         </div>
       </section>
-
       <section id="movie-playlist" class="section"><div class="page-head"><div><h1>Movie &amp; Series / Playlist</h1><p>শুধু Movie &amp; Series playlist আপলোড বা আপডেট করুন। Live TV playlist এতে পরিবর্তন হবে না।</p></div></div>
         <div class="tabs playlist-tabs" data-tab-scope="movie"><button class="tab active" data-tab="movie-url">M3U URL</button><button class="tab" data-tab="movie-file">M3U File</button></div>
         <div class="import-grid">
@@ -110,25 +101,59 @@
           <div class="panel guide"><h2>Movie &amp; Series Playlist</h2><p>এই playlist-এর সব item স্বয়ংক্রিয়ভাবে <b>MOVIE &amp; SERIES</b> category-তে থাকবে। Live TV channel data পরিবর্তন হবে না।</p></div>
         </div>
       </section>
-
       <section id="categories" class="section"><div class="page-head"><div><h1>Categories</h1><p>Organize your channels.</p></div></div><div class="panel"><div class="category-add"><input id="newCat" placeholder="New category"><button class="primary" onclick="addCategory()">＋ Add</button></div><div id="categoryList" class="category-list"></div></div></section>
-
-
       <section id="notice" class="section"><div class="page-head"><div><h1>Notice / Banner</h1><p>Manage public website announcements.</p></div></div><form class="form-card" id="noticeForm"><label>Banner Text<input name="text"></label><label>Type<select name="type"><option>Information</option><option>Success</option><option>Warning</option><option>Important</option></select></label><label>Enable<select name="enabled"><option>Yes</option><option>No</option></select></label><button class="primary">📢 Save Banner</button></form></section>
-
       <section id="devices" class="section"><div class="page-head"><div><h1>User &amp; Device Management</h1><p>Users: <b id="deviceConnected">0</b> / Allowed: <b id="deviceAllowed">—</b></p></div><button class="primary" onclick="loadDevices()">⟳ Refresh</button></div><div class="panel"><div class="filters" style="margin-bottom:12px"><input id="deviceSearch" placeholder="Search name, number, device or IP..."></div><div id="deviceList" class="device-list">Loading devices...</div></div></section>
-
       <section id="security" class="section"><div class="page-head"><div><h1>Security</h1><p>Administrator session and access control.</p></div></div><div class="panel security-card"><h2>Admin Session</h2><p>Use Logout to securely end the current administrator session.</p><button class="primary danger" onclick="logoutWorker()">⇥ Logout Admin</button></div></section>
-
       <section id="activity" class="section"><div class="page-head"><div><h1>Activity Logs</h1><p>Recent actions performed from this admin panel.</p></div><button class="primary" onclick="clearLogs()">Clear Logs</button></div><div class="panel"><div id="activityList" class="activity-list"></div></div></section>
-
-      <section id="backup" class="section"><div class="page-head"><div><h1>Backup & Export</h1><p>Export your playlist and local backup.</p></div></div><div class="quick-grid two"><button onclick="exportData()">⇩ <b>Export JSON</b></button><button onclick="exportM3U()">⇩ <b>Export M3U</b></button><button onclick="clearAll()">⌫ <b>Clear All Channels</b></button></div></section>
+      <section id="backup" class="section"><div class="page-head"><div><h1>Backup &amp; Export</h1><p>Export your playlist and local backup.</p></div></div><div class="quick-grid two"><button onclick="exportData()">⇩ <b>Export JSON</b></button><button onclick="exportM3U()">⇩ <b>Export M3U</b></button><button onclick="clearAll()">⌫ <b>Clear All Channels</b></button></div></section>
     </section>
   </main>
 </div>
-
 <div class="modal-backdrop" id="loginModal"><div class="login-card"><img src="https://i.postimg.cc/fWC0JfBr/FB-IMG-1788617876279.jpg" alt="Admin"><h2>WELCOME</h2><h1>Admin Panel</h1><p>🛡️ Secure administrator access</p><label>Password</label><div class="password-row"><span>🔒</span><input id="workerPassword" type="password" placeholder="Password"><button id="loginEye" type="button">👁</button></div><label class="remember"><input id="vipRemember" type="checkbox"> Remember me</label><button id="loginBtn" type="button" class="primary login-button">⇥ LOGIN</button><div id="loginStatus"></div><small>MsM.Tv ADMIN PANEL</small></div></div>
 <div class="toast" id="toast"></div>
 <script src="app.js"></script>
+<script>
+(function(){
+  const FREE=['A Sports HD','ATN Bangla','BTV','Makkah Live','Independent','RTV','Ananda TV','HUM TV','Sony Max 2','Sony Aath','Enter 10 Bangla','Zee Bangla HD','B4U Music','Sony YaY','9XM','T Sports HD','Star Sports SL 2','Sony Ten 1','Star Sports 1'];
+  const norm=v=>String(v||'').replace(/\s+/g,' ').trim().toLowerCase();
+  const isDefaultFree=n=>FREE.some(x=>norm(x)===norm(n));
+  const accessSelect=document.getElementById('addAccess');
+  const editSelect=document.getElementById('editAccess');
+  function syncEditAccess(){
+    if(!editSelect)return;
+    const name=document.getElementById('editName')?.value||'';
+    editSelect.value=isDefaultFree(name)?'free':'paid';
+  }
+  function addAccessSave(){
+    const form=document.getElementById('channelForm');
+    if(!form)return;
+    form.addEventListener('submit',function(){
+      const name=form.querySelector('[name="name"]')?.value||'';
+      const value=accessSelect?.value|| (isDefaultFree(name)?'free':'paid');
+      setTimeout(function(){ if(name && window.setChannelAccess) window.setChannelAccess(name,value); },0);
+    },true);
+    form.addEventListener('reset',function(){setTimeout(function(){if(accessSelect)accessSelect.value='paid'},0)});
+  }
+  const oldShow=window.preview;
+  window.preview=function(i){
+    const r=oldShow?oldShow(i):undefined;
+    setTimeout(syncEditAccess,0);
+    return r;
+  };
+  document.getElementById('editName')?.addEventListener('input',syncEditAccess);
+  document.getElementById('editAccess')?.addEventListener('change',function(){
+    const name=document.getElementById('editName')?.value||'';
+    if(name && window.setChannelAccess) window.setChannelAccess(name,this.value);
+  });
+  document.getElementById('saveEditBtn')?.addEventListener('click',function(){
+    const name=document.getElementById('editName')?.value||'';
+    const value=editSelect?.value||'paid';
+    if(name && window.setChannelAccess) setTimeout(function(){window.setChannelAccess(name,value)},50);
+  },true);
+  addAccessSave();
+  setTimeout(syncEditAccess,300);
+})();
+</script>
 <script src="pwa.js"></script>
 </body></html>
