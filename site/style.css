@@ -3366,52 +3366,29 @@ video{
   user-drag:none;
 }
 
-/* V22: same-size channel-name badge with auto-fitting text */
+/* V23: same-size channel-name badge; only the text scales to fit. */
 .label{
-  left:50% !important;
-  right:auto !important;
-  bottom:4px !important;
+  left:50% !important; right:auto !important; bottom:4px !important;
   transform:translateX(-50%) !important;
-  width:calc(100% - 12px) !important;
-  max-width:calc(100% - 12px) !important;
-  min-height:18px !important;
-  height:20px !important;
-  box-sizing:border-box !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  padding:2px 5px !important;
-  border:1.2px solid transparent !important;
-  border-radius:6px !important;
-  background:
-    linear-gradient(#252525,#252525) padding-box,
-    linear-gradient(90deg,#ff2525 0%,#ff4a4a 35%,#00d866 70%,#00a94f 100%) border-box !important;
-  color:#fff !important;
-  font-family:Georgia,"Times New Roman",serif !important;
-  font-size:11px !important;
-  font-weight:900 !important;
-  font-style:italic !important;
-  letter-spacing:.1px !important;
-  line-height:1 !important;
-  white-space:nowrap !important;
-  overflow:hidden !important;
-  text-overflow:clip !important;
-  text-align:center !important;
+  width:calc(100% - 12px) !important; max-width:calc(100% - 12px) !important;
+  min-height:20px !important; height:20px !important; box-sizing:border-box !important;
+  display:flex !important; align-items:center !important; justify-content:center !important;
+  padding:2px 4px !important; border:1.2px solid transparent !important; border-radius:6px !important;
+  background:linear-gradient(#252525,#252525) padding-box,linear-gradient(90deg,#ff2525 0%,#ff4a4a 35%,#00d866 70%,#00a94f 100%) border-box !important;
+  color:#fff !important; font-family:Georgia,"Times New Roman",serif !important;
+  font-size:11px !important; font-weight:900 !important; font-style:italic !important;
+  letter-spacing:.05px !important; line-height:1 !important; white-space:nowrap !important;
+  overflow:hidden !important; text-overflow:clip !important; text-align:center !important;
   box-shadow:0 0 4px #ff202022,0 0 5px #00d86622,inset 0 0 4px #0009 !important;
-  text-shadow:0 1px 2px #000,0 0 1px #fff4 !important;
-  z-index:5 !important;
+  text-shadow:0 1px 2px #000,0 0 1px #fff4 !important; z-index:5 !important;
+}
+.label .label-text{
+  display:block !important; flex:0 0 auto !important; max-width:none !important;
+  white-space:nowrap !important; transform-origin:center center !important;
+  will-change:transform !important;
 }
 @media(max-width:420px){
-  .label{
-    bottom:3px !important;
-    width:calc(100% - 10px) !important;
-    max-width:calc(100% - 10px) !important;
-    height:19px !important;
-    min-height:19px !important;
-    padding:2px 4px !important;
-    border-width:1.1px !important;
-    border-radius:6px !important;
-    font-size:10px !important;
-    letter-spacing:.05px !important;
-  }
+  .label{bottom:3px !important;width:calc(100% - 10px) !important;max-width:calc(100% - 10px) !important;
+    height:19px !important;min-height:19px !important;padding:2px 4px !important;
+    border-width:1.1px !important;border-radius:6px !important;font-size:10px !important;}
 }

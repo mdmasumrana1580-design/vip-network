@@ -276,16 +276,16 @@ function render() {
   });
   visibleChannels = list;
 
-  // V22: keep every name badge the same size and shrink only the text when needed.
+  // V23: keep every name badge the same size; scale only the text so long names never clip.
   requestAnimationFrame(function () {
     grid.querySelectorAll(".label").forEach(function (label) {
-      var size = window.innerWidth <= 420 ? 10 : 11;
-      label.style.fontSize = size + "px";
-      label.style.letterSpacing = "0.05px";
-      while (label.scrollWidth > label.clientWidth && size > 7) {
-        size -= 0.25;
-        label.style.fontSize = size.toFixed(2) + "px";
-      }
+      var text = label.querySelector(".label-text");
+      if (!text) return;
+      text.style.transform = "scaleX(1)";
+      var available = Math.max(1, label.clientWidth - 8);
+      var needed = text.scrollWidth;
+      var scale = needed > available ? Math.max(0.58, available / needed) : 1;
+      text.style.transform = "scaleX(" + scale.toFixed(3) + ")";
     });
   });
 
@@ -304,7 +304,7 @@ function render() {
 
     el.innerHTML =
       '<div class="circle">' + icon + '</div>' +
-      '<div class="label">' + esc(c.name) + '</div>';
+      '<div class="label"><span class="label-text">' + esc(c.name) + '</span></div>';
 
     el.addEventListener("click", async function () {
       if (el.dataset.paymentChecking === "1") return;
