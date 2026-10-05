@@ -138,7 +138,7 @@ async function initGuestTracker(){
       }catch(e){console.warn('Guest tracker unavailable',e)}
       return true;
     };
-    const guestRegister = await fetch(api+'/api/guest/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceName}),cache:'no-store'}).catch(()=>null);
+    await fetch(api+'/api/guest/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({visitorId,deviceName}),cache:'no-store'}).catch(()=>{});
     send(); setInterval(send,5*60*1000);
   }catch(e){console.warn('Guest ID unavailable',e)}
 }
@@ -216,25 +216,24 @@ function esc(value) {
 }
 
 function catFor(name, group) {
-  // Admin Panel category is authoritative. Never reclassify a channel by its name
-  // when the Admin Panel/Worker already supplied a category.
-  const rawGroup = String(group || "").trim();
-  if (rawGroup) {
-    const g = rawGroup.toUpperCase();
-    if (g === "OTHERS") return "OTHER";
-    if (g === "OTHER") return "OTHER";
-    if (g === "MOVIE&SERIES" || g === "MOVIES & SERIES" || g === "MOVIE SERIES") return "MOVIE & SERIES";
-    if (g === "SPORT" || g === "SPORTS") return "SPORTS";
-    if (g === "BANGLADESH" || g === "BANGLA" || g === "BD") return "BD";
-    if (g === "INDIA" || g === "INDIAN") return "INDIA";
-    return g;
-  }
+  const n = String(name || "").trim().toLowerCase();
+  const g = String(group || "").trim().toLowerCase();
 
-  // Only use name-based detection when no Admin Panel category exists.
-  const text = String(name || "").toLowerCase();
+  // Explicit playlist/group category always wins over name-based detection.
+  // This prevents live Indian channels such as Zee Cinema/Jalsha Movies/B4U Movie
+  // from being moved into MOVIE & SERIES just because their channel name contains
+  // words like "movie" or "cinema".
+  if (/^movie\s*&?\s*series$|^movies?\s*(and|&)\s*series$|^movie|^series$/.test(g)) return "MOVIE & SERIES";
+  if (/india|indian/.test(g)) return "INDIA";
+  if (/sport|cricket|football|fifa|espn|bein|wwe|golf|nfl|nba/.test(g)) return "SPORTS";
+  if (/bangladesh|\bbd\b|bangla/.test(g)) return "BD";
+  if (/^other(s)?$/.test(g)) return "OTHER";
+
+  const text = n + " " + g;
   if (/sport|cricket|football|fifa|espn|bein|wwe|golf|nfl|nba|ten\s*cricket|ptv\s*sports/.test(text)) return "SPORTS";
   if (/bangladesh|\bbd\b|bangla|somoy|jamuna|ekattor|dbc|maasranga|atn|channel\s*24|news24|independent|ntv|rtv|banglavision|boishakhi|gazi\s*tv|btv|duronto|deepto|nagorik|mohona|asian\s*tv|desh\s*tv|bijoy\s*tv|mytv|satv|ekushey/.test(text)) return "BD";
   if (/india|indian|sony|zee|star|colors|set\b|sab\b|aaj\s*tak|ndtv|republic|news18|times\s*now|india\s*tv|dd\s*(national|sports)|sun\s*tv|asianet|vijay|jaya|starplus|star\s*gold|sony\s*(max|pix|wah|yay|pal)|&pictures|b4u|movies\s*now|mnx|hbo\s*india/.test(text)) return "INDIA";
+  if (/movie|movies|film|series|web\s*series|ott|cinema|flix/.test(n)) return "MOVIE & SERIES";
   return "OTHER";
 }
 function parseM3U(text) {
@@ -278,6 +277,24 @@ function parseM3U(text) {
   return out;
 }
 
+(function addPaidChannelBadgeStyle(){
+  if (document.getElementById("paidChannelBadgeStyle")) return;
+  const style = document.createElement("style");
+  style.id = "paidChannelBadgeStyle";
+  style.textContent = `
+    .paid-channel-badge {
+      position: absolute; right: 5px; top: 5px; z-index: 5;
+      width: 30px; height: 30px; display: flex;
+      align-items: center; justify-content: center;
+      font-size: 20px; line-height: 1; border-radius: 50%;
+      background: rgba(0,0,0,.72);
+      box-shadow: 0 0 8px rgba(255,215,0,.75);
+    }
+    .circle { position: relative; }
+  `;
+  document.head.appendChild(style);
+})();
+
 function render() {
   const q = "";
 
@@ -289,19 +306,6 @@ function render() {
     return categoryOk && searchOk;
   });
   visibleChannels = list;
-
-  // V23: keep every name badge the same size; scale only the text so long names never clip.
-  requestAnimationFrame(function () {
-    grid.querySelectorAll(".label").forEach(function (label) {
-      var text = label.querySelector(".label-text");
-      if (!text) return;
-      text.style.transform = "scaleX(1)";
-      var available = Math.max(1, label.clientWidth - 8);
-      var needed = text.scrollWidth;
-      var scale = needed > available ? Math.max(0.58, available / needed) : 1;
-      text.style.transform = "scaleX(" + scale.toFixed(3) + ")";
-    });
-  });
 
   empty.hidden = list.length > 0;
   if (!list.length) {
@@ -316,32 +320,23 @@ function render() {
       ? '<img src="' + esc(c.logo) + '" alt="" loading="lazy">'
       : "<span>TV</span>";
 
-    el.innerHTML =
-      '<div class="circle">' + icon + '</div>' +
-      '<div class="label"><span class="label-text">' + esc(c.name) + '</span></div>';
+    const FREE_CHANNELS = new Set([
+      "A Sports HD", "ATN Bangla", "BTV", "Makkah Live", "Independent",
+      "RTV", "Ananda TV", "HUM TV", "Sony Max 2", "Sony Aath",
+      "Enter 10 Bangla", "Zee Bangla HD", "B4U Music", "Sony YaY", "9XM",
+      "T Sports HD", "Star Sports SL 2", "Sony Ten 1", "Star Sports 1"
+    ]);
+    const isPaid = !FREE_CHANNELS.has(String(c.name || "").trim());
+    const paidBadge = isPaid
+      ? '<span class="paid-channel-badge" aria-label="Paid channel" title="Paid channel">👑</span>'
+      : "";
 
-    el.addEventListener("click", async function () {
-      if (el.dataset.paymentChecking === "1") return;
-      el.dataset.paymentChecking = "1";
-      try {
-        const api = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/,"");
-        const accessRes = await fetch(api + "/api/payment/access", {credentials:"include", cache:"no-store"});
-        const access = await accessRes.json().catch(function(){ return null; });
-        if (access && access.ok && access.blocked === true) {
-          if (typeof window.VIP_SHOW_BLOCKED_PAGE === "function") window.VIP_SHOW_BLOCKED_PAGE();
-          return;
-        }
-        if (access && access.ok && access.active === false) {
-          location.href = "/payment.html";
-          return;
-        }
-        play(c, el);
-      } catch (e) {
-        console.warn("Payment access check unavailable", e);
-        play(c, el);
-      } finally {
-        el.dataset.paymentChecking = "0";
-      }
+    el.innerHTML =
+      '<div class="circle">' + icon + paidBadge + '</div>' +
+      '<div class="label">' + esc(c.name) + '</div>';
+
+    el.addEventListener("click", function () {
+      play(c, el);
     });
 
     grid.appendChild(el);
@@ -376,6 +371,9 @@ function restoreWelcomeAfterBack(){
 
 function play(c, clickedCard, retryOriginal) {
   currentChannelIndex = visibleChannels.indexOf(c);
+  const isMovieSeries = String(c && c.cat || "").toUpperCase() === "MOVIE & SERIES";
+  if (videoBox) videoBox.classList.toggle("movie-series-player", isMovieSeries);
+  video.controls = isMovieSeries;
   if (welcomeVideo) welcomeVideo.classList.add("welcome-hidden");
   if (videoBox) videoBox.classList.remove("welcome-active");
   const liveBadge = document.getElementById("liveBadge");
@@ -470,8 +468,73 @@ function play(c, clickedCard, retryOriginal) {
   }
 }
 
+function isMovieSeriesPlayer() {
+  return !!(videoBox && videoBox.classList.contains("movie-series-player"));
+}
+
+function isMovieSeriesVideoFullscreen() {
+  return isMovieSeriesPlayer() && !!(document.fullscreenElement === video || document.webkitFullscreenElement === video);
+}
+
+function showMsMTvFullscreenNotice() {
+  try {
+    const id = "msmTvFullscreenNotice";
+    let notice = document.getElementById(id);
+    if (!notice) {
+      notice = document.createElement("div");
+      notice.id = id;
+      notice.textContent = "MsM.Tv – To exit full screen, drag from the top and touch the back button";
+      Object.assign(notice.style, {
+        position: "fixed",
+        left: "50%",
+        bottom: "18px",
+        transform: "translateX(-50%)",
+        zIndex: "2147483647",
+        maxWidth: "calc(100vw - 24px)",
+        padding: "9px 14px",
+        boxSizing: "border-box",
+        borderRadius: "7px",
+        background: "rgba(45,45,45,.96)",
+        color: "#fff",
+        font: "14px/1.35 sans-serif",
+        textAlign: "center",
+        boxShadow: "0 2px 8px rgba(0,0,0,.35)",
+        pointerEvents: "none"
+      });
+      document.body.appendChild(notice);
+    }
+    notice.style.display = "block";
+    clearTimeout(window.__msmTvFullscreenNoticeTimer);
+    window.__msmTvFullscreenNoticeTimer = setTimeout(() => {
+      if (notice) notice.style.display = "none";
+    }, 4500);
+  } catch (e) {}
+}
+
 async function requestNativeFullscreen() {
   if (!videoBox) return;
+
+  // Movie & Series uses the browser's native video controls. Fullscreen the
+  // actual <video> element so Android/Chrome can restore the exact inline
+  // player geometry when Back/Exit Fullscreen is pressed. TV keeps the
+  // existing container-fullscreen implementation below unchanged.
+  if (isMovieSeriesPlayer()) {
+    try {
+      if (video.requestFullscreen) {
+        await video.requestFullscreen({navigationUI:"hide"});
+      } else if (video.webkitRequestFullscreen) {
+        video.webkitRequestFullscreen();
+      }
+    } catch (e) {}
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        await screen.orientation.lock("landscape");
+      }
+    } catch (e) {}
+    showMsMTvFullscreenNotice();
+    return;
+  }
+
   try {
     if (videoBox.requestFullscreen) {
       await videoBox.requestFullscreen({navigationUI:"hide"});
@@ -490,6 +553,7 @@ async function requestNativeFullscreen() {
   } catch (e) {
     // Orientation locking is browser-dependent; keep normal fullscreen if unavailable.
   }
+  showMsMTvFullscreenNotice();
 }
 
 async function exitNativeFullscreen() {
@@ -497,11 +561,14 @@ async function exitNativeFullscreen() {
     if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
     else if (document.webkitFullscreenElement && document.webkitExitFullscreen) document.webkitExitFullscreen();
   } catch (e) {}
-  if (videoBox) {
+
+  // Native Movie & Series fullscreen owns the video element, so do not force
+  // the TV/container fullscreen classes onto it during the exit transition.
+  if (videoBox && !isMovieSeriesVideoFullscreen()) {
     videoBox.classList.remove("vip-css-fullscreen","vip-fullscreen","is-fullscreen","vip-orientation-fallback");
   }
   try {
-    if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+    if (screen.orientation && screen.orientation.unlock) await screen.orientation.unlock();
   } catch (e) {}
 }
 
@@ -522,12 +589,19 @@ async function toggleNativeFullscreen() {
 
 function setFullscreenButtonState() {
   const isFs = isNativeFullscreen();
+  const movieNativeFs = isMovieSeriesVideoFullscreen();
   if (videoBox) {
-    videoBox.classList.toggle("vip-fullscreen", isFs);
-    videoBox.classList.toggle("is-fullscreen", isFs);
-    videoBox.classList.toggle("vip-css-fullscreen", isFs);
+    // For Movie & Series native video fullscreen, the browser owns the
+    // fullscreen viewport. Do not mirror that state onto the parent container.
+    if (!movieNativeFs) {
+      videoBox.classList.toggle("vip-fullscreen", isFs);
+      videoBox.classList.toggle("is-fullscreen", isFs);
+      videoBox.classList.toggle("vip-css-fullscreen", isFs);
+    } else {
+      videoBox.classList.remove("vip-fullscreen","is-fullscreen","vip-css-fullscreen","vip-orientation-fallback");
+    }
   }
-  document.body.classList.toggle("vip-player-fullscreen", isFs);
+  document.body.classList.toggle("vip-player-fullscreen", isFs && !movieNativeFs);
   const controls = document.getElementById("landscapeChannelControls");
   if (controls) controls.setAttribute("aria-hidden", isFs ? "false" : "true");
 }
@@ -596,6 +670,8 @@ function closePlayer() {
 
   video.pause();
   video.removeAttribute("src");
+  video.removeAttribute("controls");
+  if (videoBox) videoBox.classList.remove("movie-series-player");
   video.load();
 }
 
@@ -637,10 +713,13 @@ async function fetchMoviePlaylistFromWorker(){const apiBase=(window.VIP_WORKER_A
 async function fetchPlaylistFromWorker() {
   const apiBase = (window.VIP_WORKER_API || window.location.origin).replace(/\/$/, "");
   if (!apiBase) return [];
-  const r = await fetch(apiBase + "/api/playlist", {cache:"no-store"});
-  if (!r.ok) throw new Error("Worker playlist load failed: " + r.status);
+  // Read the dedicated TV list from the Worker state.
+  // Do not use /api/playlist here because that endpoint may also contain
+  // the separate Movie & Series list. TV and Movie playlists must stay isolated.
+  const r = await fetch(apiBase + "/api/state", {cache:"no-store"});
+  if (!r.ok) throw new Error("Worker state load failed: " + r.status);
   const data = await r.json();
-  const list = Array.isArray(data?.channels) ? data.channels : [];
+  const list = Array.isArray(data?.tvChannels) ? data.tvChannels : [];
   return list.map(function(c){
     return {name:c.name||"Live Channel",cat:catFor(c.name,c.category),url:c.url||"",logo:c.logo||""};
   }).filter(function(c){return c.url;});
@@ -817,34 +896,4 @@ document.addEventListener("DOMContentLoaded", function(){
     touchStartAt = 0;
     touchMoved = false;
   }, {passive:true});
-})();
-
-
-// VIP-Network: Disable Android/Chrome long-press image menu on channel logos.
-// Keeps normal single-tap channel selection working because the handler only
-// cancels browser image actions, not the card click handler.
-(function preventChannelLogoLongPressMenu(){
-  function isChannelLogo(target){
-    return !!(target && target.closest && target.closest('.card img'));
-  }
-
-  function blockImageAction(e){
-    if (!isChannelLogo(e.target)) return;
-    e.preventDefault();
-    e.stopPropagation();
-    return false;
-  }
-
-  ['contextmenu', 'selectstart', 'dragstart'].forEach(function(type){
-    document.addEventListener(type, blockImageAction, true);
-  });
-
-  document.addEventListener('touchstart', function(e){
-    var img = e.target && e.target.closest ? e.target.closest('.card img') : null;
-    if (!img) return;
-    img.style.webkitTouchCallout = 'none';
-    img.style.webkitUserSelect = 'none';
-    img.style.userSelect = 'none';
-    img.style.webkitUserDrag = 'none';
-  }, {capture:true, passive:true});
 })();
