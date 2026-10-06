@@ -3539,18 +3539,3 @@ video{
     height:24px !important;
   }
 }
-
-/* V31: long channel names automatically shrink to one line inside the badge. */
-.label {
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: clip !important;
-}
-.label .label-text {
-  display: inline-block !important;
-  max-width: none !important;
-  white-space: nowrap !important;
-  line-height: 1 !important;
-  transform-origin: center center !important;
-  flex: 0 0 auto !important;
-}

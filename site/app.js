@@ -204,12 +204,28 @@ function esc(value) {
   });
 }
 
+function normalizeCategoryKey(value) {
+  const v = String(value || "").trim().toUpperCase();
+  if (v === "ALL") return "ALL";
+  if (v === "SPORTS" || v === "SPORT") return "SPORTS";
+  if (v === "BD" || v === "BANGLADESH") return "BD";
+  if (v === "INDIA" || v === "INDIAN") return "INDIA";
+  if (v === "OTHER" || v === "OTHERS") return "OTHER";
+  if (v === "MOVIE & SERIES" || v === "MOVIES & SERIES" || v === "MOVIE" || v === "MOVIES" || v === "SERIES") return "MOVIE & SERIES";
+  return v;
+}
+
 function catFor(name, group) {
   const text = ((name || "") + " " + (group || "")).toLowerCase();
 
+  // MOVIE & SERIES: respect an explicit playlist group first.
+  if (/movie\s*(?:&|and)\s*series|movies?\s*(?:&|and)\s*series|\bseries\b|\bmovie\b|\bmovies\b|cinema|film|netflix|prime\s*video|hoichoi|bioscope/.test(text)) {
+    return "MOVIE & SERIES";
+  }
+
   // SPORTS comes first, so sports channels stay together even if they are BD/India.
   if (/sport|cricket|football|fifa|eurosport|willow|ten\s*cricket|ptv\s*sports|tsn|espn|bein|wwe|golf|nfl|nba/.test(text)) {
-    return "Sports";
+    return "SPORTS";
   }
 
   // Bangladesh channels
@@ -219,10 +235,10 @@ function catFor(name, group) {
 
   // India channels
   if (/india|indian|sony|zee|star|colors|set\b|sab\b|aaj tak|ndtv|republic|news18|times now|india tv|dd national|dd sports|sun tv|asianet|vijay|jaya|starplus|star gold|sony max|sony pix|sony wah|sony yay|sony pal|&pictures|b4u|movies now|mnx|hbo india/.test(text)) {
-    return "India";
+    return "INDIA";
   }
 
-  return "Others";
+  return "OTHER";
 }
 
 function parseM3U(text) {
@@ -271,8 +287,9 @@ function render() {
 
   grid.innerHTML = "";
 
+  const selectedCategory = normalizeCategoryKey(current);
   const list = channels.filter(function (c) {
-    const categoryOk = current === "All" || c.cat === current;
+    const categoryOk = selectedCategory === "ALL" || normalizeCategoryKey(c.cat) === selectedCategory;
     const searchOk = c.name.toLowerCase().includes(q);
     return categoryOk && searchOk;
   });
@@ -295,7 +312,7 @@ function render() {
     el.innerHTML =
       '<div class="circle">' + icon + '</div>' +
       (isPaid ? '<img class="vip-paid-crown" src="https://i.postimg.cc/g05JdqSY/Blue-Star-symbol.png" alt="Paid channel" title="Paid channel">' : '') +
-      '<div class="label"><span class="label-text">' + esc(c.name) + '</span></div>';
+      '<div class="label">' + esc(c.name) + '</div>';
 
     el.addEventListener("click", function () {
       play(c, el);
@@ -303,39 +320,7 @@ function render() {
 
     grid.appendChild(el);
   });
-
-  // Keep every channel name inside its fixed border: long names automatically
-  // shrink in font size instead of being clipped or wrapping outside the card.
-  requestAnimationFrame(fitChannelLabels);
 }
-
-
-function fitChannelLabels() {
-  const labels = document.querySelectorAll(".label");
-  labels.forEach(function (label) {
-    const text = label.querySelector(".label-text");
-    if (!text) return;
-
-    text.style.transform = "none";
-    text.style.fontSize = "11px";
-
-    const available = Math.max(1, label.clientWidth - 8);
-    let size = 11;
-    while (text.scrollWidth > available && size > 6) {
-      size -= 0.25;
-      text.style.fontSize = size + "px";
-    }
-
-    // Extremely long names get a tiny additional horizontal squeeze so they
-    // still remain on one line inside the same border.
-    if (text.scrollWidth > available) {
-      const scale = Math.max(0.62, available / text.scrollWidth);
-      text.style.transform = "scaleX(" + scale.toFixed(3) + ")";
-    }
-  });
-}
-
-window.addEventListener("resize", fitChannelLabels);
 
 function play(c, clickedCard, retryOriginal) {
   currentChannelIndex = visibleChannels.indexOf(c);
@@ -512,7 +497,7 @@ document.querySelectorAll("#cats button").forEach(function (button) {
     });
 
     button.classList.add("active");
-    current = button.dataset.cat;
+    current = normalizeCategoryKey(button.dataset.cat);
     render();
   });
 });
