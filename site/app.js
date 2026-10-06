@@ -347,8 +347,9 @@ function render() {
       (isPaid ? '<img class="vip-paid-crown" src="https://i.postimg.cc/g05JdqSY/Blue-Star-symbol.png" alt="Paid channel" title="Paid channel">' : '') +
       '<div class="label"><span class="label-text">' + esc(c.name) + '</span></div>';
 
-    el.addEventListener("click", function () {
-      play(c, el);
+    el.addEventListener("click", function (e) {
+      e.preventDefault();
+      play(c, el, false, true);
     });
 
     grid.appendChild(el);
@@ -356,7 +357,7 @@ function render() {
   });
 }
 
-function play(c, clickedCard, retryOriginal) {
+function play(c, clickedCard, retryOriginal, fromUserClick) {
   if (!retryOriginal && !playerOpenedFromCard) {
     playerReturnScrollY = window.scrollY || window.pageYOffset || 0;
     playerOpenedFromCard = true;
@@ -369,6 +370,8 @@ function play(c, clickedCard, retryOriginal) {
   section.hidden = false;
   section.removeAttribute("hidden");
   section.style.display = "block";
+  section.style.visibility = "visible";
+  if (clickedCard) clickedCard.setAttribute("aria-current", "true");
   document.getElementById("playerTitle").textContent = c.name || "Live Player";
   document.getElementById("note").style.display = "none";
 
@@ -380,7 +383,7 @@ function play(c, clickedCard, retryOriginal) {
   const isMovieSeries = normalizeCategoryKey(c.cat) === "MOVIE & SERIES";
   if (videoBox) videoBox.classList.toggle("movie-native-player", isMovieSeries);
   video.controls = isMovieSeries;
-  video.autoplay = false;
+  video.autoplay = true;
   video.playsInline = true;
   video.muted = false;
   video.volume = 1;
@@ -408,9 +411,8 @@ function play(c, clickedCard, retryOriginal) {
     if (p && p.catch) p.catch(function(err) {
       // Do not replace a real stream just because Chrome blocked autoplay.
       // The user can press the native Play button for Movie & Series.
-      if (!isMovieSeries) {
-        showPlaybackError();
-      }
+      // Chrome may reject autoplay; the stream is still loaded and can be started by the player control.
+      if (fromUserClick) showPlaybackError();
     });
   }
 

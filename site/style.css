@@ -3587,3 +3587,8 @@ video{
 .video-box > #video{visibility:visible !important;opacity:1 !important;display:block !important;}
 .video-box.welcome-active > #video{visibility:hidden !important;}
 .video-box.movie-native-player > #video[controls]{visibility:visible !important;opacity:1 !important;display:block !important;pointer-events:auto !important;}
+
+/* FINAL PLAYER LAUNCH PATCH */
+.player-section[hidden]{display:none !important;visibility:hidden !important;}
+.player-section:not([hidden]){visibility:visible !important;}
+.video-box > #video{visibility:visible !important;opacity:1 !important;}
