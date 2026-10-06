@@ -3457,8 +3457,9 @@ video{
   border:1px solid rgba(255,255,255,.62) !important;
   border-radius:10px !important;
   color:#fff !important;
-  background:linear-gradient(115deg,#8b8b8b,#f0f0f0 42%,#8d8d8d 65%,#dcdcdc) !important;
-  box-shadow:0 0 9px rgba(255,80,80,.38),0 0 15px rgba(0,255,150,.30),inset 0 1px 3px rgba(255,255,255,.75) !important;
+  background:linear-gradient(115deg,#140406 0%,#7a0815 28%,#111b14 52%,#087b48 78%,#06100c 100%) !important;
+  border-color:rgba(255,70,90,.85) !important;
+  box-shadow:0 0 9px rgba(255,30,60,.62),0 0 17px rgba(0,255,145,.48),inset 0 1px 4px rgba(255,255,255,.22) !important;
   font-weight:900 !important;
   letter-spacing:.4px !important;
   animation:msmInstallFloat 2.9s ease-in-out infinite,msmInstallGlow 3.8s linear infinite !important;
@@ -3483,8 +3484,8 @@ video{
   50%{transform:translateY(-4px) scale(1.025)}
 }
 @keyframes msmInstallGlow{
-  0%,100%{box-shadow:0 0 8px rgba(255,40,70,.42),0 0 13px rgba(0,255,150,.26),inset 0 1px 3px rgba(255,255,255,.75)}
-  50%{box-shadow:0 0 13px rgba(255,40,70,.72),0 0 22px rgba(0,255,150,.52),inset 0 1px 4px rgba(255,255,255,.9)}
+  0%,100%{background:linear-gradient(115deg,#160407,#700814 30%,#101a13 55%,#08703f 80%,#06100c);box-shadow:0 0 8px rgba(255,35,65,.55),0 0 13px rgba(0,255,150,.32),inset 0 1px 3px rgba(255,255,255,.22)}
+  50%{background:linear-gradient(115deg,#650714,#c10b27 30%,#14251a 55%,#0acb70 80%,#0a1710);box-shadow:0 0 14px rgba(255,35,65,.85),0 0 24px rgba(0,255,150,.62),inset 0 1px 5px rgba(255,255,255,.34)}
 }
 @keyframes msmInstallShine{0%{left:-65%}45%,100%{left:135%}}
 @media(max-width:600px){
