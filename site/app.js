@@ -471,34 +471,33 @@ function play(c, clickedCard, retryOriginal, fromUserClick) {
 
 async function requestNativeFullscreen() {
   if (!videoBox) return;
-  try {
-    if (videoBox.requestFullscreen) {
-      await videoBox.requestFullscreen({ navigationUI: "hide" });
-      return;
-    }
-    if (videoBox.webkitRequestFullscreen) {
-      videoBox.webkitRequestFullscreen();
-      return;
-    }
-  } catch (e) {
-    // Fall through to CSS fullscreen if native fullscreen is unavailable/blocked.
-  }
+  // Use app-style CSS fullscreen only. Native Fullscreen API changes the
+  // document viewport on Android and can reset the page scroll when the
+  // orientation returns to portrait.
+  playerFullscreenScrollY = window.scrollY || window.pageYOffset || 0;
   videoBox.classList.add("vip-css-fullscreen", "vip-fullscreen", "is-fullscreen");
   document.body.classList.add("vip-player-fullscreen");
 }
 
 async function exitNativeFullscreen() {
-  try {
-    if (document.fullscreenElement && document.exitFullscreen) {
-      await document.exitFullscreen();
-    } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
-      document.webkitExitFullscreen();
-    }
-  } catch (e) {}
+  // This player intentionally does not use the browser Fullscreen API.
+  // Remove the fixed overlay and restore the page to the exact pre-rotate
+  // scroll position.
   if (videoBox) {
     videoBox.classList.remove("vip-css-fullscreen", "vip-fullscreen", "is-fullscreen");
   }
   document.body.classList.remove("vip-player-fullscreen");
+  restorePlayerPageScroll();
+}
+
+function restorePlayerPageScroll() {
+  const y = Number.isFinite(playerFullscreenScrollY) ? playerFullscreenScrollY : 0;
+  requestAnimationFrame(function () {
+    window.scrollTo(0, y);
+    requestAnimationFrame(function () {
+      window.scrollTo(0, y);
+    });
+  });
 }
 
 function isNativeFullscreen() {
@@ -507,6 +506,9 @@ function isNativeFullscreen() {
 
 async function toggleNativeFullscreen() {
   const wasPlaying = !video.paused && !video.ended;
+  if (!isNativeFullscreen()) {
+    playerFullscreenScrollY = window.scrollY || window.pageYOffset || 0;
+  }
   if (isNativeFullscreen()) {
     await exitNativeFullscreen();
     try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
@@ -565,7 +567,21 @@ document.getElementById("nextChannel").addEventListener("click", function(e) {
   e.preventDefault(); e.stopPropagation(); changeChannel(1); showVipControls();
 });
 
-window.addEventListener("orientationchange", syncFullscreenState);
+window.addEventListener("orientationchange", function () {
+  syncFullscreenState();
+  if (isNativeFullscreen()) {
+    setTimeout(restorePlayerPageScroll, 80);
+    setTimeout(restorePlayerPageScroll, 250);
+    setTimeout(restorePlayerPageScroll, 600);
+  } else {
+    setTimeout(restorePlayerPageScroll, 80);
+  }
+});
+window.addEventListener("resize", function () {
+  if (isNativeFullscreen()) {
+    setTimeout(restorePlayerPageScroll, 80);
+  }
+});
 document.addEventListener("fullscreenchange", syncFullscreenState);
 document.addEventListener("webkitfullscreenchange", syncFullscreenState);
 syncFullscreenState();
@@ -591,6 +607,7 @@ function closePlayer() {
   const y = playerReturnScrollY;
   playerOpenedFromCard = false;
   requestAnimationFrame(function(){
+    window.scrollTo({top:y, left:0, behavior:"auto"});
     requestAnimationFrame(function(){
       window.scrollTo({top:y, left:0, behavior:"auto"});
     });
