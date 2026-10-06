@@ -293,8 +293,9 @@ function render() {
     const isPaid = getChannelAccess(c.name) === 'paid';
 
     el.innerHTML =
-      '<div class="circle">' + icon + '</div>' +
-      (isPaid ? '<img class="vip-paid-crown" src="https://i.postimg.cc/g05JdqSY/Blue-Star-symbol.png" alt="Paid channel" title="Paid channel">' : '') +
+      '<div class="circle" style="position:relative;">' + icon +
+      (isPaid ? '<span class="vip-paid-crown" aria-label="Paid channel" title="Paid channel">👑</span>' : '') +
+      '</div>' +
       '<div class="label">' + esc(c.name) + '</div>';
 
     el.addEventListener("click", function () {
@@ -613,6 +614,12 @@ async function loadVipNotice() {
     if (track && text) track.innerHTML = "<span>"+esc(text)+"</span><span>"+esc(text)+"</span>";
   } catch (e) {}
 }
+
+(function(){
+  const s=document.createElement('style');
+  s.textContent='.vip-paid-crown{position:absolute;right:-2px;top:-5px;z-index:5;font-size:23px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.9));pointer-events:none;}';
+  document.head.appendChild(s);
+})();
 
 loadChannelAccess().then(function(){
   return Promise.all([loadVipPlaylist(), loadVipNotice()]);
