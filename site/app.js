@@ -543,13 +543,27 @@ function setFullscreenButtonState() {
 }
 
 function restorePlayerGridScroll() {
-  if (!grid) return;
-  const target = Number.isFinite(playerFullscreenGridScrollTop)
+  const gridTarget = Number.isFinite(playerFullscreenGridScrollTop)
     ? playerFullscreenGridScrollTop
     : playerReturnGridScrollTop;
+  const pageTarget = Number.isFinite(playerReturnScrollY)
+    ? playerReturnScrollY
+    : 0;
+
+  // Restore both scroll containers. On mobile, exiting fullscreen can
+  // change window.scrollY even when the channel grid itself did not move.
+  function restore() {
+    try {
+      window.scrollTo({ top: pageTarget, left: 0, behavior: "auto" });
+    } catch (e) {
+      try { window.scrollTo(0, pageTarget); } catch (_) {}
+    }
+    if (grid) grid.scrollTop = gridTarget;
+  }
+
   requestAnimationFrame(function () {
-    grid.scrollTop = target;
-    requestAnimationFrame(function () { grid.scrollTop = target; });
+    restore();
+    requestAnimationFrame(restore);
   });
 }
 
