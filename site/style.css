@@ -3503,31 +3503,41 @@ video{
   .install-app-header .install-text{font-size:8.5px !important}
 }
 
-/* PAID CHANNEL CROWN — outside the circular logo, anchored to the card */
-.card{overflow:hidden;}
-.card > .circle{position:relative;z-index:1;}
+/* PAID CHANNEL CROWN — perched just outside the logo, like a small premium badge */
+.card{position:relative !important;overflow:visible !important;}
+.card > .circle{position:relative;z-index:2;}
 .vip-paid-crown{
   position:absolute !important;
-  left:calc(50% + 47px) !important;
-  top:calc(50% - 84px) !important;
-  z-index:12 !important;
-  width:34px !important;
-  height:34px !important;
+  left:calc(50% + 25px) !important;
+  top:4px !important;
+  z-index:20 !important;
+  width:32px !important;
+  height:32px !important;
   display:flex !important;
   align-items:center !important;
   justify-content:center !important;
-  font-size:29px !important;
+  font-size:25px !important;
   line-height:1 !important;
-  filter:drop-shadow(0 0 4px rgba(255,190,0,.98)) drop-shadow(0 2px 3px rgba(0,0,0,.95)) !important;
+  filter:drop-shadow(0 0 3px rgba(255,214,55,1)) drop-shadow(0 2px 3px rgba(0,0,0,.95)) !important;
   pointer-events:none !important;
-  transform:rotate(-8deg);
+  transform:rotate(-10deg);
+  transform-origin:center;
 }
 @media (max-width:700px){
   .vip-paid-crown{
-    left:calc(50% + 45px) !important;
-    top:calc(50% - 82px) !important;
-    width:31px !important;
-    height:31px !important;
-    font-size:26px !important;
+    left:calc(50% + 20px) !important;
+    top:3px !important;
+    width:29px !important;
+    height:29px !important;
+    font-size:23px !important;
+  }
+}
+@media (max-width:420px){
+  .vip-paid-crown{
+    left:calc(50% + 17px) !important;
+    top:2px !important;
+    width:27px !important;
+    height:27px !important;
+    font-size:21px !important;
   }
 }
