@@ -505,7 +505,7 @@ function isNativeFullscreen() {
   return !!(document.fullscreenElement || (videoBox && videoBox.classList.contains("vip-css-fullscreen")));
 }
 
-async async function toggleNativeFullscreen() {
+async function toggleNativeFullscreen() {
   const wasPlaying = !video.paused && !video.ended;
   if (isNativeFullscreen()) {
     await exitNativeFullscreen();
