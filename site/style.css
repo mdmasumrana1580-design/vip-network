@@ -1342,6 +1342,21 @@ body.vip-player-fullscreen{overflow:hidden!important;}
   .vip-fullscreen-btn{width:40px;height:40px;}
 }
 
+/* Movie & Series: use the real browser/Chrome video controls. */
+.video-box.movie-native-player{touch-action:auto!important;}
+.video-box.movie-native-player > #video{
+  cursor:default!important;
+  object-fit:contain!important;
+}
+.video-box.movie-native-player .live-badge,
+.video-box.movie-native-player .landscape-channel-controls,
+.video-box.movie-native-player .vip-bottom-controls{
+  display:none!important;
+}
+.video-box.movie-native-player .welcome-video{
+  pointer-events:none!important;
+}
+
 /* Final premium cleanup: only custom controls are visible; no play button, timeline, or time counter. */
 .plyr__controls{display:none!important;}
 .landscape-channel-controls{bottom:20px!important;transform:none!important;left:0!important;right:0!important;padding:0 18px!important;}

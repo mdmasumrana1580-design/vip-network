@@ -370,13 +370,19 @@ function play(c, clickedCard, retryOriginal) {
     hls = null;
   }
 
-  video.pause();
-  video.removeAttribute("src");
-  video.load();
-  video.autoplay = true;
+  // Movie & Series uses the browser's native Chrome video player,
+  // while live channels keep the existing custom controls.
+  const isMovieSeries = normalizeCategoryKey(c.cat) === "MOVIE & SERIES";
+  if (videoBox) videoBox.classList.toggle("movie-native-player", isMovieSeries);
+  video.controls = isMovieSeries;
+  video.autoplay = !isMovieSeries;
   video.playsInline = true;
   video.muted = false;
   video.volume = 1;
+
+  video.pause();
+  video.removeAttribute("src");
+  video.load();
 
   const originalUrl = c.url;
   let fallbackUsed = !retryOriginal && c._usingFallback === true;
@@ -409,6 +415,8 @@ function play(c, clickedCard, retryOriginal) {
   }
 
   function startPlayback() {
+    // Native movie player should wait for the user's Play button.
+    if (isMovieSeries) return;
     const p = video.play();
     if (p && p.catch) p.catch(function () {
       if (!fallbackUsed) switchToFallback();
