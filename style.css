@@ -1,0 +1,2683 @@
+html{background:#05070d!important;color-scheme:dark!important;}
+*{box-sizing:border-box}body{margin:0;background:#03070b;color:#fff;font-family:Georgia,"Times New Roman",serif}.header{height:82px;background:#05070c;border-bottom:1px solid #17202a;display:flex;align-items:center;justify-content:space-between;padding:0 18px;position:sticky;top:0;z-index:20}.logo{font-size:27px;font-weight:900;font-style:italic;letter-spacing:-1.5px;color:#08a9ed;text-shadow:0 0 12px #008fd0}.logo b{color:#ff2d72;font-size:19px}.actions{display:flex;gap:12px}.topbtn{width:58px;height:58px;border:1px solid #0878a8;border-radius:16px;background:#06131d;color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;font:34px Georgia,serif;box-shadow:inset 0 0 16px #001a28,0 0 9px #00364d;cursor:pointer}.topbtn:first-child{font-family:Arial;font-weight:bold}.searchbar{display:none;padding:10px 18px;background:#050a10}.searchbar.show{display:block}.searchbar input{width:100%;height:44px;border-radius:10px;border:1px solid #0786b8;background:#07131d;color:#fff;padding:0 12px;outline:0}.cats{display:flex;gap:15px;overflow-x:auto;scrollbar-width:none;padding:36px 48px 16px}.cats::-webkit-scrollbar{display:none}.cats button{flex:0 0 auto;height:52px;min-width:138px;padding:0 25px;border-radius:28px;border:1px solid #087cad;background:#030a10;color:#fff;font-size:21px;font-weight:700;font-style:italic;box-shadow:0 0 10px #001a29;white-space:nowrap}.cats button.active{background:linear-gradient(135deg,#11b9f1,#079bd4);box-shadow:0 0 22px #00baff88}.blue-line{height:6px;width:47%;margin:0 16px 18px;background:linear-gradient(90deg,#0cb8ef,#087eaa 70%,transparent);border-radius:4px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:0 32px 90px}.card{height:196px;background:#fafafa;border-radius:17px;border:1px solid #d9dee2;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;transition:.18s}.card:hover{transform:translateY(-2px);box-shadow:0 0 18px #00baff55}.badge{position:absolute;right:7px;top:5px;font-size:18px}.circle{width:106px;height:106px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#eee 65%,#ddd);box-shadow:0 5px 17px #0002;display:flex;align-items:center;justify-content:center;text-align:center;padding:9px;color:#111;font-size:13px;font-weight:900;line-height:1.05}.circle.sports{color:#121212}.circle.red{color:#cf1938}.circle.blue{color:#087db0}.circle.gold{color:#ad7500}.label{position:absolute;left:8px;right:8px;bottom:7px;padding:6px 5px;border-radius:10px;background:#404040;color:#fff;text-align:center;font-size:12.5px;font-weight:700;font-style:italic;line-height:1.05}.empty{text-align:center;padding:60px;color:#8ca0ad}.player-section{width:calc(100% - 32px);max-width:900px;margin:0 auto 18px;background:#071018;border:1px solid #078fc4;border-radius:14px;padding:11px;box-shadow:0 0 22px #00aef033}.player-head{height:38px;display:flex;align-items:center;justify-content:space-between;font-size:16px}.player-head button{width:32px;height:32px;border:0;border-radius:8px;background:#0b1821;color:#fff;font-size:24px;line-height:1;cursor:pointer}.video-box{position:relative;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}.video-box video{display:block;width:100%;height:100%;background:#000}.note{display:none;position:absolute;left:10px;right:10px;bottom:10px;background:#000c;padding:8px;border-radius:8px;font:13px Arial;color:#d8e6ed}.float-fb{position:fixed;right:18px;bottom:18px;width:64px;height:64px;border-radius:50%;background:#159fd7;color:#fff;text-decoration:none;display:flex;align-items:center;justify-content:center;font:bold 38px Arial;box-shadow:0 5px 25px #008fd077;z-index:25}@media(min-width:900px){.grid{grid-template-columns:repeat(4,minmax(0,1fr));padding-left:45px;padding-right:45px}.card{height:215px}}@media(max-width:700px){.header{height:82px;padding:0 15px}.logo{font-size:26px}.logo b{font-size:18px}.topbtn{width:58px;height:58px}.cats{padding:36px 48px 16px}.cats button{min-width:138px}.grid{padding-left:32px;padding-right:32px}.card{height:196px}.circle{width:104px;height:104px}.label{font-size:12px}.player-section{width:calc(100% - 24px)}}
+
+/* V7 compact UI + round channel logos */
+.header{height:64px;padding:0 12px}.logo{font-size:22px}.logo b{font-size:16px}.actions{gap:8px}.topbtn{width:46px;height:46px;border-radius:13px;font-size:28px}.cats{gap:6px;padding:12px 10px 8px}.cats button{height:34px;min-width:76px;padding:0 12px;border-radius:18px;font-size:13px}.blue-line{height:4px;width:42%;margin:0 12px 10px}.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 10px 80px}.card{height:116px;border-radius:14px;background:#0b1219;border-color:#173647}.circle{width:64px;height:64px;padding:0;overflow:hidden;background:#f4f4f4;box-shadow:0 3px 10px #0005}.circle img{width:100%;height:100%;object-fit:cover;display:block}.circle span{font:700 12px Arial;color:#111}.label{left:4px;right:4px;bottom:4px;padding:4px 3px;border-radius:8px;font-size:10px;line-height:1.05;max-height:28px;overflow:hidden;display:flex;align-items:center;justify-content:center}.player-section{width:calc(100% - 20px);margin:0 auto 10px;padding:7px;border-radius:11px}.player-head{height:30px;font-size:13px}.player-head button{width:27px;height:27px;font-size:20px}.float-fb{width:52px;height:52px;right:12px;bottom:12px;font-size:31px}@media(max-width:420px){.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding-left:7px;padding-right:7px}.card{height:105px}.circle{width:56px;height:56px}.label{font-size:9px}.cats{padding-left:6px;padding-right:6px}.cats button{min-width:72px;padding:0 10px;font-size:12px}}
+
+
+/* V8: sticky player + red scrolling headline */
+.player-section{
+  position:sticky;
+  top:64px;
+  z-index:18;
+  background:#071018;
+}
+.headline{
+  margin-top:7px;
+  height:34px;
+  overflow:hidden;
+  border-radius:8px;
+  border:1px solid #7d1414;
+  background:#180808;
+  display:flex;
+  align-items:center;
+  white-space:nowrap;
+}
+.headline-track{
+  display:flex;
+  width:max-content;
+  min-width:200%;
+  animation:vipHeadlineMove 42s linear infinite;
+  will-change:transform;
+}
+.headline-track span{
+  display:inline-block;
+  flex:0 0 auto;
+  padding-right:70px;
+  color:#ff3030;
+  font-family:Arial, sans-serif;
+  font-size:12px;
+  font-weight:700;
+  text-shadow:0 0 7px rgba(255,40,40,.45);
+}
+@keyframes vipHeadlineMove{
+  from{transform:translateX(0)}
+  to{transform:translateX(-50%)}
+}
+@media(max-width:420px){
+  .player-section{top:64px}
+  .headline{height:30px;margin-top:6px}
+  .headline-track span{font-size:10px;padding-right:50px}
+}
+
+
+/* V9: custom logos + faster headline */
+.logo-image{
+  display:flex;
+  align-items:center;
+  height:58px;
+  max-width:210px;
+}
+.logo-image img{
+  display:block;
+  width:145px;
+  max-height:54px;
+  object-fit:contain;
+}
+.service-link{
+  overflow:hidden;
+  padding:5px;
+}
+.service-link img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  border-radius:50%;
+  display:block;
+}
+.headline-track{
+  animation-duration:22s !important;
+}
+@media(max-width:420px){
+  .logo-image img{
+    width:125px;
+    max-height:48px;
+  }
+}
+
+/* V10: categories below player + complete notice headline + footer */
+.player-section{position:relative;top:auto;margin-bottom:8px}
+.cats{position:relative;padding-top:8px}
+.headline{height:38px;margin-top:7px;display:flex;align-items:stretch;white-space:nowrap;overflow:hidden}
+.headline-notice{flex:0 0 auto;display:flex;align-items:center;justify-content:center;padding:0 12px;background:#d40000;color:#fff;border-radius:7px 0 0 7px;font-family:Arial,sans-serif;font-size:12px;font-weight:800;z-index:2}
+.headline-window{min-width:0;flex:1;overflow:hidden;display:flex;align-items:center}
+.headline-track{min-width:max-content;width:max-content;display:flex;align-items:center;animation:vipHeadlineMove 34s linear infinite !important}
+.headline-track span{font-size:12px;padding-right:80px;line-height:1.3}
+.site-footer{text-align:center;color:#8ea1ad;font:700 11px Arial,sans-serif;padding:8px 10px 24px;letter-spacing:.2px}
+@media(max-width:420px){
+  .headline{height:32px}
+  .headline-notice{padding:0 9px;font-size:10px}
+  .headline-track span{font-size:10px;padding-right:55px}
+  .cats{padding-top:7px}
+  .site-footer{font-size:10px;padding-bottom:20px}
+}
+
+/* Keep player/category/headline in normal page flow; opening a channel must not jump the list. */
+.player-section,
+.cats,
+.headline { overflow-anchor: none; }
+.player-section { position: relative !important; top: auto !important; }
+
+/* Final anti-jump fix: opening a channel must preserve the user's viewport. */
+html { scroll-behavior: auto !important; }
+body { overflow-anchor: none; }
+.card { scroll-margin: 0 !important; }
+
+
+/* Final fix: opening/playing a channel must never make the page itself scroll. */
+html, body { scroll-behavior: auto !important; }
+.player-section { position: relative !important; top: auto !important; }
+.card { scroll-margin: 0 !important; }
+
+
+/* REFERENCE PLAYER: fixed overlay on top, no layout reflow when a channel is selected. */
+.player-section{
+  position:fixed !important;
+  left:0 !important;
+  right:0 !important;
+  top:0 !important;
+  width:100% !important;
+  max-width:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:#000 !important;
+  box-shadow:0 4px 18px #0009 !important;
+  z-index:1000 !important;
+}
+.player-head{display:none !important}
+.video-box{
+  width:100% !important;
+  aspect-ratio:16/9 !important;
+  border-radius:0 !important;
+  background:#000 !important;
+}
+.video-box video{width:100% !important;height:100% !important;object-fit:contain !important}
+.player-section[hidden]{display:none !important}
+/* Keep the normal page content exactly where it was; the player overlays it. */
+.cats{position:relative;z-index:1}
+.grid{position:relative;z-index:1}
+.headline{position:relative;z-index:1}
+@media(max-width:420px){
+  .video-box{aspect-ratio:16/9 !important}
+}
+
+
+/* V11: preserve header/logo, reserve player space, and keep headline/categories in page flow. */
+.header{position:sticky;top:0;z-index:1100;background:#05070c}
+.player-section{
+  position:fixed !important;
+  left:0 !important; right:0 !important;
+  top:64px !important;
+  width:100% !important; max-width:none !important;
+  margin:0 !important; padding:0 !important;
+  border:0 !important; border-radius:0 !important;
+  background:#000 !important;
+  box-shadow:0 4px 18px #0009 !important;
+  z-index:1000 !important;
+}
+.player-section[hidden]{display:block !important}
+.player-head{display:none !important}
+.video-box{width:100% !important;aspect-ratio:16/9 !important;border-radius:0 !important;background:#000 !important}
+.video-box video{width:100% !important;height:100% !important;object-fit:contain !important;display:block !important}
+.player-spacer{width:100%;aspect-ratio:16/9;background:#000}
+.headline{position:relative !important;z-index:2 !important;margin:7px 10px 0 !important;height:38px}
+.cats{position:relative !important;z-index:2 !important;padding-top:8px !important}
+.grid{position:relative !important;z-index:1 !important}
+.site-footer{position:relative;z-index:1}
+@media(max-width:420px){
+  .headline{height:32px;margin:6px 6px 0 !important}
+  .player-spacer{aspect-ratio:16/9}
+}
+
+
+/* VIP PLAYER BORDER: premium red + green border */
+.video-box{
+  border:3px solid transparent !important;
+  border-radius:12px !important;
+  background:
+    linear-gradient(#000,#000) padding-box,
+    linear-gradient(135deg,#e00000 0%,#ff3030 25%,#00a651 50%,#00d66a 72%,#e00000 100%) border-box !important;
+  box-shadow:0 0 0 1px #e0000033,0 0 14px #00a65155,0 0 24px #e0000033 !important;
+}
+.video-box video{border-radius:9px !important;}
+@media(max-width:700px){
+  .video-box{border-width:2px !important;border-radius:10px !important;box-shadow:0 0 0 1px #e0000033,0 0 10px #00a65144,0 0 16px #e0000033 !important;}
+  .video-box video{border-radius:8px !important;}
+}
+
+/* V12: keep player + headline + categories stable while the channel grid scrolls. */
+:root{--vip-header-h:64px;--vip-player-h:56.25vw;--vip-headline-h:38px;--vip-cat-h:50px}
+@media(min-width:701px){:root{--vip-player-h:calc(min(900px,100vw) * .5625)}}
+.header{position:sticky !important;top:0 !important;z-index:1100 !important}
+.player-section{position:fixed !important;top:var(--vip-header-h) !important;left:0 !important;right:0 !important;width:100% !important;height:var(--vip-player-h) !important;z-index:1000 !important}
+.video-box{width:100% !important;height:100% !important;aspect-ratio:auto !important}
+.video-box video{width:100% !important;height:100% !important;object-fit:contain !important}
+.player-spacer{width:100% !important;height:var(--vip-player-h) !important;aspect-ratio:auto !important;background:#000}
+.headline{position:sticky !important;top:calc(var(--vip-header-h) + var(--vip-player-h)) !important;z-index:900 !important}
+.cats{position:sticky !important;top:calc(var(--vip-header-h) + var(--vip-player-h) + var(--vip-headline-h)) !important;z-index:899 !important;background:#03070b}
+.blue-line{position:relative;z-index:2}
+.grid,.empty,.site-footer{position:relative;z-index:1}
+/* Clicking a channel should never ask the browser to scroll the clicked card into view. */
+.card{scroll-margin-top:0 !important}
+html{scroll-behavior:auto !important}
+body{overflow-anchor:none !important}
+@media(max-width:420px){
+  :root{--vip-headline-h:32px;--vip-cat-h:50px}
+  .headline{top:calc(var(--vip-header-h) + var(--vip-player-h)) !important}
+  .cats{top:calc(var(--vip-header-h) + var(--vip-player-h) + var(--vip-headline-h)) !important}
+}
+
+
+/* Header total visitor badge */
+.brand-wrap{display:flex;align-items:center;gap:8px;min-width:0}
+.header-total{height:38px;display:flex;align-items:center;gap:5px;padding:0 9px;border:1px solid #087cad;border-radius:11px;background:#06131d;box-shadow:inset 0 0 12px #001a28,0 0 8px #00364d;white-space:nowrap}
+.header-total-icon{font-size:16px;line-height:1}
+.header-total-label{font:700 10px Arial,sans-serif;color:#9fb4bf}
+.header-total strong{font:700 15px Arial,sans-serif;color:#fff;min-width:22px;text-align:center}
+@media(max-width:420px){
+  .brand-wrap{gap:5px}
+  .header-total{height:34px;padding:0 6px;border-radius:9px;gap:3px}
+  .header-total-icon{font-size:14px}
+  .header-total-label{font-size:8px}
+  .header-total strong{font-size:12px;min-width:18px}
+  .logo-image img{width:112px;max-height:44px}
+}
+
+/* V12 FINAL: red + green headline lettering and channel-card borders */
+.headline-track span{
+  background:linear-gradient(90deg,#ff2b2b 0%,#ff5252 22%,#ffffff 42%,#36e06f 62%,#00c853 82%,#ff3030 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  color:transparent;
+  text-shadow:none !important;
+  font-weight:800;
+}
+.headline-notice{
+  background:linear-gradient(135deg,#e00000,#ff3030 45%,#008f3d 55%,#00c853) !important;
+  box-shadow:inset 0 0 10px #0005,0 0 10px #e0000044;
+}
+
+.card{
+  border:2px solid transparent !important;
+  background:
+    linear-gradient(#0b1219,#0b1219) padding-box,
+    linear-gradient(135deg,#e00000 0%,#ff3030 30%,#00a651 65%,#00d66a 100%) border-box !important;
+  box-shadow:0 0 0 1px #000,0 0 8px #00a65122,0 0 10px #e0000022 !important;
+}
+.card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 0 0 1px #000,0 0 12px #00c85355,0 0 16px #ff303055 !important;
+}
+.card:nth-child(3n+2){
+  background:
+    linear-gradient(#0b1219,#0b1219) padding-box,
+    linear-gradient(135deg,#00c853 0%,#00e676 35%,#e00000 70%,#ff3030 100%) border-box !important;
+}
+.card:nth-child(3n){
+  background:
+    linear-gradient(#0b1219,#0b1219) padding-box,
+    linear-gradient(135deg,#ff3030 0%,#e00000 35%,#00d66a 70%,#00a651 100%) border-box !important;
+}
+@media(max-width:700px){
+  .card{border-width:1.5px !important}
+}
+
+/* V13: PREMIUM RED + GREEN CATEGORY NAV */
+.cats{
+  gap:8px !important;
+  padding:10px 10px 9px !important;
+  background:linear-gradient(180deg,#03070b 0%,#07100d 100%) !important;
+  border-top:1px solid #12351f;
+  border-bottom:1px solid #2a1717;
+  box-shadow:0 5px 18px #0008, inset 0 1px 0 #ffffff08;
+}
+.cats button{
+  position:relative !important;
+  height:40px !important;
+  min-width:92px !important;
+  padding:0 16px 0 34px !important;
+  border:1px solid transparent !important;
+  border-radius:13px !important;
+  background:
+    linear-gradient(#071016,#0a1516) padding-box,
+    linear-gradient(135deg,#e00000 0%,#ff3030 32%,#00a651 68%,#00d66a 100%) border-box !important;
+  color:#eaf4ef !important;
+  font:800 13px Arial,sans-serif !important;
+  font-style:normal !important;
+  letter-spacing:.4px;
+  text-shadow:0 1px 2px #000;
+  box-shadow:0 0 0 1px #000, inset 0 0 12px #0008, 0 3px 10px #0008, 0 0 8px #00a65118;
+  overflow:hidden;
+  transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;
+}
+.cats button::before{
+  position:absolute;
+  left:11px;
+  top:50%;
+  transform:translateY(-50%);
+  width:17px;
+  height:17px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:linear-gradient(135deg,#ff3030,#00c853);
+  color:#fff;
+  font:900 10px Arial,sans-serif;
+  box-shadow:0 0 8px #00c85355,0 0 7px #ff303055;
+}
+.cats button:nth-child(1)::before{content:'▦';}
+.cats button:nth-child(2)::before{content:'★';}
+.cats button:nth-child(3)::before{content:'BD';font-size:7px;}
+.cats button:nth-child(4)::before{content:'IN';font-size:7px;}
+.cats button:nth-child(5)::before{content:'◎';}
+.cats button::after{
+  content:'';
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:2px;
+  background:linear-gradient(90deg,#ff2020,#ff4a4a 35%,#00c853 65%,#00e676);
+  opacity:.65;
+}
+.cats button:hover{
+  transform:translateY(-1px);
+  filter:brightness(1.12);
+  box-shadow:0 0 0 1px #000, inset 0 0 12px #0008, 0 5px 14px #0009, 0 0 13px #00c85344, 0 0 13px #ff303033;
+}
+.cats button.active{
+  color:#fff !important;
+  background:
+    linear-gradient(135deg,#3a0808 0%,#17090a 45%,#062817 100%) padding-box,
+    linear-gradient(110deg,#ff1717 0%,#ff4242 30%,#00c853 70%,#00f078 100%) border-box !important;
+  border-width:2px !important;
+  box-shadow:
+    0 0 0 1px #000,
+    inset 0 0 18px #0009,
+    0 0 10px #ff303055,
+    0 0 18px #00c85344;
+}
+.cats button.active::before{
+  background:linear-gradient(135deg,#ff1f1f 0%,#ff3030 45%,#00d95a 55%,#00f078 100%);
+  box-shadow:0 0 10px #ff303077,0 0 10px #00d66a66;
+}
+@media(max-width:700px){
+  .cats{gap:6px !important;padding:8px 7px 8px !important;}
+  .cats button{height:38px !important;min-width:82px !important;padding:0 12px 0 30px !important;font-size:12px !important;border-radius:12px !important;}
+  .cats button::before{left:8px;width:16px;height:16px;font-size:9px;}
+}
+@media(max-width:420px){
+  .cats{gap:5px !important;padding:7px 6px !important;}
+  .cats button{height:36px !important;min-width:76px !important;padding:0 9px 0 27px !important;font-size:11px !important;border-radius:11px !important;letter-spacing:.2px;}
+  .cats button::before{left:7px;width:15px;height:15px;font-size:8px;}
+  .cats button:nth-child(3)::before,.cats button:nth-child(4)::before{font-size:6px;}
+}
+
+/* V14: Premium top logos */
+.logo-image{
+  position:relative;
+  height:52px;
+  min-width:148px;
+  max-width:220px;
+  padding:3px 10px 3px 5px;
+  border-radius:14px;
+  background:linear-gradient(135deg,#180607,#07170d 55%,#04100a) padding-box,
+             linear-gradient(105deg,#ff1717 0%,#ff4040 30%,#00c853 70%,#00ef78 100%) border-box;
+  border:1.5px solid transparent;
+  box-shadow:0 0 8px #ff252533,0 0 14px #00d85a22,inset 0 0 14px #000b;
+}
+.logo-image::before{
+  content:"";
+  position:absolute;
+  inset:2px;
+  border-radius:12px;
+  border:1px solid #ffffff18;
+  pointer-events:none;
+}
+.logo-image::after{
+  content:"";
+  position:absolute;
+  top:5px;
+  left:12%;
+  width:76%;
+  height:2px;
+  border-radius:3px;
+  background:linear-gradient(90deg,transparent,#ff3030,#00d95a,transparent);
+  opacity:.9;
+  pointer-events:none;
+}
+.logo-image img{
+  position:relative;
+  z-index:1;
+  width:145px;
+  max-height:46px;
+  filter:drop-shadow(0 0 4px #ff202044) drop-shadow(0 0 5px #00d95a33);
+}
+.service-link{
+  position:relative;
+  width:50px !important;
+  height:50px !important;
+  padding:4px !important;
+  border-radius:15px !important;
+  border:1.5px solid transparent !important;
+  background:linear-gradient(#07120d,#090607) padding-box,
+             linear-gradient(145deg,#ff1717,#ff4b4b 42%,#00c853 68%,#00ef78) border-box !important;
+  box-shadow:0 0 8px #ff222233,0 0 14px #00d95a33,inset 0 0 12px #000b !important;
+}
+.service-link::before{
+  content:"";
+  position:absolute;
+  inset:3px;
+  border-radius:11px;
+  border:1px solid #ffffff18;
+  pointer-events:none;
+}
+.service-link img{
+  position:relative;
+  z-index:1;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  border-radius:11px;
+  filter:drop-shadow(0 0 4px #00e67655);
+}
+.service-link:hover,.logo-image:hover{
+  transform:translateY(-1px);
+  filter:brightness(1.08);
+  box-shadow:0 0 10px #ff303044,0 0 18px #00d95a44,inset 0 0 14px #000b !important;
+}
+@media(max-width:700px){
+  .logo-image{height:46px;min-width:126px;padding:2px 7px 2px 3px;border-radius:12px;}
+  .logo-image img{width:120px;max-height:40px;}
+  .service-link{width:44px !important;height:44px !important;border-radius:13px !important;}
+}
+@media(max-width:420px){
+  .logo-image{height:42px;min-width:116px;padding-right:5px;}
+  .logo-image img{width:112px;max-height:37px;}
+  .service-link{width:40px !important;height:40px !important;border-radius:11px !important;}
+}
+
+/* V15: Larger channel logos inside premium cards */
+.circle{
+  width:82px !important;
+  height:82px !important;
+  padding:2px !important;
+}
+.circle img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  display:block;
+  border-radius:50%;
+}
+.card{
+  min-height:126px !important;
+}
+@media(max-width:700px){
+  .card{height:122px !important;min-height:122px !important;}
+  .circle{width:76px !important;height:76px !important;padding:2px !important;}
+  .circle img{object-fit:contain !important;}
+  .label{font-size:9.5px !important;}
+}
+@media(max-width:420px){
+  .card{height:116px !important;min-height:116px !important;}
+  .circle{width:72px !important;height:72px !important;padding:2px !important;}
+  .label{left:3px !important;right:3px !important;bottom:3px !important;font-size:9px !important;}
+}
+
+/* V17: make channel logos visibly larger without shrinking the card */
+.card{height:132px !important;min-height:132px !important;}
+.circle{width:90px !important;height:90px !important;padding:1px !important;}
+.circle img{width:100% !important;height:100% !important;object-fit:cover !important;transform:scale(1.02);}
+.label{left:4px !important;right:4px !important;bottom:4px !important;z-index:3 !important;}
+@media(max-width:700px){
+  .card{height:130px !important;min-height:130px !important;}
+  .circle{width:88px !important;height:88px !important;padding:1px !important;}
+  .circle img{object-fit:cover !important;transform:scale(1.03);}
+}
+@media(max-width:420px){
+  .card{height:124px !important;min-height:124px !important;}
+  .circle{width:84px !important;height:84px !important;padding:1px !important;}
+  .circle img{object-fit:cover !important;transform:scale(1.03);}
+  .label{left:3px !important;right:3px !important;bottom:3px !important;font-size:9px !important;}
+}
+
+/* V18: compact logo border, snug around the channel logo */
+.circle{
+  width:78px !important;
+  height:78px !important;
+  padding:2px !important;
+  border-radius:50% !important;
+  background:
+    linear-gradient(#f7f7f7,#f7f7f7) padding-box,
+    linear-gradient(135deg,#ff1717 0%,#ff3d3d 38%,#00c853 68%,#00ef78 100%) border-box !important;
+  border:2px solid transparent !important;
+  box-shadow:0 3px 12px #0005,0 0 8px #00c85322,0 0 8px #ff303022 !important;
+}
+.circle img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  transform:none !important;
+  border-radius:50% !important;
+  background:#f7f7f7;
+}
+@media(max-width:700px){
+  .circle{width:72px !important;height:72px !important;padding:2px !important;}
+  .circle img{object-fit:contain !important;transform:none !important;}
+}
+@media(max-width:420px){
+  .circle{width:66px !important;height:66px !important;padding:2px !important;}
+  .circle img{object-fit:contain !important;transform:none !important;}
+}
+
+
+/* V19: remove square channel-card border; keep snug circular logo border */
+.card{
+  border:0 !important;
+  background:#0b1219 !important;
+  box-shadow:none !important;
+}
+.card:hover{
+  border:0 !important;
+  box-shadow:0 0 14px #00c85322,0 0 14px #ff303022 !important;
+}
+.circle{
+  border:2px solid transparent !important;
+  border-radius:50% !important;
+  padding:2px !important;
+  background:
+    linear-gradient(#f7f7f7,#f7f7f7) padding-box,
+    linear-gradient(135deg,#ff1717 0%,#ff4040 38%,#00c853 68%,#00ef78 100%) border-box !important;
+  box-shadow:0 0 7px #ff303033,0 0 9px #00c85333,0 3px 10px #0005 !important;
+}
+.circle img{
+  border-radius:50% !important;
+  object-fit:contain !important;
+  background:#f7f7f7 !important;
+}
+
+/* V19: top website logos - border follows the actual logo instead of a large box */
+.logo-image{
+  height:auto !important;
+  min-width:0 !important;
+  width:max-content !important;
+  max-width:none !important;
+  padding:1px 3px !important;
+  border-radius:10px !important;
+}
+.logo-image::before{
+  inset:1px !important;
+  border-radius:8px !important;
+}
+.logo-image::after{
+  display:none !important;
+}
+.logo-image img{
+  width:142px !important;
+  max-width:none !important;
+  height:auto !important;
+  max-height:none !important;
+  display:block !important;
+}
+.service-link{
+  width:46px !important;
+  height:46px !important;
+  padding:2px !important;
+  border-radius:12px !important;
+}
+.service-link::before{
+  inset:2px !important;
+  border-radius:9px !important;
+}
+.service-link img{
+  border-radius:9px !important;
+}
+@media(max-width:700px){
+  .logo-image{padding:1px 2px !important;border-radius:9px !important;}
+  .logo-image::before{border-radius:7px !important;}
+  .logo-image img{width:120px !important;}
+  .service-link{width:42px !important;height:42px !important;border-radius:11px !important;}
+  .service-link::before{border-radius:8px !important;}
+  .service-link img{border-radius:8px !important;}
+}
+@media(max-width:420px){
+  .logo-image img{width:112px !important;}
+  .service-link{width:39px !important;height:39px !important;border-radius:10px !important;}
+}
+
+/* V20: clean transparent website logos + remove visitor box border */
+.logo-image{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  min-width:0 !important;
+  width:auto !important;
+  height:auto !important;
+}
+.logo-image::before,.logo-image::after{display:none !important;}
+.logo-image img{
+  display:block !important;
+  width:150px !important;
+  height:auto !important;
+  max-height:none !important;
+  filter:drop-shadow(0 0 5px #ff202022) drop-shadow(0 0 7px #00d95a22) !important;
+}
+.service-link{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  width:48px !important;
+  height:48px !important;
+  border-radius:0 !important;
+}
+.service-link::before{display:none !important;}
+.service-link img{
+  display:block !important;
+  width:48px !important;
+  height:48px !important;
+  object-fit:contain !important;
+  border-radius:0 !important;
+  filter:drop-shadow(0 0 5px #00d95a33) !important;
+}
+.header-total{
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  padding:0 4px !important;
+}
+.header-total-icon{filter:drop-shadow(0 0 5px #00c85355);}
+.header-total strong{color:#e8fff0 !important;}
+@media(max-width:700px){
+  .logo-image img{width:122px !important;}
+  .service-link,.service-link img{width:43px !important;height:43px !important;}
+}
+@media(max-width:420px){
+  .logo-image img{width:114px !important;}
+  .service-link,.service-link img{width:40px !important;height:40px !important;}
+}
+
+
+/* V21: green NETWORK word + Facebook header button */
+.logo-image img{
+  width:150px !important;
+  height:auto !important;
+  filter:drop-shadow(0 0 5px rgba(0,210,85,.28)) !important;
+}
+.logo-image{background:transparent !important;border:0 !important;box-shadow:none !important;padding:0 !important;}
+.facebook-link{
+  display:flex !important; align-items:center !important; justify-content:center !important;
+  width:46px !important; height:46px !important; padding:0 !important;
+  border:0 !important; border-radius:50% !important;
+  background:linear-gradient(145deg,#1877f2,#0d5dcc) !important;
+  box-shadow:0 0 10px rgba(24,119,242,.35) !important;
+  text-decoration:none !important;
+}
+.facebook-link span{
+  color:#fff !important; font-family:Arial,sans-serif !important;
+  font-size:32px !important; font-weight:700 !important; line-height:1 !important;
+}
+.facebook-link:hover{transform:translateY(-1px) scale(1.03);}
+@media(max-width:700px){.logo-image img{width:122px !important}.facebook-link{width:43px !important;height:43px !important}.facebook-link span{font-size:29px !important}}
+@media(max-width:420px){.logo-image img{width:114px !important}.facebook-link{width:40px !important;height:40px !important}.facebook-link span{font-size:27px !important}}
+
+
+/* V22: compact Facebook + premium borderless search + smaller categories */
+.search-btn{
+  width:42px !important;
+  height:42px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#f5fff9 !important;
+  font-size:0 !important;
+  position:relative !important;
+  transition:transform .2s ease, filter .2s ease !important;
+}
+.search-btn::before{
+  content:"";
+  position:absolute;
+  inset:2px;
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.10),transparent 48%);
+  box-shadow:0 0 12px rgba(0,210,90,.14), inset 0 0 8px rgba(255,255,255,.04);
+  pointer-events:none;
+}
+.search-btn svg{
+  width:25px !important;
+  height:25px !important;
+  fill:none !important;
+  stroke:#f3fff8 !important;
+  stroke-width:2.25 !important;
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+  filter:drop-shadow(0 0 4px rgba(0,210,90,.45)) !important;
+  position:relative;
+  z-index:1;
+}
+.search-btn:hover{transform:scale(1.07) !important;filter:brightness(1.12) !important;}
+
+.facebook-link{
+  width:38px !important;
+  height:38px !important;
+  border:0 !important;
+  border-radius:50% !important;
+  box-shadow:0 0 8px rgba(24,119,242,.28) !important;
+}
+.facebook-link span{font-size:25px !important;}
+
+.cats{
+  gap:6px !important;
+  padding:8px 8px 7px !important;
+}
+.cats button{
+  height:34px !important;
+  min-width:82px !important;
+  padding:0 12px 0 29px !important;
+  border-radius:11px !important;
+  font-size:12px !important;
+  letter-spacing:.25px !important;
+}
+.cats button::before{
+  left:8px !important;
+  width:15px !important;
+  height:15px !important;
+  font-size:9px !important;
+}
+.cats button:nth-child(3)::before,.cats button:nth-child(4)::before{font-size:6px !important;}
+
+@media(max-width:700px){
+  .search-btn{width:39px !important;height:39px !important;}
+  .search-btn svg{width:23px !important;height:23px !important;}
+  .facebook-link{width:36px !important;height:36px !important;}
+  .facebook-link span{font-size:23px !important;}
+  .cats{gap:5px !important;padding:7px 6px 6px !important;}
+  .cats button{height:32px !important;min-width:76px !important;padding-left:27px !important;padding-right:10px !important;font-size:11.5px !important;border-radius:10px !important;}
+  .cats button::before{left:7px !important;width:14px !important;height:14px !important;}
+}
+@media(max-width:420px){
+  .search-btn{width:37px !important;height:37px !important;}
+  .search-btn svg{width:22px !important;height:22px !important;}
+  .facebook-link{width:34px !important;height:34px !important;}
+  .facebook-link span{font-size:22px !important;}
+  .cats{gap:4px !important;padding:6px 5px 5px !important;}
+  .cats button{height:30px !important;min-width:70px !important;padding-left:25px !important;padding-right:8px !important;font-size:11px !important;border-radius:9px !important;}
+  .cats button::before{left:6px !important;width:13px !important;height:13px !important;font-size:8px !important;}
+}
+
+
+/* V23: remove search button and shift Facebook slightly inward */
+.actions{padding-right:8px !important;}
+.facebook-link{margin-right:4px !important;}
+@media(max-width:700px){.actions{padding-right:5px !important}.facebook-link{margin-right:3px !important;}}
+@media(max-width:420px){.actions{padding-right:3px !important}.facebook-link{margin-right:2px !important;}}
+
+/* V24: Premium typography system — elegant, clean and readable across the whole site */
+:root{
+  --vip-font-bn:"Noto Sans Bengali","Hind Siliguri","SolaimanLipi","Nirmala UI",Arial,sans-serif;
+  --vip-font-ui:"Poppins","Segoe UI","Trebuchet MS",Arial,sans-serif;
+  --vip-font-display:"Trebuchet MS","Segoe UI",Arial,sans-serif;
+}
+
+html,body,button,input,select,textarea{
+  font-family:var(--vip-font-bn) !important;
+}
+body{
+  font-weight:500;
+  letter-spacing:.1px;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* Header */
+.header-total-label,.header-total strong,.topbtn,.player-head,.player-head button{
+  font-family:var(--vip-font-ui) !important;
+}
+.header-total-label{font-weight:700 !important;letter-spacing:.25px}
+.header-total strong{font-weight:800 !important;letter-spacing:.2px}
+
+/* Headline typography */
+.headline-notice{
+  font-family:var(--vip-font-bn) !important;
+  font-weight:900 !important;
+  letter-spacing:.2px !important;
+}
+.headline-track span{
+  font-family:var(--vip-font-bn) !important;
+  font-weight:800 !important;
+  letter-spacing:.15px !important;
+}
+
+/* Category buttons */
+.cats button{
+  font-family:var(--vip-font-ui) !important;
+  font-weight:800 !important;
+  letter-spacing:.55px !important;
+  text-transform:uppercase;
+}
+.cats button:nth-child(3),.cats button:nth-child(4){
+  font-family:var(--vip-font-ui) !important;
+  letter-spacing:.35px !important;
+}
+
+/* Channel names */
+.label{
+  font-family:var(--vip-font-bn) !important;
+  font-weight:800 !important;
+  font-style:normal !important;
+  letter-spacing:.05px !important;
+  text-shadow:0 1px 2px #0009;
+}
+.circle span{
+  font-family:var(--vip-font-ui) !important;
+  font-weight:800 !important;
+}
+
+/* Player / status text */
+.note,.empty,.site-footer{
+  font-family:var(--vip-font-bn) !important;
+}
+.note{font-weight:600 !important;line-height:1.5 !important}
+.empty{font-weight:700 !important;letter-spacing:.2px}
+.site-footer{font-family:var(--vip-font-ui) !important;font-weight:600 !important;letter-spacing:.35px !important}
+
+/* Give UI text a more polished hierarchy */
+.player-head b{
+  font-family:var(--vip-font-ui) !important;
+  font-weight:800 !important;
+  letter-spacing:.3px;
+}
+
+/* Visitor box stays borderless as requested */
+.header-total{
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  padding-left:5px !important;
+  padding-right:5px !important;
+}
+
+@media(max-width:420px){
+  body{letter-spacing:0 !important}
+  .headline-track span{letter-spacing:0 !important}
+  .cats button{letter-spacing:.3px !important}
+  .label{letter-spacing:0 !important}
+}
+
+
+/* V25: Plyr premium player */
+:root{--plyr-color-main:#00a651;--plyr-video-control-color:#fff;--plyr-video-control-color-hover:#fff;--plyr-control-radius:8px}
+.video-box .plyr{width:100%;height:100%;border-radius:10px;overflow:hidden;background:#000}
+.video-box .plyr--video{background:#000}
+.video-box .plyr__controls{background:linear-gradient(180deg,transparent,rgba(0,0,0,.88));padding:38px 12px 10px}
+.video-box .plyr__control:hover,.video-box .plyr__control.plyr__tab-focus{background:#e00000}
+.video-box .plyr__progress__buffer{color:#ffffff55}
+.video-box .plyr__progress input[type=range]::-webkit-slider-thumb{box-shadow:0 0 0 2px #00a651}
+.video-box .plyr__control--overlaid{background:linear-gradient(135deg,#e00000,#00a651);box-shadow:0 0 24px #00a65155}
+.video-box .plyr__control--overlaid:hover{background:linear-gradient(135deg,#00a651,#e00000)}
+@media(max-width:700px){.video-box .plyr__controls{padding:28px 7px 7px}.video-box .plyr__control{padding:6px}.video-box .plyr__time{font-size:11px}}
+
+
+/* V26: compact header visitor stats */
+.header-stats{display:flex;align-items:center;gap:5px;margin-left:4px;white-space:nowrap}
+.header-stat{height:30px;display:flex;align-items:center;gap:3px;padding:0 7px;border-radius:999px;background:rgba(7,19,29,.78);border:1px solid #173c4e;box-shadow:0 0 8px #001a2880}
+.header-stat span:first-child{font-size:12px;line-height:1}
+.header-stat small{font:700 8px Arial,sans-serif;color:#9fb4bf}
+.header-stat strong{font:800 11px Arial,sans-serif;color:#fff;min-width:14px;text-align:center}
+.online-dot{width:7px;height:7px;border-radius:50%;background:#22d96b;box-shadow:0 0 7px #22d96b;display:inline-block}
+@media(max-width:420px){
+  .header-stats{gap:3px;margin-left:2px}
+  .header-stat{height:27px;padding:0 5px;gap:2px}
+  .header-stat span:first-child{font-size:10px}
+  .header-stat small{font-size:7px}
+  .header-stat strong{font-size:10px;min-width:12px}
+  .online-dot{width:6px;height:6px}
+  .logo-image img{width:104px;max-height:42px}
+}
+
+
+
+
+/* FINAL: Welcome video lives strictly inside the 16:9 video player */
+.video-box{position:relative !important;overflow:hidden !important;}
+.welcome-video{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  z-index:10 !important;
+  display:block !important;
+  background:#000 !important;
+  border-radius:inherit !important;
+  opacity:1;
+  pointer-events:none !important;
+}
+.welcome-video.welcome-hidden{
+  opacity:0 !important;
+  visibility:hidden !important;
+  transition:opacity .35s ease,visibility .35s ease !important;
+}
+/* Tiny Messenger icon in the header, with a subtle premium wiggle */
+.messenger-btn{
+  width:30px !important;
+  height:30px !important;
+  padding:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:transparent !important;
+  border:0 !important;
+  border-radius:50% !important;
+  text-decoration:none !important;
+  flex:0 0 30px !important;
+  position:relative !important;
+  animation:messengerWiggle 3.2s ease-in-out infinite !important;
+}
+.messenger-btn img{
+  width:30px !important;
+  height:30px !important;
+  display:block !important;
+  object-fit:cover !important;
+  border-radius:50% !important;
+  filter:drop-shadow(0 2px 6px rgba(0,120,255,.45)) !important;
+}
+.messenger-btn:after{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  border:1px solid rgba(65,183,255,.45);
+  border-radius:50%;
+  animation:messengerPulse 2.6s ease-out infinite;
+  pointer-events:none;
+}
+@keyframes messengerWiggle{
+  0%,82%,100%{transform:translate(0,0) rotate(0deg)}
+  85%{transform:translate(-1px,-1px) rotate(-7deg)}
+  88%{transform:translate(1px,0) rotate(7deg)}
+  91%{transform:translate(-1px,0) rotate(-5deg)}
+  94%{transform:translate(0,0) rotate(0deg)}
+}
+@keyframes messengerPulse{
+  0%,65%{transform:scale(.92);opacity:.65}
+  85%,100%{transform:scale(1.22);opacity:0}
+}
+@media(max-width:420px){
+  .messenger-btn{width:27px !important;height:27px !important;flex-basis:27px !important}
+  .messenger-btn img{width:27px !important;height:27px !important}
+}
+
+
+/* V27 FIX: welcome video is ONLY the player intro layer */
+.video-box{position:relative !important;overflow:hidden !important;background:#000 !important;}
+.video-box > #video{position:relative !important;z-index:1 !important;}
+.welcome-video{position:absolute !important;inset:0 !important;width:100% !important;height:100% !important;object-fit:cover !important;z-index:20 !important;display:block !important;background:#000 !important;opacity:1 !important;pointer-events:none !important;transition:opacity .35s ease,visibility .35s ease !important;}
+.welcome-video.welcome-hidden{opacity:0 !important;visibility:hidden !important;}
+.video-box.welcome-active .plyr{visibility:hidden !important;}
+.video-box.welcome-active #video{visibility:hidden !important;}
+
+/* V28: crystal-clear premium player border + clean page scrolling */
+html, body{
+  overflow-x:hidden !important;
+}
+html::-webkit-scrollbar, body::-webkit-scrollbar{
+  width:0 !important;
+  height:0 !important;
+}
+html, body{scrollbar-width:none !important;-ms-overflow-style:none !important;}
+
+/* Keep the player border clearly visible around the actual 16:9 screen. */
+.video-box{
+  position:relative !important;
+  box-sizing:border-box !important;
+  border:3px solid transparent !important;
+  border-radius:13px !important;
+  background:
+    linear-gradient(#000,#000) padding-box,
+    linear-gradient(120deg,#ff1414 0%,#ff3b3b 30%,#18df67 67%,#00a94f 84%,#ff1414 100%) border-box !important;
+  box-shadow:
+    0 0 0 1px rgba(255,20,20,.35),
+    0 0 12px rgba(255,20,20,.30),
+    0 0 22px rgba(0,200,90,.24) !important;
+}
+.video-box::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:10px;
+  pointer-events:none;
+  z-index:50;
+}
+.video-box .plyr,
+.video-box > video{
+  border-radius:9px !important;
+}
+
+/* The welcome MP4 itself contains the curtain-opening animation. */
+.welcome-video{
+  object-fit:cover !important;
+  z-index:20 !important;
+}
+
+/* Tiny Messenger: compact, visible, and gently moves in place. */
+.messenger-btn{
+  width:32px !important;
+  height:32px !important;
+  flex-basis:32px !important;
+  animation:messengerWiggle2 3.8s ease-in-out infinite !important;
+}
+.messenger-btn img{
+  width:32px !important;
+  height:32px !important;
+}
+.messenger-btn:after{inset:-1px !important;}
+@keyframes messengerWiggle2{
+  0%,78%,100%{transform:translate3d(0,0,0) rotate(0)}
+  82%{transform:translate3d(-1px,-1px,0) rotate(-6deg)}
+  85%{transform:translate3d(1px,0,0) rotate(6deg)}
+  88%{transform:translate3d(-1px,0,0) rotate(-4deg)}
+  91%{transform:translate3d(0,0,0) rotate(0)}
+}
+@media(max-width:420px){
+  .messenger-btn{width:29px !important;height:29px !important;flex-basis:29px !important}
+  .messenger-btn img{width:29px !important;height:29px !important}
+  .video-box{border-width:3px !important;border-radius:12px !important}
+}
+
+
+/* FINAL LAYOUT: ONLY CHANNEL LIST SCROLLS */
+html,body{
+  width:100% !important;
+  height:100% !important;
+  margin:0 !important;
+  overflow:hidden !important;
+  overscroll-behavior:none !important;
+}
+body{
+  position:fixed !important;
+  inset:0 !important;
+  overflow:hidden !important;
+}
+
+/* Fixed header */
+.header{
+  position:fixed !important;
+  top:0 !important;
+  left:0 !important;
+  right:0 !important;
+  width:100% !important;
+  height:var(--vip-header-h,64px) !important;
+  z-index:1100 !important;
+}
+
+/* Fixed player directly under header */
+.player-section{
+  position:fixed !important;
+  top:var(--vip-header-h,64px) !important;
+  left:0 !important;
+  right:0 !important;
+  width:100% !important;
+  height:var(--vip-player-h,56.25vw) !important;
+  margin:0 !important;
+  padding:0 !important;
+  z-index:1000 !important;
+  background:#03070b !important;
+}
+.player-section .video-box{
+  width:100% !important;
+  height:100% !important;
+}
+
+/* The spacer is no longer allowed to create page height. */
+#playerSpacer{
+  display:none !important;
+}
+
+/* Fixed notice */
+.headline{
+  position:fixed !important;
+  left:0 !important;
+  right:0 !important;
+  top:calc(var(--vip-header-h,64px) + var(--vip-player-h,56.25vw)) !important;
+  width:100% !important;
+  height:var(--vip-headline-h,38px) !important;
+  margin:0 !important;
+  z-index:950 !important;
+  background:#03070b !important;
+}
+
+/* Fixed horizontal category bar */
+.cats{
+  position:fixed !important;
+  left:0 !important;
+  right:0 !important;
+  top:calc(var(--vip-header-h,64px) + var(--vip-player-h,56.25vw) + var(--vip-headline-h,38px)) !important;
+  width:100% !important;
+  height:var(--vip-cat-h,50px) !important;
+  margin:0 !important;
+  z-index:940 !important;
+  background:#03070b !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  scrollbar-width:none !important;
+}
+.cats::-webkit-scrollbar{display:none !important}
+
+/* Decorative line fixed with category section */
+.blue-line{
+  position:fixed !important;
+  left:12px !important;
+  top:calc(var(--vip-header-h,64px) + var(--vip-player-h,56.25vw) + var(--vip-headline-h,38px) + var(--vip-cat-h,50px)) !important;
+  margin:0 0 0 0 !important;
+  z-index:935 !important;
+  height:4px !important;
+}
+
+/* ONLY THIS AREA CAN SCROLL */
+#grid{
+  position:fixed !important;
+  left:0 !important;
+  right:0 !important;
+  top:calc(var(--vip-header-h,64px) + var(--vip-player-h,56.25vw) + var(--vip-headline-h,38px) + var(--vip-cat-h,50px) + 14px) !important;
+  bottom:0 !important;
+  width:100% !important;
+  height:auto !important;
+  margin:0 !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  overscroll-behavior:contain !important;
+  -webkit-overflow-scrolling:touch !important;
+  scrollbar-width:none !important;
+  padding-bottom:24px !important;
+}
+#grid::-webkit-scrollbar{
+  width:0 !important;
+  height:0 !important;
+  display:none !important;
+}
+
+/* Don't let empty/footer create another scrolling page */
+#empty{display:none !important}
+.site-footer{display:none !important}
+
+/* Mobile browser viewport */
+@supports (height:100dvh){
+  body{height:100dvh !important}
+  #grid{max-height:100dvh !important}
+}
+@media(max-width:420px){
+  :root{
+    --vip-header-h:64px;
+    --vip-headline-h:32px;
+    --vip-cat-h:50px;
+  }
+}
+
+/* V28 FINAL: strict player intro + channel-only scrolling */
+html,body{overflow:hidden !important;width:100% !important;height:100% !important}
+body{position:fixed !important;inset:0 !important;touch-action:pan-y !important;background:#05070d!important;}
+.player-section{overflow:hidden !important}
+.video-box{position:relative !important;overflow:hidden !important;border:3px solid transparent !important;border-radius:14px !important;background:linear-gradient(#000,#000) padding-box,linear-gradient(115deg,#e00000 0%,#ff3030 28%,#11d86a 72%,#00a84f 100%) border-box !important;box-shadow:0 0 0 1px rgba(255,0,0,.25),0 0 18px rgba(0,190,100,.18) !important}
+.video-box .plyr{position:relative !important;z-index:1 !important}
+.video-box > #video{position:relative !important;z-index:1 !important}
+.welcome-video{position:absolute !important;inset:0 !important;width:100% !important;height:100% !important;object-fit:cover !important;z-index:30 !important;display:block !important;pointer-events:none !important;background:#000 !important}
+.video-box.welcome-active .plyr,.video-box.welcome-active > #video{visibility:hidden !important}
+.welcome-video.welcome-hidden{opacity:0 !important;visibility:hidden !important;pointer-events:none !important;transition:opacity .3s ease,visibility .3s ease !important}
+#grid{position:fixed !important;left:0 !important;right:0 !important;bottom:0 !important;overflow-y:auto !important;overflow-x:hidden !important;scrollbar-width:none !important;-ms-overflow-style:none !important;overscroll-behavior:contain !important;-webkit-overflow-scrolling:touch !important}
+#grid::-webkit-scrollbar{display:none !important;width:0 !important;height:0 !important}
+
+/* V29: fullscreen landscape + compact channel switch buttons */
+.landscape-channel-controls{
+  position:absolute !important;
+  left:50% !important;
+  bottom:14px !important;
+  transform:translateX(-50%) !important;
+  z-index:80 !important;
+  display:none !important;
+  align-items:center !important;
+  gap:8px !important;
+  pointer-events:auto !important;
+}
+.landscape-channel-controls button{
+  width:36px !important;
+  height:36px !important;
+  padding:0 !important;
+  border:1px solid rgba(255,255,255,.55) !important;
+  border-radius:50% !important;
+  background:rgba(0,0,0,.62) !important;
+  color:#fff !important;
+  font:700 27px/32px Arial,sans-serif !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  cursor:pointer !important;
+  backdrop-filter:blur(5px) !important;
+  -webkit-backdrop-filter:blur(5px) !important;
+}
+.landscape-channel-controls button:active{
+  transform:scale(.9) !important;
+  background:rgba(0,0,0,.85) !important;
+}
+/* Only show the two channel buttons while fullscreen */
+.video-box.vip-fullscreen .landscape-channel-controls{
+  display:flex !important;
+}
+/* Keep buttons above the Plyr UI */
+.video-box.vip-fullscreen .plyr__controls{
+  padding-bottom:58px !important;
+}
+@media (max-width:700px){
+  .landscape-channel-controls{bottom:10px !important;gap:6px !important}
+  .landscape-channel-controls button{
+    width:32px !important;height:32px !important;font-size:24px !important;
+  }
+}
+@media (orientation:landscape) and (max-height:600px){
+  .video-box.vip-fullscreen .landscape-channel-controls{bottom:8px !important}
+}
+
+
+/* V30: reliable mobile fullscreen + always-visible channel switcher in fullscreen */
+#vipVideoBox:fullscreen,
+#vipVideoBox:-webkit-full-screen{
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  max-width:none !important;
+  aspect-ratio:auto !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  z-index:2147483647 !important;
+  background:#000 !important;
+}
+#vipVideoBox:fullscreen .plyr,
+#vipVideoBox:-webkit-full-screen .plyr,
+#vipVideoBox:fullscreen video,
+#vipVideoBox:-webkit-full-screen video{
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  border-radius:0 !important;
+}
+.video-box.is-fullscreen{
+  width:100vw !important;
+  height:100vh !important;
+}
+.video-box.is-fullscreen .landscape-channel-controls,
+#vipVideoBox:fullscreen .landscape-channel-controls,
+#vipVideoBox:-webkit-full-screen .landscape-channel-controls{
+  display:flex !important;
+  position:absolute !important;
+  left:50% !important;
+  bottom:72px !important;
+  transform:translateX(-50%) !important;
+  z-index:2147483647 !important;
+}
+.video-box.is-fullscreen .landscape-channel-controls button,
+#vipVideoBox:fullscreen .landscape-channel-controls button,
+#vipVideoBox:-webkit-full-screen .landscape-channel-controls button{
+  width:34px !important;
+  height:34px !important;
+  font-size:24px !important;
+  background:rgba(0,0,0,.72) !important;
+  border:1px solid rgba(255,255,255,.7) !important;
+  box-shadow:0 2px 10px rgba(0,0,0,.55) !important;
+}
+.live-badge{
+  position:absolute !important;
+  top:10px !important;
+  left:10px !important;
+  z-index:75 !important;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  padding:4px 8px !important;
+  border-radius:7px !important;
+  background:rgba(210,0,0,.86) !important;
+  color:#fff !important;
+  font:800 11px Arial,sans-serif !important;
+  letter-spacing:.4px !important;
+  box-shadow:0 2px 8px rgba(0,0,0,.35) !important;
+  pointer-events:none !important;
+}
+.live-badge::first-letter{font-size:10px}
+#vipVideoBox:fullscreen .live-badge,
+#vipVideoBox:-webkit-full-screen .live-badge{top:14px !important;left:14px !important}
+@media (orientation:landscape) and (max-height:600px){
+  .video-box.is-fullscreen .landscape-channel-controls,
+  #vipVideoBox:fullscreen .landscape-channel-controls,
+  #vipVideoBox:-webkit-full-screen .landscape-channel-controls{bottom:58px !important}
+}
+
+/* V13 PREMIUM PLAYER: clean controls, fullscreen-safe layout, click-to-toggle overlay. */
+.video-box{position:relative;touch-action:manipulation;}
+.video-box video{cursor:pointer;}
+.live-badge{position:absolute!important;left:16px!important;top:16px!important;display:none;align-items:center;gap:6px;padding:7px 12px;border-radius:9px;background:linear-gradient(135deg,#e00000,#b30000);color:#fff;font:800 15px Arial,sans-serif;letter-spacing:.5px;box-shadow:0 5px 18px #0008;z-index:30;pointer-events:none;}
+.landscape-channel-controls{position:absolute!important;left:0;right:0;bottom:50%;transform:translateY(50%);display:none;justify-content:space-between;align-items:center;padding:0 18px;z-index:35;pointer-events:none;}
+.landscape-channel-controls button{pointer-events:auto;width:48px;height:48px;border:1px solid rgba(25,230,162,.55);border-radius:50%;background:linear-gradient(145deg,#191919,#030303);color:#f5cf78;font:900 38px/42px Arial,sans-serif;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 1px #000,0 6px 22px #000a;cursor:pointer;opacity:.95;}
+.landscape-channel-controls button:active{transform:scale(.92);}
+.vip-bottom-controls{position:absolute!important;left:0;right:0;bottom:12px;display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:0 18px;z-index:36;opacity:0;transform:translateY(8px);transition:opacity .2s ease,transform .2s ease;pointer-events:none;}
+.video-box.vip-controls-visible .vip-bottom-controls{opacity:1;transform:none;pointer-events:auto;}
+.vip-volume-control{display:flex;align-items:center;gap:8px;min-width:150px;padding:8px 12px;border:1px solid rgba(25,230,162,.38);border-radius:14px;background:linear-gradient(180deg,#171717e8,#050505e8);backdrop-filter:blur(10px);box-shadow:0 8px 24px #0009;}
+.vip-volume-control button{border:0;background:none;color:#fff;font-size:19px;width:26px;height:26px;cursor:pointer;padding:0;}
+.vip-volume-control input{width:100px;accent-color:#19e6a2;cursor:pointer;}
+.vip-fullscreen-btn{width:42px;height:42px;border:1px solid rgba(25,230,162,.55);border-radius:12px;background:linear-gradient(145deg,#191919,#030303);color:#f5cf78;font-size:25px;line-height:1;cursor:pointer;box-shadow:0 6px 22px #000a;}
+.vip-bottom-controls button:active{transform:scale(.94);}
+.video-box.vip-fullscreen,.video-box.is-fullscreen{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;max-width:none!important;aspect-ratio:auto!important;border:0!important;border-radius:0!important;background:#000!important;z-index:2147483000!important;box-shadow:none!important;}
+.video-box.vip-fullscreen video,.video-box.is-fullscreen video{width:100vw!important;height:100vh!important;object-fit:contain!important;border-radius:0!important;}
+.video-box.vip-fullscreen .landscape-channel-controls,.video-box.is-fullscreen .landscape-channel-controls{display:flex!important;}
+.video-box.vip-fullscreen .vip-bottom-controls,.video-box.is-fullscreen .vip-bottom-controls{bottom:18px!important;}
+.video-box.vip-fullscreen .live-badge,.video-box.is-fullscreen .live-badge{left:22px!important;top:20px!important;}
+body.vip-player-fullscreen{overflow:hidden!important;}
+@media(max-width:700px){
+  .live-badge{left:10px!important;top:10px!important;font-size:13px;padding:6px 10px;border-radius:8px;}
+  .landscape-channel-controls{padding:0 10px;}
+  .landscape-channel-controls button{width:44px;height:44px;font-size:34px;}
+  .vip-bottom-controls{bottom:8px;padding:0 10px;}
+  .vip-volume-control{min-width:130px;padding:7px 9px;}
+  .vip-volume-control input{width:78px;}
+  .vip-fullscreen-btn{width:40px;height:40px;}
+}
+
+/* Final premium cleanup: only custom controls are visible; no play button, timeline, or time counter. */
+.plyr__controls{display:none!important;}
+.landscape-channel-controls{bottom:20px!important;transform:none!important;left:0!important;right:0!important;padding:0 18px!important;}
+.landscape-channel-controls button{width:46px!important;height:46px!important;font-size:35px!important;}
+.video-box.vip-fullscreen .landscape-channel-controls,.video-box.is-fullscreen .landscape-channel-controls{bottom:24px!important;}
+.video-box.vip-fullscreen .vip-bottom-controls,.video-box.is-fullscreen .vip-bottom-controls{bottom:24px!important;justify-content:center!important;}
+.video-box.vip-fullscreen .vip-volume-control,.video-box.is-fullscreen .vip-volume-control{margin:auto!important;}
+@media(max-width:700px){
+  .landscape-channel-controls{bottom:10px!important;padding:0 10px!important;}
+  .landscape-channel-controls button{width:42px!important;height:42px!important;font-size:32px!important;}
+  .video-box.vip-fullscreen .landscape-channel-controls,.video-box.is-fullscreen .landscape-channel-controls{bottom:18px!important;}
+  .video-box.vip-fullscreen .vip-bottom-controls,.video-box.is-fullscreen .vip-bottom-controls{bottom:18px!important;}
+}
+
+
+/* V7 FINAL — reference-style premium TV player */
+.video-box{
+  position:relative!important;
+  background:#000!important;
+  overflow:hidden!important;
+  touch-action:manipulation!important;
+}
+.video-box > video#video{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  background:#000!important;
+}
+/* No native/Plyr timeline, play button, duration or progress UI. */
+.plyr,.plyr__controls,.plyr__control--overlaid{display:none!important;}
+
+.live-badge{
+  left:18px!important;top:18px!important;
+  padding:7px 13px!important;border-radius:9px!important;
+  background:linear-gradient(135deg,#f00000,#a40000)!important;
+  font-size:15px!important;z-index:100!important;
+}
+
+/* Previous / Next: lower left and lower right, matching the reference */
+.landscape-channel-controls{
+  position:absolute!important;
+  left:0!important;right:0!important;bottom:13%!important;
+  top:auto!important;transform:none!important;
+  display:none!important;
+  justify-content:space-between!important;align-items:center!important;
+  padding:0 6.5%!important;
+  z-index:110!important;pointer-events:none!important;
+}
+.video-box.vip-controls-visible .landscape-channel-controls,
+.video-box.vip-fullscreen .landscape-channel-controls,
+.video-box.is-fullscreen .landscape-channel-controls,
+.video-box.vip-css-fullscreen .landscape-channel-controls{
+  display:flex!important;
+}
+.landscape-channel-controls button{
+  pointer-events:auto!important;
+  width:54px!important;height:54px!important;
+  border:1px solid rgba(214,166,58,.9)!important;
+  border-radius:50%!important;
+  background:radial-gradient(circle at 35% 30%,#292929,#060606 72%)!important;
+  color:#f5cf78!important;
+  font:900 39px/1 Arial,sans-serif!important;
+  box-shadow:0 0 0 1px #000,0 8px 25px #000b,0 0 12px rgba(214,166,58,.18)!important;
+}
+.landscape-channel-controls button:active{transform:scale(.90)!important;}
+
+/* Bottom center volume, slightly below the channel buttons */
+.vip-bottom-controls{
+  position:absolute!important;
+  left:0!important;right:0!important;bottom:3.2%!important;
+  display:flex!important;justify-content:center!important;align-items:center!important;
+  gap:12px!important;padding:0!important;
+  z-index:120!important;
+  opacity:0!important;transform:translateY(8px)!important;
+  pointer-events:none!important;
+}
+.video-box.vip-controls-visible .vip-bottom-controls,
+.video-box.vip-fullscreen .vip-bottom-controls,
+.video-box.is-fullscreen .vip-bottom-controls,
+.video-box.vip-css-fullscreen .vip-bottom-controls{
+  opacity:1!important;transform:none!important;pointer-events:auto!important;
+}
+.vip-volume-control{
+  min-width:230px!important;height:54px!important;
+  box-sizing:border-box!important;
+  padding:9px 14px!important;
+  border:1px solid rgba(214,166,58,.75)!important;
+  border-radius:15px!important;
+  background:linear-gradient(180deg,rgba(22,22,22,.96),rgba(4,4,4,.96))!important;
+  backdrop-filter:blur(12px)!important;
+  box-shadow:0 8px 28px #000b, inset 0 0 0 1px #ffffff08!important;
+}
+.vip-volume-control button{font-size:22px!important;width:30px!important;}
+.vip-volume-control input{width:145px!important;accent-color:#d6a63a!important;}
+.vip-fullscreen-btn{
+  width:54px!important;height:54px!important;
+  border-radius:14px!important;
+  border:1px solid rgba(214,166,58,.75)!important;
+  background:linear-gradient(145deg,#191919,#030303)!important;
+  color:#f5cf78!important;font-size:29px!important;
+}
+
+/* Real fullscreen: fill the entire display and crop the 16:9 stream rather than leaving black side bars. */
+#vipVideoBox:fullscreen,
+#vipVideoBox:-webkit-full-screen,
+.video-box.vip-fullscreen,
+.video-box.is-fullscreen,
+.video-box.vip-css-fullscreen{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;height:100vh!important;
+  max-width:none!important;max-height:none!important;
+  aspect-ratio:auto!important;
+  border:0!important;border-radius:0!important;
+  margin:0!important;padding:0!important;
+  background:#000!important;
+  z-index:2147483647!important;
+}
+#vipVideoBox:fullscreen > #video,
+#vipVideoBox:-webkit-full-screen > #video,
+.video-box.vip-fullscreen > #video,
+.video-box.is-fullscreen > #video,
+.video-box.vip-css-fullscreen > #video{
+  width:100vw!important;height:100vh!important;
+  max-width:none!important;max-height:none!important;
+  object-fit:cover!important;
+}
+#vipVideoBox:fullscreen .welcome-video,
+#vipVideoBox:-webkit-full-screen .welcome-video{width:100vw!important;height:100vh!important;object-fit:cover!important;}
+body.vip-player-fullscreen{overflow:hidden!important;background:#000!important;}
+
+@media(max-width:700px){
+  .live-badge{left:14px!important;top:14px!important;font-size:14px!important;padding:7px 11px!important;}
+  .landscape-channel-controls{bottom:13%!important;padding:0 7%!important;}
+  .landscape-channel-controls button{width:48px!important;height:48px!important;font-size:35px!important;}
+  .vip-bottom-controls{bottom:3.5%!important;}
+  .vip-volume-control{min-width:190px!important;height:48px!important;padding:7px 10px!important;}
+  .vip-volume-control input{width:115px!important;}
+  .vip-fullscreen-btn{width:48px!important;height:48px!important;font-size:26px!important;}
+}
+
+
+/* V8 FINAL — exact reference-style player layout */
+.video-box{
+  border:3px solid transparent!important;
+  border-radius:14px!important;
+  background:linear-gradient(#000,#000) padding-box,
+             linear-gradient(120deg,#e00000 0%,#ff3030 27%,#13d76a 73%,#00a84f 100%) border-box!important;
+  box-shadow:0 0 0 1px rgba(255,0,0,.18),0 0 22px rgba(0,190,100,.18)!important;
+}
+
+/* Small LIVE badge — deliberately smaller than the previous version */
+.live-badge{
+  left:12px!important;
+  top:12px!important;
+  padding:4px 8px!important;
+  min-height:0!important;
+  border-radius:6px!important;
+  gap:4px!important;
+  font:800 11px/1 Arial,sans-serif!important;
+  letter-spacing:.25px!important;
+  box-shadow:0 2px 8px rgba(0,0,0,.42)!important;
+}
+
+/* Reference: channel buttons at lower-left / lower-right, never in the middle */
+.landscape-channel-controls{
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  top:auto!important;
+  bottom:10%!important;
+  transform:none!important;
+  display:none!important;
+  justify-content:space-between!important;
+  align-items:center!important;
+  padding:0 6.5%!important;
+  z-index:300!important;
+  pointer-events:none!important;
+}
+.video-box.vip-controls-visible .landscape-channel-controls{
+  display:flex!important;
+}
+.video-box.vip-fullscreen .landscape-channel-controls,
+.video-box.is-fullscreen .landscape-channel-controls,
+.video-box.vip-css-fullscreen .landscape-channel-controls{
+  display:none!important;
+}
+.video-box.vip-fullscreen.vip-controls-visible .landscape-channel-controls,
+.video-box.is-fullscreen.vip-controls-visible .landscape-channel-controls,
+.video-box.vip-css-fullscreen.vip-controls-visible .landscape-channel-controls{
+  display:flex!important;
+}
+.landscape-channel-controls button{
+  pointer-events:auto!important;
+  width:52px!important;
+  height:52px!important;
+  padding:0!important;
+  border:1px solid rgba(214,166,58,.95)!important;
+  border-radius:50%!important;
+  background:radial-gradient(circle at 35% 30%,#292929,#050505 72%)!important;
+  color:#f5cf78!important;
+  font:900 31px/1 Arial,sans-serif!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  box-shadow:0 0 0 1px #000,0 8px 24px rgba(0,0,0,.72),0 0 12px rgba(214,166,58,.2)!important;
+}
+.landscape-channel-controls button:active{transform:scale(.9)!important;}
+
+/* Reference: premium volume bar centered at the very bottom */
+.vip-bottom-controls{
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  bottom:2.2%!important;
+  top:auto!important;
+  display:flex!important;
+  justify-content:center!important;
+  align-items:center!important;
+  gap:12px!important;
+  padding:0!important;
+  z-index:310!important;
+  opacity:0!important;
+  transform:translateY(8px)!important;
+  pointer-events:none!important;
+  transition:opacity .18s ease,transform .18s ease!important;
+}
+.video-box.vip-controls-visible .vip-bottom-controls,
+.video-box.vip-fullscreen.vip-controls-visible .vip-bottom-controls,
+.video-box.is-fullscreen.vip-controls-visible .vip-bottom-controls,
+.video-box.vip-css-fullscreen.vip-controls-visible .vip-bottom-controls{
+  opacity:1!important;
+  transform:none!important;
+  pointer-events:auto!important;
+}
+.vip-volume-control{
+  min-width:230px!important;
+  height:52px!important;
+  padding:8px 14px!important;
+  border:1px solid rgba(214,166,58,.78)!important;
+  border-radius:15px!important;
+  background:linear-gradient(180deg,rgba(22,22,22,.97),rgba(4,4,4,.97))!important;
+  backdrop-filter:blur(12px)!important;
+  -webkit-backdrop-filter:blur(12px)!important;
+  box-shadow:0 8px 28px rgba(0,0,0,.72),inset 0 0 0 1px rgba(255,255,255,.03)!important;
+}
+.vip-volume-control input{accent-color:#d6a63a!important;}
+.vip-fullscreen-btn{
+  width:52px!important;
+  height:52px!important;
+  border-radius:14px!important;
+  border:1px solid rgba(214,166,58,.78)!important;
+  background:linear-gradient(145deg,#191919,#030303)!important;
+  color:#f5cf78!important;
+  font-size:28px!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.72)!important;
+}
+
+/* Fullscreen: the player itself fills the display; stream fills it without side bars. */
+#vipVideoBox:fullscreen,
+#vipVideoBox:-webkit-full-screen,
+.video-box.vip-fullscreen,
+.video-box.is-fullscreen,
+.video-box.vip-css-fullscreen{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100vh!important;
+  max-width:none!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  aspect-ratio:auto!important;
+  background:#000!important;
+  z-index:2147483647!important;
+}
+#vipVideoBox:fullscreen > #video,
+#vipVideoBox:-webkit-full-screen > #video,
+.video-box.vip-fullscreen > #video,
+.video-box.is-fullscreen > #video,
+.video-box.vip-css-fullscreen > #video{
+  width:100vw!important;
+  height:100vh!important;
+  object-fit:cover!important;
+  max-width:none!important;
+  max-height:none!important;
+}
+#vipVideoBox:fullscreen .welcome-video,
+#vipVideoBox:-webkit-full-screen .welcome-video{
+  width:100vw!important;
+  height:100vh!important;
+  object-fit:cover!important;
+}
+
+@media(max-width:700px){
+  .live-badge{left:9px!important;top:9px!important;padding:4px 7px!important;font-size:10px!important;border-radius:6px!important;}
+  .landscape-channel-controls{bottom:9%!important;padding:0 6%!important;}
+  .landscape-channel-controls button{width:44px!important;height:44px!important;font-size:27px!important;}
+  .vip-bottom-controls{bottom:2.5%!important;gap:8px!important;}
+  .vip-volume-control{min-width:180px!important;height:46px!important;padding:7px 10px!important;}
+  .vip-volume-control input{width:110px!important;}
+  .vip-fullscreen-btn{width:46px!important;height:46px!important;font-size:25px!important;border-radius:12px!important;}
+}
+
+@media(orientation:landscape) and (max-height:600px){
+  .landscape-channel-controls{bottom:9%!important;padding:0 5%!important;}
+  .landscape-channel-controls button{width:48px!important;height:48px!important;}
+  .vip-bottom-controls{bottom:2.5%!important;}
+}
+
+/* V9 FINAL — exact clean reference layout: landscape-first fullscreen, transparent controls */
+/* Keep the live badge compact. */
+.live-badge{left:10px!important;top:10px!important;padding:3px 7px!important;font-size:10px!important;line-height:1!important;border-radius:5px!important;}
+
+/* Bottom row: previous far left, volume center, fullscreen beside it, next far right. */
+.landscape-channel-controls{
+  left:0!important;right:0!important;bottom:2.8%!important;top:auto!important;transform:none!important;
+  padding:0 3.2%!important;z-index:400!important;
+}
+.landscape-channel-controls button{
+  width:46px!important;height:46px!important;
+  border:0!important;border-radius:0!important;background:transparent!important;
+  box-shadow:none!important;color:#f2c45c!important;
+  font:900 42px/1 Arial,sans-serif!important;text-shadow:0 2px 8px #000!important;
+}
+.landscape-channel-controls button:active{background:transparent!important;transform:scale(.9)!important;}
+
+/* Clean transparent volume + fullscreen controls, no panels/backgrounds. */
+.vip-bottom-controls{
+  left:0!important;right:0!important;bottom:2.8%!important;padding:0 0!important;
+  gap:14px!important;z-index:410!important;
+}
+.vip-volume-control{
+  min-width:205px!important;height:44px!important;padding:0!important;
+  border:0!important;border-radius:0!important;background:transparent!important;
+  box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+.vip-volume-control button{width:30px!important;height:30px!important;background:transparent!important;border:0!important;box-shadow:none!important;font-size:22px!important;}
+.vip-volume-control input{width:130px!important;height:5px!important;accent-color:#d9aa3d!important;background:transparent!important;}
+.vip-fullscreen-btn{
+  width:44px!important;height:44px!important;padding:0!important;
+  border:0!important;border-radius:0!important;background:transparent!important;
+  box-shadow:none!important;color:#f2c45c!important;font-size:30px!important;
+  text-shadow:0 2px 8px #000!important;
+}
+
+/* Real fullscreen: preserve the whole broadcast and make portrait phones rotate to landscape.
+   This avoids the giant/cropped portrait fullscreen seen on some Android browsers. */
+#vipVideoBox:fullscreen,#vipVideoBox:-webkit-full-screen,
+.video-box.vip-fullscreen,.video-box.is-fullscreen,.video-box.vip-css-fullscreen{
+  position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;
+  margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
+  max-width:none!important;max-height:none!important;aspect-ratio:auto!important;
+  background:#000!important;overflow:hidden!important;z-index:2147483647!important;
+}
+#vipVideoBox:fullscreen > #video,#vipVideoBox:-webkit-full-screen > #video,
+.video-box.vip-fullscreen > #video,.video-box.is-fullscreen > #video,.video-box.vip-css-fullscreen > #video{
+  width:100vw!important;height:100vh!important;object-fit:contain!important;
+  max-width:none!important;max-height:none!important;background:#000!important;
+}
+
+/* If fullscreen remains portrait, rotate the complete player to landscape instead of zooming it. */
+@media (orientation:portrait){
+  #vipVideoBox:fullscreen,.video-box.vip-fullscreen,.video-box.is-fullscreen,.video-box.vip-css-fullscreen{
+    width:100vh!important;height:100vw!important;
+    left:50%!important;top:50%!important;right:auto!important;bottom:auto!important;
+    inset:auto!important;transform:translate(-50%,-50%) rotate(90deg)!important;
+    transform-origin:center center!important;
+  }
+  #vipVideoBox:fullscreen > #video,#vipVideoBox:-webkit-full-screen > #video,
+  .video-box.vip-fullscreen > #video,.video-box.is-fullscreen > #video,.video-box.vip-css-fullscreen > #video{
+    width:100%!important;height:100%!important;object-fit:contain!important;
+  }
+  #vipVideoBox:fullscreen .landscape-channel-controls,
+  #vipVideoBox:-webkit-full-screen .landscape-channel-controls,
+  .video-box.vip-fullscreen .landscape-channel-controls,.video-box.is-fullscreen .landscape-channel-controls,
+  .video-box.vip-css-fullscreen .landscape-channel-controls{bottom:2.8%!important;padding:0 3.2%!important;}
+  #vipVideoBox:fullscreen .vip-bottom-controls,
+  #vipVideoBox:-webkit-full-screen .vip-bottom-controls,
+  .video-box.vip-fullscreen .vip-bottom-controls,.video-box.is-fullscreen .vip-bottom-controls,
+  .video-box.vip-css-fullscreen .vip-bottom-controls{bottom:2.8%!important;}
+}
+
+/* Fullscreen landscape: use nearly the entire width, with controls close to the bottom edge. */
+@media (orientation:landscape){
+  #vipVideoBox:fullscreen > #video,#vipVideoBox:-webkit-full-screen > #video,
+  .video-box.vip-fullscreen > #video,.video-box.is-fullscreen > #video,.video-box.vip-css-fullscreen > #video{
+    object-fit:contain!important;
+  }
+}
+
+
+/* V10 FINAL — Home screen: no channel arrows; tiny controls at bottom-right.
+   Fullscreen: tiny channel arrows at the two lower corners; player fits every display. */
+.player-head{display:none!important;}
+
+/* Home/non-fullscreen: channel switching is NEVER shown. */
+.video-box:not(.vip-fullscreen):not(.is-fullscreen):not(.vip-css-fullscreen) .landscape-channel-controls{
+  display:none!important;
+}
+
+/* Compact sound + fullscreen controls, transparent and bottom-right. */
+.vip-bottom-controls{
+  left:auto!important;
+  right:8px!important;
+  bottom:7px!important;
+  width:auto!important;
+  padding:0!important;
+  gap:7px!important;
+  justify-content:flex-end!important;
+  align-items:center!important;
+}
+.vip-volume-control{
+  min-width:118px!important;
+  width:118px!important;
+  height:30px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.vip-volume-control button{
+  width:22px!important;
+  height:22px!important;
+  font-size:16px!important;
+  padding:0!important;
+  margin:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.vip-volume-control input{
+  width:88px!important;
+  height:4px!important;
+  margin:0!important;
+  accent-color:#e0b343!important;
+}
+.vip-fullscreen-btn{
+  width:27px!important;
+  height:27px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#f3cc67!important;
+  font-size:20px!important;
+  line-height:1!important;
+  text-shadow:0 1px 5px #000!important;
+}
+
+/* Fullscreen player: use the dynamic viewport and never crop the broadcast. */
+#vipVideoBox:fullscreen,
+#vipVideoBox:-webkit-full-screen,
+.video-box.vip-fullscreen,
+.video-box.is-fullscreen,
+.video-box.vip-css-fullscreen{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  width:100dvw!important;
+  height:100vh!important;
+  height:100dvh!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-width:none!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  aspect-ratio:auto!important;
+  overflow:hidden!important;
+  background:#000!important;
+  z-index:2147483647!important;
+  transform:none!important;
+}
+#vipVideoBox:fullscreen > #video,
+#vipVideoBox:-webkit-full-screen > #video,
+.video-box.vip-fullscreen > #video,
+.video-box.is-fullscreen > #video,
+.video-box.vip-css-fullscreen > #video{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  background:#000!important;
+}
+#vipVideoBox:fullscreen .welcome-video,
+#vipVideoBox:-webkit-full-screen .welcome-video,
+.video-box.vip-fullscreen .welcome-video,
+.video-box.is-fullscreen .welcome-video{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+}
+
+/* Fullscreen only: very small channel arrows, far apart and close to the bottom edge. */
+.video-box.vip-fullscreen .landscape-channel-controls,
+.video-box.is-fullscreen .landscape-channel-controls,
+.video-box.vip-css-fullscreen .landscape-channel-controls,
+#vipVideoBox:fullscreen .landscape-channel-controls,
+#vipVideoBox:-webkit-full-screen .landscape-channel-controls{
+  display:flex!important;
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  bottom:max(7px, env(safe-area-inset-bottom))!important;
+  top:auto!important;
+  transform:none!important;
+  padding:0 max(10px, env(safe-area-inset-left))!important;
+  justify-content:space-between!important;
+  align-items:center!important;
+  z-index:2147483646!important;
+  pointer-events:none!important;
+}
+.video-box.vip-fullscreen .landscape-channel-controls button,
+.video-box.is-fullscreen .landscape-channel-controls button,
+.video-box.vip-css-fullscreen .landscape-channel-controls button,
+#vipVideoBox:fullscreen .landscape-channel-controls button,
+#vipVideoBox:-webkit-full-screen .landscape-channel-controls button{
+  width:30px!important;
+  height:30px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#f2c45c!important;
+  font:900 29px/30px Arial,sans-serif!important;
+  text-shadow:0 1px 5px #000!important;
+  opacity:.95!important;
+  pointer-events:auto!important;
+}
+
+/* Fullscreen sound/fullscreen controls stay tiny at the bottom-right. */
+.video-box.vip-fullscreen .vip-bottom-controls,
+.video-box.is-fullscreen .vip-bottom-controls,
+.video-box.vip-css-fullscreen .vip-bottom-controls,
+#vipVideoBox:fullscreen .vip-bottom-controls,
+#vipVideoBox:-webkit-full-screen .vip-bottom-controls{
+  left:auto!important;
+  right:max(8px, env(safe-area-inset-right))!important;
+  bottom:max(7px, env(safe-area-inset-bottom))!important;
+  width:auto!important;
+  padding:0!important;
+  gap:5px!important;
+  justify-content:flex-end!important;
+  z-index:2147483646!important;
+}
+
+/* Keep the controls hidden until the user taps the video. */
+.video-box:not(.vip-controls-visible) .vip-bottom-controls{
+  opacity:0!important;
+  pointer-events:none!important;
+}
+.video-box.vip-controls-visible .vip-bottom-controls{
+  opacity:1!important;
+  transform:none!important;
+}
+
+/* No accidental portrait rotation/cropping: the JS requests landscape when the browser permits it,
+   while CSS always preserves the complete video frame on browsers that refuse orientation lock. */
+@media(max-width:700px){
+  .vip-bottom-controls{right:6px!important;bottom:6px!important;gap:5px!important;}
+  .vip-volume-control{min-width:100px!important;width:100px!important;height:27px!important;}
+  .vip-volume-control input{width:70px!important;}
+  .vip-fullscreen-btn{width:24px!important;height:24px!important;font-size:18px!important;}
+  .live-badge{left:8px!important;top:8px!important;padding:3px 6px!important;font-size:9px!important;border-radius:5px!important;}
+  .video-box.vip-fullscreen .landscape-channel-controls button,
+  .video-box.is-fullscreen .landscape-channel-controls button,
+  .video-box.vip-css-fullscreen .landscape-channel-controls button,
+  #vipVideoBox:fullscreen .landscape-channel-controls button,
+  #vipVideoBox:-webkit-full-screen .landscape-channel-controls button{
+    width:26px!important;height:26px!important;font-size:25px!important;line-height:26px!important;
+  }
+}
+
+/* V10b: fullscreen channel arrows also follow the tap-to-show / tap-to-hide behavior. */
+.video-box.vip-fullscreen .landscape-channel-controls,
+.video-box.is-fullscreen .landscape-channel-controls,
+.video-box.vip-css-fullscreen .landscape-channel-controls,
+#vipVideoBox:fullscreen .landscape-channel-controls,
+#vipVideoBox:-webkit-full-screen .landscape-channel-controls{
+  display:none!important;
+}
+.video-box.vip-fullscreen.vip-controls-visible .landscape-channel-controls,
+.video-box.is-fullscreen.vip-controls-visible .landscape-channel-controls,
+.video-box.vip-css-fullscreen.vip-controls-visible .landscape-channel-controls,
+#vipVideoBox:fullscreen.vip-controls-visible .landscape-channel-controls,
+#vipVideoBox:-webkit-full-screen.vip-controls-visible .landscape-channel-controls{
+  display:flex!important;
+}
+
+
+/* V11: raise fullscreen channel arrows slightly upward while keeping them at the far left/right. */
+.video-box.is-fullscreen .landscape-channel-controls,
+.video-box.vip-css-fullscreen .landscape-channel-controls,
+#vipVideoBox:fullscreen .landscape-channel-controls,
+#vipVideoBox:-webkit-full-screen .landscape-channel-controls{
+  left:0 !important;
+  right:0 !important;
+  width:100% !important;
+  bottom:64px !important;
+  transform:none !important;
+  justify-content:space-between !important;
+  padding:0 24px !important;
+  pointer-events:none !important;
+}
+.video-box.is-fullscreen .landscape-channel-controls button,
+.video-box.vip-css-fullscreen .landscape-channel-controls button,
+#vipVideoBox:fullscreen .landscape-channel-controls button,
+#vipVideoBox:-webkit-full-screen .landscape-channel-controls button{
+  pointer-events:auto !important;
+  width:28px !important;
+  height:28px !important;
+  font-size:24px !important;
+  line-height:28px !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  padding:0 !important;
+}
+@media (max-width:700px){
+  .video-box.is-fullscreen .landscape-channel-controls,
+  .video-box.vip-css-fullscreen .landscape-channel-controls,
+  #vipVideoBox:fullscreen .landscape-channel-controls,
+  #vipVideoBox:-webkit-full-screen .landscape-channel-controls{
+    bottom:58px !important;
+    padding:0 18px !important;
+  }
+}
+
+/* V12: prevent Android/Chrome long-press video popup while keeping normal tap controls. */
+#vipVideoBox video,
+#vipVideoBox .welcome-video{
+  -webkit-touch-callout:none !important;
+  -webkit-user-select:none !important;
+  user-select:none !important;
+  -webkit-user-drag:none !important;
+  user-drag:none !important;
+  touch-action:manipulation !important;
+}
+#vipVideoBox{
+  -webkit-touch-callout:none !important;
+  -webkit-user-select:none !important;
+  user-select:none !important;
+}
+
+/* V13: allow the ROOT PAGE to scroll so Android Chrome can collapse its address/search bar.
+   The player/header remain fixed/sticky; only the channel list no longer uses a nested scroll box. */
+html{
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  height:auto !important;
+  overscroll-behavior-y:auto !important;
+}
+body{
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  min-height:100vh !important;
+  overscroll-behavior-y:auto !important;
+}
+#grid{
+  overflow:visible !important;
+  height:auto !important;
+  max-height:none !important;
+  -webkit-overflow-scrolling:auto !important;
+}
+/* Keep the fixed player out of the document flow while the spacer reserves its height. */
+.player-spacer{
+  display:block !important;
+}
+
+/* V14: let the ROOT DOCUMENT scroll on mobile so Android Chrome can collapse
+   its address/search bar. Keep the player/header/categories visually fixed. */
+html,body{
+  width:100% !important;
+  min-height:100% !important;
+  height:auto !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior-y:auto !important;
+}
+body{
+  position:static !important;
+  inset:auto !important;
+  display:block !important;
+  touch-action:pan-y !important;
+}
+.header{
+  position:fixed !important;
+  top:0 !important;
+  left:0 !important;
+  right:0 !important;
+  z-index:1100 !important;
+}
+.player-section{
+  position:fixed !important;
+  top:var(--vip-header-h,64px) !important;
+  left:0 !important;
+  right:0 !important;
+  z-index:1000 !important;
+}
+/* Reserve the complete fixed top area in normal document flow. */
+#playerSpacer{
+  display:block !important;
+  width:100% !important;
+  height:calc(var(--vip-header-h,64px) + var(--vip-player-h,56.25vw) + var(--vip-headline-h,38px) + var(--vip-cat-h,50px) + 14px) !important;
+  min-height:calc(var(--vip-header-h,64px) + var(--vip-player-h,56.25vw) + var(--vip-headline-h,38px) + var(--vip-cat-h,50px) + 14px) !important;
+  background:transparent !important;
+}
+.headline{
+  position:fixed !important;
+  top:calc(var(--vip-header-h,64px) + var(--vip-player-h,56.25vw)) !important;
+  left:0 !important;
+  right:0 !important;
+  z-index:950 !important;
+}
+.cats{
+  position:fixed !important;
+  top:calc(var(--vip-header-h,64px) + var(--vip-player-h,56.25vw) + var(--vip-headline-h,38px)) !important;
+  left:0 !important;
+  right:0 !important;
+  z-index:940 !important;
+}
+.blue-line{
+  position:fixed !important;
+  top:calc(var(--vip-header-h,64px) + var(--vip-player-h,56.25vw) + var(--vip-headline-h,38px) + var(--vip-cat-h,50px)) !important;
+  left:12px !important;
+  z-index:935 !important;
+}
+#grid{
+  position:relative !important;
+  top:auto !important;
+  bottom:auto !important;
+  left:auto !important;
+  right:auto !important;
+  width:100% !important;
+  height:auto !important;
+  max-height:none !important;
+  overflow:visible !important;
+  overscroll-behavior-y:auto !important;
+  -webkit-overflow-scrolling:auto !important;
+  padding-top:0 !important;
+}
+/* Ensure there is enough page height for Chrome's root scrolling gesture. */
+.site-footer{display:block !important;min-height:80px !important;}
+@supports (height:100dvh){ body{min-height:100dvh !important;} }
+
+/* V15: Premium Notice badge + all scrolling headline text red */
+.headline-notice{
+  position:relative !important;
+  min-width:78px !important;
+  padding:0 14px !important;
+  color:#fff !important;
+  background:linear-gradient(135deg,#8b0000 0%,#d40000 42%,#ff2b2b 100%) !important;
+  border:1px solid #ff5a5a !important;
+  border-right:1px solid #ffb000 !important;
+  border-radius:8px 0 0 8px !important;
+  box-shadow:inset 0 1px 0 #ffffff44,inset 0 -2px 7px #4b000088,0 0 10px #ff000044 !important;
+  text-shadow:0 1px 2px #000 !important;
+}
+.headline-notice::before{
+  content:"";
+  width:6px;
+  height:6px;
+  margin-right:6px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 0 6px #fff,0 0 10px #ff3b3b;
+  animation:vipNoticePulse 1.4s ease-in-out infinite;
+}
+.headline-notice::after{
+  content:"";
+  position:absolute;
+  inset:1px;
+  border-radius:7px 0 0 7px;
+  background:linear-gradient(120deg,#ffffff20,transparent 35%,transparent 70%,#ffffff10);
+  pointer-events:none;
+}
+@keyframes vipNoticePulse{0%,100%{opacity:.7;transform:scale(.85)}50%{opacity:1;transform:scale(1.12)}}
+
+.headline-track span{
+  background:none !important;
+  -webkit-background-clip:initial !important;
+  background-clip:initial !important;
+  -webkit-text-fill-color:#ff2525 !important;
+  color:#ff2525 !important;
+  text-shadow:0 0 5px #ff000022 !important;
+  font-weight:900 !important;
+}
+
+@media(max-width:420px){
+  .headline-notice{min-width:68px !important;padding:0 9px !important;font-size:10px !important}
+  .headline-notice::before{width:5px;height:5px;margin-right:4px}
+}
+
+/* V16: PREMIUM CONTROL COLORS — home + fullscreen */
+:root{
+  --vip-premium-gold:#f6c85f;
+  --vip-premium-gold-bright:#ffe6a3;
+  --vip-premium-gold-deep:#c99422;
+}
+
+/* Home/player sound control: premium gold, clean transparent finish */
+.vip-volume-control{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  min-width:145px !important;
+  padding:0 !important;
+  gap:8px !important;
+}
+.vip-volume-control button{
+  color:var(--vip-premium-accent-bright) !important;
+  text-shadow:0 0 7px rgba(103,255,208,.75),0 0 14px rgba(103,255,208,.35) !important;
+  font-size:20px !important;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.75)) !important;
+}
+.vip-volume-control input{
+  accent-color:var(--vip-premium-accent) !important;
+  filter:drop-shadow(0 0 5px rgba(103,255,208,.4)) !important;
+}
+
+/* Fullscreen button: tiny premium gold icon, no box/background */
+.vip-fullscreen-btn{
+  width:32px !important;
+  height:32px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  color:var(--vip-premium-accent-bright) !important;
+  box-shadow:none !important;
+  text-shadow:0 0 7px rgba(103,255,208,.8),0 0 16px rgba(103,255,208,.35) !important;
+  font-size:23px !important;
+}
+
+/* Fullscreen channel arrows: small premium-gold icons, no circles/boxes */
+.landscape-channel-controls{
+  bottom:54px !important;
+  left:0 !important;
+  right:0 !important;
+  transform:none !important;
+  padding:0 28px !important;
+  justify-content:space-between !important;
+}
+.landscape-channel-controls button,
+.video-box.is-fullscreen .landscape-channel-controls button,
+#vipVideoBox:fullscreen .landscape-channel-controls button,
+#vipVideoBox:-webkit-full-screen .landscape-channel-controls button{
+  width:28px !important;
+  height:28px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  color:var(--vip-premium-accent-bright) !important;
+  box-shadow:none !important;
+  font:900 29px/28px Arial,sans-serif !important;
+  text-shadow:0 0 7px rgba(103,255,208,.85),0 0 16px rgba(103,255,208,.35) !important;
+  opacity:1 !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+.landscape-channel-controls button:active{
+  transform:scale(.86) !important;
+  color:#eafff8 !important;
+}
+
+/* Fullscreen bottom controls remain premium and compact */
+.video-box.vip-fullscreen .vip-bottom-controls,
+.video-box.is-fullscreen .vip-bottom-controls{
+  bottom:18px !important;
+  right:0 !important;
+  padding:0 18px !important;
+  gap:8px !important;
+}
+
+@media(max-width:700px){
+  .vip-volume-control{min-width:120px !important;gap:6px !important;}
+  .vip-volume-control button{font-size:18px !important;width:24px !important;height:24px !important;}
+  .vip-volume-control input{width:72px !important;}
+  .vip-fullscreen-btn{width:28px !important;height:28px !important;font-size:21px !important;}
+  .landscape-channel-controls{bottom:54px !important;padding:0 24px !important;}
+  .landscape-channel-controls button,
+  .video-box.is-fullscreen .landscape-channel-controls button,
+  #vipVideoBox:fullscreen .landscape-channel-controls button,
+  #vipVideoBox:-webkit-full-screen .landscape-channel-controls button{
+    width:26px !important;height:26px !important;font-size:27px !important;line-height:26px !important;
+  }
+}
+
+/* V18: compact red/green premium Notice + larger stylish red headline */
+.headline-notice{
+  flex:0 0 auto!important;
+  min-width:64px!important;
+  height:30px!important;
+  align-self:center!important;
+  padding:0 9px!important;
+  margin:0!important;
+  border-radius:0 8px 8px 0!important;
+  background:linear-gradient(135deg,#e00000 0%,#c60000 48%,#08b85a 100%)!important;
+  color:#fff!important;
+  font:900 12px/30px Georgia,serif!important;
+  letter-spacing:.3px!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.75)!important;
+  box-shadow:0 2px 10px rgba(0,0,0,.38),0 0 8px rgba(0,190,100,.18)!important;
+  z-index:5!important;
+}
+.headline-track span{
+  color:#ff3030!important;
+  font-size:15px!important;
+  font-weight:800!important;
+  font-family:Georgia,"Noto Serif Bengali","Noto Sans Bengali",serif!important;
+  letter-spacing:.15px!important;
+  line-height:1.45!important;
+  text-shadow:0 0 5px rgba(255,0,0,.16)!important;
+  padding-right:95px!important;
+}
+@media(max-width:700px){
+  .headline-notice{
+    min-width:58px!important;
+    height:28px!important;
+    padding:0 8px!important;
+    font-size:11px!important;
+    line-height:28px!important;
+    border-radius:0 7px 7px 0!important;
+  }
+  .headline-track span{
+    font-size:14px!important;
+    line-height:1.4!important;
+    padding-right:75px!important;
+  }
+}
+
+
+/* PWA install button — small floating button at the bottom-right corner. */
+.channel-topbar{
+  position:fixed;
+  right:12px;
+  bottom:18px;
+  width:auto;
+  min-height:0;
+  margin:0;
+  padding:0;
+  display:block;
+  z-index:99990;
+  pointer-events:none;
+}
+.install-app-btn{
+  pointer-events:auto;
+  border:1px solid rgba(0,255,150,.55);
+  color:#eafff7;
+  background:linear-gradient(135deg,rgba(210,0,40,.94),rgba(0,150,85,.94));
+  border-radius:999px;
+  padding:6px 10px;
+  font-weight:800;
+  font-size:10px;
+  line-height:1;
+  box-shadow:0 2px 12px rgba(0,0,0,.45),0 0 10px rgba(0,255,150,.18);
+  cursor:pointer;
+  white-space:nowrap;
+}
+.install-app-btn[hidden]{display:none!important}
+@media(max-width:600px){
+  .channel-topbar{right:10px;bottom:20px;}
+  .install-app-btn{padding:5px 9px;font-size:9px;}
+}
+
+
+/* V21: force dark Android/browser chrome theme and prevent white system-bar flash */
+html, body {
+  background-color:#03070b !important;
+  color-scheme:dark !important;
+  overscroll-behavior-y:none;
+}
+@supports (padding: env(safe-area-inset-top)) {
+  body { padding-top: env(safe-area-inset-top); }
+}
+@media (display-mode: standalone) {
+  html, body { background:#03070b !important; }
+}
+
+
+/* V22: App-style fullscreen — keep Android's real status bar visible.
+   Do NOT use the Fullscreen API here; it hides the system status bar. */
+html, body { background:#03070b !important; color-scheme:dark !important; }
+.video-box.vip-css-fullscreen,
+.video-box.vip-fullscreen,
+.video-box.is-fullscreen {
+  position:fixed !important;
+  left:0 !important;
+  right:0 !important;
+  top:env(safe-area-inset-top, 0px) !important;
+  bottom:env(safe-area-inset-bottom, 0px) !important;
+  width:100vw !important;
+  height:calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+  max-width:none !important;
+  max-height:none !important;
+  margin:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:#000 !important;
+  z-index:2147483000 !important;
+}
+.video-box.vip-css-fullscreen video,
+.video-box.vip-fullscreen video,
+.video-box.is-fullscreen video {
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+}
+body.vip-player-fullscreen { overflow:hidden !important; }
+/* System status bar remains outside the app viewport in standalone mode. */
+@media (display-mode: standalone) {
+  html, body { background:#03070b !important; }
+}
+
+/* V25: Fullscreen button rotates/locks the player to landscape on Android.\n   Native Fullscreen API is intentionally NOT used, so the Android status bar\n   remains visible. If orientation.lock() is unavailable, use a visual fallback. */
+.video-box.vip-css-fullscreen.vip-orientation-fallback{
+  width:100dvh !important;
+  height:calc(100vw - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+  left:50% !important;
+  right:auto !important;
+  top:50% !important;
+  bottom:auto !important;
+  transform:translate(-50%,-50%) rotate(90deg) !important;
+  transform-origin:center center !important;
+}
+.video-box.vip-css-fullscreen.vip-orientation-fallback > #video,
+.video-box.vip-css-fullscreen.vip-orientation-fallback .welcome-video{
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+}
+
+/* V26 FINAL: stable app-style fullscreen on every display.
+   Never rotate the player with CSS. This prevents the oversized portrait
+   fallback seen on Android when Screen Orientation Lock is unavailable. */
+.video-box.vip-css-fullscreen,
+.video-box.vip-fullscreen,
+.video-box.is-fullscreen{
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100dvh !important;
+  max-width:none !important;
+  max-height:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:#000 !important;
+  z-index:2147483000 !important;
+  transform:none !important;
+}
+.video-box.vip-css-fullscreen.vip-orientation-fallback{
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100dvh !important;
+  transform:none !important;
+}
+.video-box.vip-css-fullscreen > video,
+.video-box.vip-fullscreen > video,
+.video-box.is-fullscreen > video{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  max-width:none !important;
+  max-height:none !important;
+  object-fit:contain !important;
+  background:#000 !important;
+}
+.video-box.vip-css-fullscreen .live-badge,
+.video-box.vip-fullscreen .live-badge,
+.video-box.is-fullscreen .live-badge{
+  top:max(12px, env(safe-area-inset-top)) !important;
+  left:max(12px, env(safe-area-inset-left)) !important;
+}
+.video-box.vip-css-fullscreen .landscape-channel-controls,
+.video-box.vip-fullscreen .landscape-channel-controls,
+.video-box.is-fullscreen .landscape-channel-controls{
+  bottom:max(52px, calc(7vh + env(safe-area-inset-bottom))) !important;
+  padding-left:max(18px, env(safe-area-inset-left)) !important;
+  padding-right:max(18px, env(safe-area-inset-right)) !important;
+}
+.video-box.vip-css-fullscreen .vip-bottom-controls,
+.video-box.vip-fullscreen .vip-bottom-controls,
+.video-box.is-fullscreen .vip-bottom-controls{
+  right:0 !important;
+  bottom:max(8px, env(safe-area-inset-bottom)) !important;
+  padding-left:max(8px, env(safe-area-inset-left)) !important;
+  padding-right:max(8px, env(safe-area-inset-right)) !important;
+}
+@media (orientation:landscape){
+  .video-box.vip-css-fullscreen .landscape-channel-controls,
+  .video-box.vip-fullscreen .landscape-channel-controls,
+  .video-box.is-fullscreen .landscape-channel-controls{
+    bottom:62px !important;
+  }
+}
+@media (orientation:portrait){
+  .video-box.vip-css-fullscreen .landscape-channel-controls,
+  .video-box.vip-fullscreen .landscape-channel-controls,
+  .video-box.is-fullscreen .landscape-channel-controls{
+    bottom:58px !important;
+  }
+}
+
+
+/* V31 FINAL: native fullscreen is the rotation trigger. Keep one compact,
+   responsive player layout in both portrait and landscape. */
+#vipVideoBox:fullscreen,
+#vipVideoBox:-webkit-full-screen,
+.video-box.vip-css-fullscreen,
+.video-box.vip-fullscreen,
+.video-box.is-fullscreen{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-width:none!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:#000!important;
+  overflow:hidden!important;
+  z-index:2147483647!important;
+}
+#vipVideoBox:fullscreen > #video,
+#vipVideoBox:-webkit-full-screen > #video,
+.video-box.vip-css-fullscreen > #video,
+.video-box.vip-fullscreen > #video,
+.video-box.is-fullscreen > #video{
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:contain!important;
+  display:block!important;
+}
+#vipVideoBox:fullscreen .welcome-video,
+#vipVideoBox:-webkit-full-screen .welcome-video,
+.video-box.vip-css-fullscreen .welcome-video{
+  width:100%!important;height:100%!important;object-fit:cover!important;
+}
+.video-box.vip-css-fullscreen .landscape-channel-controls,
+.video-box.vip-fullscreen .landscape-channel-controls,
+.video-box.is-fullscreen .landscape-channel-controls,
+#vipVideoBox:fullscreen .landscape-channel-controls,
+#vipVideoBox:-webkit-full-screen .landscape-channel-controls{
+  display:flex!important;
+  bottom:11%!important;
+  left:0!important;right:0!important;
+  padding:0 4%!important;
+  transform:none!important;
+  justify-content:space-between!important;
+}
+.video-box.vip-css-fullscreen .landscape-channel-controls button,
+.video-box.vip-fullscreen .landscape-channel-controls button,
+.video-box.is-fullscreen .landscape-channel-controls button,
+#vipVideoBox:fullscreen .landscape-channel-controls button,
+#vipVideoBox:-webkit-full-screen .landscape-channel-controls button{
+  width:38px!important;height:38px!important;font-size:28px!important;
+  border:0!important;background:transparent!important;box-shadow:none!important;
+  color:#19e6a2!important;text-shadow:0 0 10px rgba(25,230,162,.9)!important;
+}
+.video-box.vip-css-fullscreen .vip-bottom-controls,
+.video-box.vip-fullscreen .vip-bottom-controls,
+.video-box.is-fullscreen .vip-bottom-controls,
+#vipVideoBox:fullscreen .vip-bottom-controls,
+#vipVideoBox:-webkit-full-screen .vip-bottom-controls{
+  bottom:4%!important;
+  right:2%!important;left:auto!important;
+  padding:0!important;
+  justify-content:flex-end!important;
+  gap:6px!important;
+}
+.video-box.vip-css-fullscreen .vip-volume-control,
+.video-box.vip-fullscreen .vip-volume-control,
+.video-box.is-fullscreen .vip-volume-control,
+#vipVideoBox:fullscreen .vip-volume-control,
+#vipVideoBox:-webkit-full-screen .vip-volume-control{
+  min-width:145px!important;width:145px!important;height:38px!important;
+  padding:5px 8px!important;border:0!important;background:transparent!important;
+  box-shadow:none!important;backdrop-filter:none!important;
+}
+.video-box.vip-css-fullscreen .vip-volume-control input,
+.video-box.vip-fullscreen .vip-volume-control input,
+.video-box.is-fullscreen .vip-volume-control input,
+#vipVideoBox:fullscreen .vip-volume-control input,
+#vipVideoBox:-webkit-full-screen .vip-volume-control input{width:95px!important;}
+.video-box.vip-css-fullscreen .vip-fullscreen-btn,
+.video-box.vip-fullscreen .vip-fullscreen-btn,
+.video-box.is-fullscreen .vip-fullscreen-btn,
+#vipVideoBox:fullscreen .vip-fullscreen-btn,
+#vipVideoBox:-webkit-full-screen .vip-fullscreen-btn{
+  width:36px!important;height:36px!important;border:0!important;
+  border-radius:0!important;background:transparent!important;box-shadow:none!important;
+  color:#19e6a2!important;font-size:23px!important;text-shadow:0 0 10px rgba(25,230,162,.9)!important;
+}
+.video-box.vip-css-fullscreen .live-badge,
+.video-box.vip-fullscreen .live-badge,
+.video-box.is-fullscreen .live-badge,
+#vipVideoBox:fullscreen .live-badge,
+#vipVideoBox:-webkit-full-screen .live-badge{left:16px!important;top:16px!important;font-size:12px!important;padding:5px 9px!important;}
+body.vip-player-fullscreen{overflow:hidden!important;background:#000!important;}
+
+@media (orientation:portrait){
+  /* The browser fullscreen + orientation lock should rotate supported devices.
+     This rule only prevents overflow while the rotation transition completes. */
+  body.vip-player-fullscreen{overflow:hidden!important;}
+}
+
+
+
+/* ViP-tv APP splash — created only on standalone app launch, never on refresh. */
+.app-splash{
+  position:fixed!important; inset:0!important; width:100vw!important; height:100dvh!important;
+  z-index:2147483647!important; display:flex; align-items:center; justify-content:center;
+  background:#000!important; overflow:hidden!important; opacity:1; visibility:visible;
+  transition:opacity .38s ease,visibility .38s ease;
+}
+.app-splash img{
+  width:100%!important; height:100%!important; max-width:none!important; max-height:none!important;
+  object-fit:cover!important; object-position:center!important; display:block!important;
+}
+.app-splash-hide{opacity:0!important; visibility:hidden!important; pointer-events:none!important}
+
+/* V32 layout: Messenger at upper-right, Install App directly below it. */
+.header .actions{
+  position:fixed !important;
+  top:12px !important;
+  right:12px !important;
+  z-index:2147482000 !important;
+  margin:0 !important;
+}
+.header .messenger-btn{
+  width:42px !important;
+  height:42px !important;
+  flex-basis:42px !important;
+  border-radius:12px !important;
+  margin:0 !important;
+}
+.header .messenger-btn img{
+  width:42px !important;
+  height:42px !important;
+  border-radius:12px !important;
+}
+.channel-topbar{
+  top:60px !important;
+  right:12px !important;
+  bottom:auto !important;
+  z-index:2147481999 !important;
+}
+.install-app-btn{
+  min-height:30px !important;
+  padding:6px 9px !important;
+  font-size:10px !important;
+  border-radius:999px !important;
+}
+@media(max-width:600px){
+  .header .actions{top:10px !important;right:10px !important;}
+  .header .messenger-btn,.header .messenger-btn img{width:38px !important;height:38px !important;flex-basis:38px !important;}
+  .channel-topbar{top:53px !important;right:10px !important;}
+  .install-app-btn{font-size:9px !important;padding:5px 8px !important;}
+}
+
+/* FINAL: Messenger top-right; Install App floating above channel area at bottom-right */
+
+/* ViP-tv clean floating controls */
+.header .actions{
+  position:fixed !important;
+  top:10px !important;
+  right:10px !important;
+  z-index:2147482000 !important;
+}
+.header .messenger-btn{
+  width:38px !important;
+  height:38px !important;
+  min-width:38px !important;
+  padding:0 !important;
+  margin:0 !important;
+  border-radius:50% !important;
+}
+.header .messenger-btn img{
+  width:38px !important;
+  height:38px !important;
+  display:block !important;
+}
+.channel-topbar{
+  position:fixed !important;
+  right:10px !important;
+  bottom:82px !important;
+  top:auto !important;
+  z-index:2147481999 !important;
+  width:auto !important;
+  margin:0 !important;
+  padding:0 !important;
+  background:transparent !important;
+}
+.install-app-btn{
+  min-height:28px !important;
+  height:28px !important;
+  padding:5px 8px !important;
+  font-size:9px !important;
+  line-height:1 !important;
+  border-radius:999px !important;
+  white-space:nowrap !important;
+}
+@media(max-width:420px){
+  .header .actions{top:9px !important;right:8px !important;}
+  .header .messenger-btn,.header .messenger-btn img{width:34px !important;height:34px !important;min-width:34px !important;}
+  .channel-topbar{right:8px !important;bottom:76px !important;}
+  .install-app-btn{height:26px !important;min-height:26px !important;font-size:8px !important;padding:4px 7px !important;}
+}
