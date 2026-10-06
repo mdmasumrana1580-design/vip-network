@@ -9,6 +9,8 @@ let current = "All";
 let hls = null;
 let currentChannelIndex = -1;
 let visibleChannels = [];
+let playerReturnScrollY = 0;
+let playerOpenedFromCard = false;
 
 // Free/Paid channel display rules. These 19 channels are FREE by default; all others are PAID.
 const FREE_DEFAULTS = ['A Sports HD','ATN Bangla','BTV','Makkah Live','Independent','RTV','Ananda TV','HUM TV','Sony Max 2','Sony Aath','Enter 10 Bangla','Zee Bangla HD','B4U Music','Sony YaY','9XM','T Sports HD','Star Sports SL 2','Sony Ten 1','Star Sports 1'];
@@ -355,6 +357,10 @@ function render() {
 }
 
 function play(c, clickedCard, retryOriginal) {
+  if (!retryOriginal && !playerOpenedFromCard) {
+    playerReturnScrollY = window.scrollY || window.pageYOffset || 0;
+    playerOpenedFromCard = true;
+  }
   currentChannelIndex = visibleChannels.indexOf(c);
   if (welcomeVideo) welcomeVideo.classList.add("welcome-hidden");
   if (videoBox) videoBox.classList.remove("welcome-active");
@@ -461,11 +467,44 @@ function play(c, clickedCard, retryOriginal) {
   }
 }
 
+async function requestNativeFullscreen() {
+  if (!videoBox) return;
+  try {
+    if (videoBox.requestFullscreen) {
+      await videoBox.requestFullscreen({ navigationUI: "hide" });
+      return;
+    }
+    if (videoBox.webkitRequestFullscreen) {
+      videoBox.webkitRequestFullscreen();
+      return;
+    }
+  } catch (e) {
+    // Fall through to CSS fullscreen if native fullscreen is unavailable/blocked.
+  }
+  videoBox.classList.add("vip-css-fullscreen", "vip-fullscreen", "is-fullscreen");
+  document.body.classList.add("vip-player-fullscreen");
+}
+
+async function exitNativeFullscreen() {
+  try {
+    if (document.fullscreenElement && document.exitFullscreen) {
+      await document.exitFullscreen();
+    } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+  } catch (e) {}
+  if (videoBox) {
+    videoBox.classList.remove("vip-css-fullscreen", "vip-fullscreen", "is-fullscreen");
+  }
+  document.body.classList.remove("vip-player-fullscreen");
+}
+
 function isNativeFullscreen() {
   return !!(document.fullscreenElement || (videoBox && videoBox.classList.contains("vip-css-fullscreen")));
 }
 
 async function toggleNativeFullscreen() {
+  const wasPlaying = !video.paused && !video.ended;
   if (isNativeFullscreen()) {
     await exitNativeFullscreen();
   } else {
@@ -474,6 +513,12 @@ async function toggleNativeFullscreen() {
   syncFullscreenState();
   setTimeout(syncFullscreenState, 120);
   setTimeout(syncFullscreenState, 500);
+  // Fullscreen must never stop the stream. If the browser briefly pauses it
+  // during the transition, resume it immediately.
+  if (wasPlaying && video.paused) {
+    const p = video.play();
+    if (p && p.catch) p.catch(function(){});
+  }
 }
 
 function setFullscreenButtonState() {
@@ -520,8 +565,6 @@ document.addEventListener("webkitfullscreenchange", syncFullscreenState);
 syncFullscreenState();
 
 function closePlayer() {
-  section.hidden = false;
-
   if (hls) {
     hls.destroy();
     hls = null;
@@ -530,6 +573,22 @@ function closePlayer() {
   video.pause();
   video.removeAttribute("src");
   video.load();
+  video.style.visibility = "hidden";
+  video.style.opacity = "0";
+
+  // Close the player and return to the exact channel-grid position.
+  section.hidden = true;
+  section.style.display = "none";
+  if (welcomeVideo) welcomeVideo.classList.add("welcome-hidden");
+  if (videoBox) videoBox.classList.remove("welcome-active");
+
+  const y = playerReturnScrollY;
+  playerOpenedFromCard = false;
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      window.scrollTo({top:y, left:0, behavior:"auto"});
+    });
+  });
 }
 
 document.getElementById("closePlayer").addEventListener("click", closePlayer);
