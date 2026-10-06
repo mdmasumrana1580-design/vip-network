@@ -3503,41 +3503,39 @@ video{
   .install-app-header .install-text{font-size:8.5px !important}
 }
 
-/* PAID CHANNEL CROWN — perched just outside the logo, like a small premium badge */
+/* PAID CHANNEL PREMIUM BADGE — small, static, attached to the channel logo */
 .card{position:relative !important;overflow:visible !important;}
 .card > .circle{position:relative;z-index:2;}
 .vip-paid-crown{
   position:absolute !important;
-  left:calc(50% + 25px) !important;
-  top:4px !important;
+  right:-3px !important;
+  top:-3px !important;
   z-index:20 !important;
-  width:32px !important;
-  height:32px !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  font-size:25px !important;
-  line-height:1 !important;
-  filter:drop-shadow(0 0 3px rgba(255,214,55,1)) drop-shadow(0 2px 3px rgba(0,0,0,.95)) !important;
+  width:23px !important;
+  height:23px !important;
+  object-fit:contain !important;
+  display:block !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  box-shadow:none !important;
+  filter:none !important;
+  transform:none !important;
   pointer-events:none !important;
-  transform:rotate(-10deg);
-  transform-origin:center;
 }
 @media (max-width:700px){
   .vip-paid-crown{
-    left:calc(50% + 20px) !important;
-    top:3px !important;
-    width:29px !important;
-    height:29px !important;
-    font-size:23px !important;
+    right:-2px !important;
+    top:-2px !important;
+    width:21px !important;
+    height:21px !important;
   }
 }
 @media (max-width:420px){
   .vip-paid-crown{
-    left:calc(50% + 17px) !important;
-    top:2px !important;
-    width:27px !important;
-    height:27px !important;
-    font-size:21px !important;
+    right:-1px !important;
+    top:-1px !important;
+    width:19px !important;
+    height:19px !important;
   }
 }

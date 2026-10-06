@@ -294,7 +294,7 @@ function render() {
 
     el.innerHTML =
       '<div class="circle">' + icon + '</div>' +
-      (isPaid ? '<span class="vip-paid-crown" aria-label="Paid channel" title="Paid channel">👑</span>' : '') +
+      (isPaid ? '<img class="vip-paid-crown" src="https://i.postimg.cc/pr3yZQjc/pngtree-premium-subscription-badge-icon-with-glowing-golden-star-3d-illustration-png-image-19505710.webp" alt="Paid channel" title="Paid channel">' : '') +
       '<div class="label">' + esc(c.name) + '</div>';
 
     el.addEventListener("click", function () {
