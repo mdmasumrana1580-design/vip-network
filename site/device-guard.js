@@ -111,63 +111,17 @@
     return text ? text.textContent.trim() : "";
   }
 
-  function addBadge(card, paid) {
-    if (!card) return;
-    const circle = card.querySelector(".circle");
-    if (!circle) return;
-
-    const old = circle.querySelector(".vip-paid-badge");
-    if (!paid) {
-      if (old) old.remove();
-      card.dataset.vipAccess = "free";
-      return;
-    }
-
-    card.dataset.vipAccess = "paid";
-    if (old) return;
-
-    const badge = document.createElement("span");
-    badge.className = "vip-paid-badge";
-    badge.textContent = "♛";
-    badge.setAttribute("aria-label", "Paid");
-    circle.appendChild(badge);
-  }
-
+  // Paid crown is rendered by site/app.js from the same channelAccess settings.
+  // Keep device-guard focused on access control so it cannot create a duplicate badge.
   function decorate(card) {
+    if (!card) return;
     const name = getCardName(card);
-    if (!name) return;
-    addBadge(card, accessFor(name) === "paid");
+    if (name) card.dataset.vipAccess = accessFor(name);
   }
 
   function decorateAll() {
     document.querySelectorAll(".card").forEach(decorate);
   }
-
-  const style = document.createElement("style");
-  style.textContent = `
-    .circle{position:relative}
-    .vip-paid-badge{
-      position:absolute;
-      top:-4px;
-      right:-4px;
-      z-index:20;
-      width:25px;
-      height:25px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      border-radius:50%;
-      background:linear-gradient(145deg,#ffd95a,#d99a08);
-      color:#171000;
-      border:2px solid #fff2a8;
-      box-shadow:0 2px 8px rgba(0,0,0,.55);
-      font-size:14px;
-      line-height:1;
-      font-weight:900;
-      pointer-events:none;
-    }
-  `;
-  (document.head || document.documentElement).appendChild(style);
 
   const observer = new MutationObserver(() => decorateAll());
   observer.observe(document.documentElement, { childList:true, subtree:true });
