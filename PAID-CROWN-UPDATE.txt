@@ -1,1 +1,0 @@
-Paid crown update: root TV site uses index.html -> app.js. The 19 specified channels are FREE; all others display a crown.
