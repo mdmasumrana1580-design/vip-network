@@ -3502,3 +3502,32 @@ video{
   .install-app-header{min-width:88px !important;height:30px !important;padding:0 7px !important}
   .install-app-header .install-text{font-size:8.5px !important}
 }
+
+/* PAID CHANNEL CROWN — outside the circular logo */
+.circle {
+  overflow: visible !important;
+}
+.vip-paid-crown {
+  position: absolute !important;
+  right: -14px !important;
+  top: -17px !important;
+  z-index: 20 !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 27px !important;
+  line-height: 1 !important;
+  filter: drop-shadow(0 0 4px rgba(255,190,0,.95)) drop-shadow(0 2px 3px rgba(0,0,0,.95)) !important;
+  pointer-events: none !important;
+}
+@media (max-width:700px) {
+  .vip-paid-crown {
+    right: -11px !important;
+    top: -14px !important;
+    width: 29px !important;
+    height: 29px !important;
+    font-size: 24px !important;
+  }
+}
