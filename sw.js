@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vip-tv-pwa-v3';
+const CACHE_NAME = 'vip-tv-pwa-v4-paid-crown';
 const CORE = [
   './',
   './index.html',
