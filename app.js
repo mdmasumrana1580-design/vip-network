@@ -10,6 +10,18 @@ let hls = null;
 let currentChannelIndex = -1;
 let visibleChannels = [];
 
+// MsM.Tv paid/free display rule: these 19 channels are FREE; every other channel is PAID.
+const FREE_CHANNELS = new Set([
+  'a sports hd','atn bangla','btv','makkah live','independent','rtv','ananda tv',
+  'hum tv','sony max 2','sony aath','enter 10 bangla','zee bangla hd','b4u music',
+  'sony yay','9xm','t sports hd','star sports sl 2','sony ten 1','star sports 1'
+]);
+function isPaidChannel(name){
+  const key = String(name || '').replace(/\s+/g,' ').trim().toLowerCase();
+  return !FREE_CHANNELS.has(key);
+}
+
+
 const grid = document.getElementById("grid");
 const empty = document.getElementById("empty");
 const video = document.getElementById("video");
@@ -275,8 +287,13 @@ function render() {
       ? '<img src="' + esc(c.logo) + '" alt="" loading="lazy">'
       : "<span>TV</span>";
 
+    const paidBadge = isPaidChannel(c.name)
+      ? '<span class="vip-paid-crown" aria-label="Paid channel" title="Paid channel">👑</span>'
+      : '';
+
     el.innerHTML =
       '<div class="circle">' + icon + '</div>' +
+      paidBadge +
       '<div class="label">' + esc(c.name) + '</div>';
 
     el.addEventListener("click", function () {
@@ -579,6 +596,13 @@ setInterval(refreshVipPlaylist, PLAYLIST_REFRESH_MS);
 (function () {
   var s = document.createElement("style");
   s.textContent = ".headline-track span{color:#fff !important;}";
+  document.head.appendChild(s);
+})();
+
+/* Paid-channel crown: placed on the card (not inside the clipped logo circle). */
+(function(){
+  var s=document.createElement('style');
+  s.textContent='.card{position:relative!important;} .vip-paid-crown{position:absolute;left:calc(50% + 27px);top:calc(50% - 47px);z-index:8;font-size:22px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.95));pointer-events:none;}';
   document.head.appendChild(s);
 })();
 
