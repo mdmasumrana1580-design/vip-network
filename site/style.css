@@ -3570,3 +3570,20 @@ video{
   transform-origin:center center !important;
   line-height:1 !important;
 }
+
+/* MOVIE & SERIES: force Chrome native controls to remain visible/clickable. */
+.video-box.movie-native-player > #video[controls]{
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  pointer-events:auto !important;
+  z-index:50 !important;
+  position:relative !important;
+}
+.video-box.movie-native-player{pointer-events:auto !important;}
+.video-box.movie-native-player .welcome-video.welcome-hidden{pointer-events:none !important;}
+
+/* PLAYER LAUNCH FIX: keep the real video element visible after channel click. */
+.video-box > #video{visibility:visible !important;opacity:1 !important;display:block !important;}
+.video-box.welcome-active > #video{visibility:hidden !important;}
+.video-box.movie-native-player > #video[controls]{visibility:visible !important;opacity:1 !important;display:block !important;pointer-events:auto !important;}

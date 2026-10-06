@@ -358,33 +358,35 @@ function play(c, clickedCard, retryOriginal) {
   currentChannelIndex = visibleChannels.indexOf(c);
   if (welcomeVideo) welcomeVideo.classList.add("welcome-hidden");
   if (videoBox) videoBox.classList.remove("welcome-active");
+
+  // Always open/show the player before touching the stream source.
+  section.hidden = false;
+  section.removeAttribute("hidden");
+  section.style.display = "block";
+  document.getElementById("playerTitle").textContent = c.name || "Live Player";
+  document.getElementById("note").style.display = "none";
+
   const liveBadge = document.getElementById("liveBadge");
   if (liveBadge) liveBadge.style.display = "flex";
 
-  section.hidden = false;
-  document.getElementById("playerTitle").textContent = c.name;
-  document.getElementById("note").style.display = "none";
+  if (hls) { try { hls.destroy(); } catch (e) {} hls = null; }
 
-  if (hls) {
-    try { hls.destroy(); } catch (e) {}
-    hls = null;
-  }
-
-  // Movie & Series uses the browser's native Chrome video player,
-  // while live channels keep the existing custom controls.
   const isMovieSeries = normalizeCategoryKey(c.cat) === "MOVIE & SERIES";
   if (videoBox) videoBox.classList.toggle("movie-native-player", isMovieSeries);
   video.controls = isMovieSeries;
-  video.autoplay = !isMovieSeries;
+  video.autoplay = false;
   video.playsInline = true;
   video.muted = false;
   video.volume = 1;
+  video.style.visibility = "visible";
+  video.style.opacity = "1";
+  video.style.display = "block";
 
   video.pause();
   video.removeAttribute("src");
   video.load();
 
-  const originalUrl = c.url;
+  const originalUrl = String(c.url || "").trim();
   let fallbackUsed = !retryOriginal && c._usingFallback === true;
   const sourceUrl = fallbackUsed ? STREAM_FALLBACK_URL : originalUrl;
 
@@ -394,17 +396,23 @@ function play(c, clickedCard, retryOriginal) {
     note.style.display = "block";
   }
 
+  function startPlayback() {
+    if (!sourceUrl) { showPlaybackError(); return; }
+    const p = video.play();
+    if (p && p.catch) p.catch(function(err) {
+      // Do not replace a real stream just because Chrome blocked autoplay.
+      // The user can press the native Play button for Movie & Series.
+      if (!isMovieSeries) {
+        showPlaybackError();
+      }
+    });
+  }
+
   function switchToFallback() {
-    if (fallbackUsed) {
-      showPlaybackError();
-      return;
-    }
+    if (fallbackUsed) { showPlaybackError(); return; }
     fallbackUsed = true;
     c._usingFallback = true;
-    if (hls) {
-      try { hls.destroy(); } catch (e) {}
-      hls = null;
-    }
+    if (hls) { try { hls.destroy(); } catch (e) {} hls = null; }
     video.pause();
     video.removeAttribute("src");
     video.load();
@@ -414,45 +422,41 @@ function play(c, clickedCard, retryOriginal) {
     startPlayback();
   }
 
-  function startPlayback() {
-    // Native movie player should wait for the user's Play button.
-    if (isMovieSeries) return;
-    const p = video.play();
-    if (p && p.catch) p.catch(function () {
-      if (!fallbackUsed) switchToFallback();
-      else showPlaybackError();
-    });
-  }
-
-  if (/\.m3u8(\?|$)/i.test(sourceUrl) && window.Hls && Hls.isSupported()) {
-    hls = new Hls({ enableWorker:true, lowLatencyMode:true, backBufferLength:30 });
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MEDIA_ATTACHED, function () {
-      if (hls) hls.loadSource(sourceUrl);
-    });
-    hls.on(Hls.Events.MANIFEST_PARSED, function () {
-      video.muted = false;
-      video.volume = 1;
-      startPlayback();
-    });
-    hls.on(Hls.Events.ERROR, function (_event, data) {
-      if (!data || !data.fatal || !hls) return;
-      if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-        try { hls.recoverMediaError(); } catch (e) {}
-      } else {
-        try { hls.destroy(); } catch (e) {}
-        hls = null;
-        switchToFallback();
-      }
-    });
+  // HLS streams: use hls.js on Chrome/Edge/Firefox and native HLS where available.
+  if (/\.m3u8(?:\?|$)/i.test(sourceUrl)) {
+    if (window.Hls && Hls.isSupported()) {
+      hls = new Hls({ enableWorker:true, lowLatencyMode:true, backBufferLength:30 });
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MEDIA_ATTACHED, function() {
+        if (hls) hls.loadSource(sourceUrl);
+      });
+      hls.on(Hls.Events.MANIFEST_PARSED, function() {
+        startPlayback();
+      });
+      hls.on(Hls.Events.ERROR, function(_event, data) {
+        if (!data || !data.fatal || !hls) return;
+        if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          try { hls.recoverMediaError(); } catch(e) { switchToFallback(); }
+        } else {
+          switchToFallback();
+        }
+      });
+    } else {
+      // Safari/iOS can play HLS directly.
+      video.src = sourceUrl;
+      video.addEventListener("loadedmetadata", startPlayback, {once:true});
+      video.addEventListener("error", function(){ showPlaybackError(); }, {once:true});
+      video.load();
+    }
   } else {
+    // MP4 and other browser-native formats.
     video.src = sourceUrl;
     video.addEventListener("loadedmetadata", startPlayback, {once:true});
     video.addEventListener("canplay", startPlayback, {once:true});
-    video.addEventListener("error", function () {
-      if (!fallbackUsed) switchToFallback();
-      else showPlaybackError();
+    video.addEventListener("error", function() {
+      if (!fallbackUsed) switchToFallback(); else showPlaybackError();
     }, {once:true});
+    video.load();
     startPlayback();
   }
 }
