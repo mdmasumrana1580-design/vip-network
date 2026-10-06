@@ -107,21 +107,28 @@
   };
 
   function getCardName(card) {
-    const text = card && card.querySelector(".label-text, .label, .channel-name, [data-channel-name]");
+    const text = card && card.querySelector(".label");
     return text ? text.textContent.trim() : "";
   }
 
-  // Paid crown is rendered by site/app.js from the same channelAccess settings.
-  // Keep device-guard focused on access control so it cannot create a duplicate badge.
-  function decorate(card) {
+  function addBadge(card, paid) {
     if (!card) return;
+    card.dataset.vipAccess = paid ? "paid" : "free";
+    // site/app.js renders the single visible 👑 crown for paid channels.
+  }
+
+  function decorate(card) {
     const name = getCardName(card);
-    if (name) card.dataset.vipAccess = accessFor(name);
+    if (!name) return;
+    addBadge(card, accessFor(name) === "paid");
   }
 
   function decorateAll() {
     document.querySelectorAll(".card").forEach(decorate);
   }
+
+  // No separate badge is injected here; app.js owns the visible 👑 crown.
+
 
   const observer = new MutationObserver(() => decorateAll());
   observer.observe(document.documentElement, { childList:true, subtree:true });
