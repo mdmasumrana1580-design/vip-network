@@ -3394,76 +3394,110 @@ video{
 }
 
 
-/* FINAL TELEGRAM + APP INSTALL FLOATING HEADER EFFECT */
-.actions{align-items:center !important;gap:8px !important;}
+/* FINAL: Premium floating Telegram + App Install controls */
+.actions{
+  display:flex !important;
+  align-items:center !important;
+  gap:8px !important;
+  position:relative !important;
+  z-index:1205 !important;
+}
 .telegram-btn{
-  width:44px !important;
-  height:44px !important;
-  flex:0 0 44px !important;
+  width:52px !important;
+  height:52px !important;
+  flex:0 0 52px !important;
   display:flex !important;
   align-items:center !important;
   justify-content:center !important;
+  padding:0 !important;
+  margin:0 !important;
   border-radius:50% !important;
+  background:transparent !important;
+  border:0 !important;
   position:relative !important;
+  z-index:1210 !important;
   text-decoration:none !important;
-  background:radial-gradient(circle at 35% 30%,#55c9ff 0%,#229ed9 42%,#087bb5 100%) !important;
-  border:2px solid rgba(255,255,255,.78) !important;
-  box-shadow:0 0 8px rgba(40,180,255,.8),0 0 18px rgba(0,155,230,.45),inset 0 0 8px rgba(255,255,255,.25) !important;
-  animation:telegramFloat 2.2s ease-in-out infinite, telegramGlow 1.8s ease-in-out infinite alternate !important;
-  z-index:1200 !important;
+  animation:msmTelegramFloat 3.2s ease-in-out infinite !important;
+  filter:drop-shadow(0 4px 9px rgba(0,136,255,.45));
 }
 .telegram-btn img{
-  width:31px !important;
-  height:31px !important;
+  width:52px !important;
+  height:52px !important;
+  object-fit:cover !important;
+  border-radius:50% !important;
   display:block !important;
-  object-fit:contain !important;
-  filter:drop-shadow(0 1px 2px rgba(0,0,0,.45)) !important;
 }
 .telegram-btn::after{
   content:"" !important;
   position:absolute !important;
-  inset:-5px !important;
+  inset:-3px !important;
   border-radius:50% !important;
-  border:1px solid rgba(72,194,255,.48) !important;
-  animation:telegramRing 2.2s ease-out infinite !important;
+  border:1px solid rgba(48,176,255,.72) !important;
+  box-shadow:0 0 12px rgba(0,153,255,.55),0 0 22px rgba(0,110,255,.24) !important;
+  animation:msmTelegramPulse 2.4s ease-out infinite !important;
   pointer-events:none !important;
 }
+@keyframes msmTelegramFloat{
+  0%,100%{transform:translate3d(0,0,0) rotate(0deg) scale(1)}
+  25%{transform:translate3d(0,-3px,0) rotate(-2deg) scale(1.02)}
+  50%{transform:translate3d(0,-6px,0) rotate(2deg) scale(1.04)}
+  75%{transform:translate3d(0,-3px,0) rotate(-1deg) scale(1.02)}
+}
+@keyframes msmTelegramPulse{
+  0%,45%{transform:scale(.92);opacity:.78}
+  75%,100%{transform:scale(1.25);opacity:0}
+}
 .install-app-header{
+  pointer-events:auto !important;
   position:relative !important;
-  overflow:visible !important;
+  z-index:1210 !important;
+  min-width:104px !important;
+  height:34px !important;
+  padding:0 10px !important;
+  border:1px solid rgba(255,255,255,.62) !important;
   border-radius:10px !important;
-  border:1px solid rgba(255,255,255,.65) !important;
-  background:linear-gradient(135deg,#777 0%,#d7d7d7 45%,#666 100%) !important;
   color:#fff !important;
-  box-shadow:0 0 7px rgba(255,255,255,.35),0 0 14px rgba(255,80,80,.35),inset 0 0 7px rgba(255,255,255,.3) !important;
-  animation:appInstallFloat 2.5s ease-in-out infinite, appInstallGlow 1.6s ease-in-out infinite alternate !important;
-  z-index:1200 !important;
+  background:linear-gradient(115deg,#8b8b8b,#f0f0f0 42%,#8d8d8d 65%,#dcdcdc) !important;
+  box-shadow:0 0 9px rgba(255,80,80,.38),0 0 15px rgba(0,255,150,.30),inset 0 1px 3px rgba(255,255,255,.75) !important;
+  font-weight:900 !important;
+  letter-spacing:.4px !important;
+  animation:msmInstallFloat 2.9s ease-in-out infinite,msmInstallGlow 3.8s linear infinite !important;
+  overflow:hidden !important;
 }
 .install-app-header::after{
   content:"" !important;
   position:absolute !important;
-  inset:-3px !important;
-  border-radius:12px !important;
-  border:1px solid rgba(255,60,60,.55) !important;
-  box-shadow:0 0 8px rgba(0,230,130,.38) !important;
+  top:-35% !important;
+  left:-65% !important;
+  width:35% !important;
+  height:170% !important;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.82),transparent) !important;
+  transform:skewX(-18deg) !important;
+  animation:msmInstallShine 2.8s linear infinite !important;
   pointer-events:none !important;
-  animation:appInstallBorder 2s linear infinite !important;
 }
-.install-app-header .install-arrow{font-weight:900 !important;}
-@keyframes telegramFloat{0%,100%{transform:translateY(0) rotate(0deg)}25%{transform:translateY(-3px) rotate(-2deg)}50%{transform:translateY(-5px) rotate(0deg)}75%{transform:translateY(-2px) rotate(2deg)}}
-@keyframes telegramGlow{from{box-shadow:0 0 7px rgba(40,180,255,.65),0 0 12px rgba(0,155,230,.35),inset 0 0 7px rgba(255,255,255,.22)}to{box-shadow:0 0 10px rgba(40,205,255,1),0 0 24px rgba(0,155,230,.65),inset 0 0 10px rgba(255,255,255,.38)}}
-@keyframes telegramRing{0%{transform:scale(.86);opacity:.8}70%{transform:scale(1.28);opacity:0}100%{transform:scale(1.28);opacity:0}}
-@keyframes appInstallFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
-@keyframes appInstallGlow{from{filter:saturate(.8) brightness(.95);box-shadow:0 0 6px rgba(255,255,255,.28),0 0 10px rgba(255,60,60,.28),inset 0 0 6px rgba(255,255,255,.25)}to{filter:saturate(1.45) brightness(1.12);box-shadow:0 0 10px rgba(255,255,255,.65),0 0 20px rgba(255,60,60,.5),0 0 8px rgba(0,230,130,.38),inset 0 0 9px rgba(255,255,255,.4)}}
-@keyframes appInstallBorder{0%{border-color:rgba(255,50,50,.7);box-shadow:0 0 7px rgba(255,40,40,.38)}50%{border-color:rgba(0,230,130,.8);box-shadow:0 0 9px rgba(0,230,130,.48)}100%{border-color:rgba(255,50,50,.7);box-shadow:0 0 7px rgba(255,40,40,.38)}}
+.install-app-header .install-text{position:relative !important;z-index:2 !important;font-size:10px !important;}
+.install-app-header .install-arrow{position:relative !important;z-index:2 !important;font-size:12px !important;margin-right:2px !important;}
+@keyframes msmInstallFloat{
+  0%,100%{transform:translateY(0) scale(1)}
+  50%{transform:translateY(-4px) scale(1.025)}
+}
+@keyframes msmInstallGlow{
+  0%,100%{box-shadow:0 0 8px rgba(255,40,70,.42),0 0 13px rgba(0,255,150,.26),inset 0 1px 3px rgba(255,255,255,.75)}
+  50%{box-shadow:0 0 13px rgba(255,40,70,.72),0 0 22px rgba(0,255,150,.52),inset 0 1px 4px rgba(255,255,255,.9)}
+}
+@keyframes msmInstallShine{0%{left:-65%}45%,100%{left:135%}}
 @media(max-width:600px){
-  .actions{gap:6px !important;padding-right:2px !important;}
-  .telegram-btn{width:46px !important;height:46px !important;flex-basis:46px !important;}
-  .telegram-btn img{width:33px !important;height:33px !important;}
-  .install-app-header{min-height:38px !important;padding:5px 9px !important;font-size:10px !important;}
+  .actions{gap:7px !important;padding-right:3px !important}
+  .telegram-btn{width:50px !important;height:50px !important;flex-basis:50px !important}
+  .telegram-btn img{width:50px !important;height:50px !important}
+  .install-app-header{min-width:96px !important;height:32px !important;padding:0 8px !important;border-radius:10px !important}
+  .install-app-header .install-text{font-size:9px !important}
 }
-@media(max-width:420px){
-  .telegram-btn{width:44px !important;height:44px !important;flex-basis:44px !important;}
-  .telegram-btn img{width:31px !important;height:31px !important;}
-  .install-app-header{min-height:36px !important;padding:4px 8px !important;font-size:9px !important;}
+@media(max-width:390px){
+  .actions{gap:5px !important}
+  .telegram-btn{width:46px !important;height:46px !important;flex-basis:46px !important}
+  .telegram-btn img{width:46px !important;height:46px !important}
+  .install-app-header{min-width:88px !important;height:30px !important;padding:0 7px !important}
+  .install-app-header .install-text{font-size:8.5px !important}
 }
