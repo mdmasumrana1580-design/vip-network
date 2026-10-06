@@ -505,12 +505,16 @@ function isNativeFullscreen() {
   return !!(document.fullscreenElement || (videoBox && videoBox.classList.contains("vip-css-fullscreen")));
 }
 
-async function toggleNativeFullscreen() {
+async async function toggleNativeFullscreen() {
   const wasPlaying = !video.paused && !video.ended;
   if (isNativeFullscreen()) {
     await exitNativeFullscreen();
+    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
   } else {
     await requestNativeFullscreen();
+    try {
+      if (screen.orientation && screen.orientation.lock) await screen.orientation.lock("landscape");
+    } catch (e) {}
   }
   syncFullscreenState();
   setTimeout(syncFullscreenState, 120);
