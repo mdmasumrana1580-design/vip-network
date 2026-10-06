@@ -3509,10 +3509,10 @@ video{
 .vip-paid-crown{
   position:absolute !important;
   right:-3px !important;
-  top:-3px !important;
+  top:-4px !important;
   z-index:20 !important;
-  width:23px !important;
-  height:23px !important;
+  width:28px !important;
+  height:28px !important;
   object-fit:contain !important;
   display:block !important;
   margin:0 !important;
@@ -3526,16 +3526,16 @@ video{
 @media (max-width:700px){
   .vip-paid-crown{
     right:-2px !important;
-    top:-2px !important;
-    width:21px !important;
-    height:21px !important;
+    top:-3px !important;
+    width:26px !important;
+    height:26px !important;
   }
 }
 @media (max-width:420px){
   .vip-paid-crown{
     right:-1px !important;
-    top:-1px !important;
-    width:19px !important;
-    height:19px !important;
+    top:-2px !important;
+    width:24px !important;
+    height:24px !important;
   }
 }
