@@ -3371,15 +3371,14 @@ video{
   left:50% !important; right:auto !important; bottom:4px !important;
   transform:translateX(-50%) !important;
   width:calc(100% - 12px) !important; max-width:calc(100% - 12px) !important;
-  min-height:28px !important; height:28px !important; box-sizing:border-box !important;
+  min-height:20px !important; height:20px !important; box-sizing:border-box !important;
   display:flex !important; align-items:center !important; justify-content:center !important;
   padding:2px 4px !important; border:1.2px solid transparent !important; border-radius:6px !important;
   background:linear-gradient(#252525,#252525) padding-box,linear-gradient(90deg,#ff2525 0%,#ff4a4a 35%,#00d866 70%,#00a94f 100%) border-box !important;
   color:#fff !important; font-family:Georgia,"Times New Roman",serif !important;
   font-size:11px !important; font-weight:900 !important; font-style:italic !important;
-  letter-spacing:.05px !important; line-height:1.05 !important; white-space:normal !important;
-  overflow:hidden !important; text-overflow:ellipsis !important; text-align:center !important;
-  overflow-wrap:anywhere !important; word-break:break-word !important;
+  letter-spacing:.05px !important; line-height:1 !important; white-space:nowrap !important;
+  overflow:hidden !important; text-overflow:clip !important; text-align:center !important;
   box-shadow:0 0 4px #ff202022,0 0 5px #00d86622,inset 0 0 4px #0009 !important;
   text-shadow:0 1px 2px #000,0 0 1px #fff4 !important; z-index:5 !important;
 }
@@ -3502,4 +3501,41 @@ video{
   .telegram-btn img{width:46px !important;height:46px !important}
   .install-app-header{min-width:88px !important;height:30px !important;padding:0 7px !important}
   .install-app-header .install-text{font-size:8.5px !important}
+}
+
+/* PAID CHANNEL PREMIUM BADGE — small, static, attached to the channel logo */
+.card{position:relative !important;overflow:visible !important;}
+.card > .circle{position:relative;z-index:2;}
+.vip-paid-crown{
+  position:absolute !important;
+  right:-3px !important;
+  top:-4px !important;
+  z-index:20 !important;
+  width:28px !important;
+  height:28px !important;
+  object-fit:contain !important;
+  display:block !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  box-shadow:none !important;
+  filter:none !important;
+  transform:none !important;
+  pointer-events:none !important;
+}
+@media (max-width:700px){
+  .vip-paid-crown{
+    right:-2px !important;
+    top:-3px !important;
+    width:26px !important;
+    height:26px !important;
+  }
+}
+@media (max-width:420px){
+  .vip-paid-crown{
+    right:-1px !important;
+    top:-2px !important;
+    width:24px !important;
+    height:24px !important;
+  }
 }
