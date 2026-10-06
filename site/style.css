@@ -3539,3 +3539,19 @@ video{
     height:24px !important;
   }
 }
+
+
+/* FINAL CHANNEL NAME FIX: always keep the complete name inside the badge. */
+.label{
+  overflow:hidden !important;
+}
+.label .label-text{
+  display:block !important;
+  flex:0 0 auto !important;
+  max-width:none !important;
+  white-space:nowrap !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  transform-origin:center center !important;
+  line-height:1 !important;
+}

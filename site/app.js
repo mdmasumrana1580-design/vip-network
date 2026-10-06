@@ -282,6 +282,37 @@ function parseM3U(text) {
   return out;
 }
 
+
+function fitChannelLabels(root) {
+  const scope = root || document;
+  scope.querySelectorAll(".label").forEach(function (label) {
+    const text = label.querySelector(".label-text");
+    if (!text) return;
+
+    text.style.transform = "none";
+    text.style.fontSize = "";
+
+    const available = Math.max(1, label.clientWidth - 8);
+    const baseSize = parseFloat(getComputedStyle(label).fontSize) || 10;
+    let size = baseSize;
+
+    text.style.fontSize = size + "px";
+
+    // First reduce the font slightly for long names.
+    while (text.scrollWidth > available && size > 7) {
+      size -= 0.5;
+      text.style.fontSize = size + "px";
+    }
+
+    // If it is still too long, scale the text horizontally just enough
+    // to keep the complete name visible inside the same badge.
+    if (text.scrollWidth > available) {
+      const scale = Math.max(0.35, available / text.scrollWidth);
+      text.style.transform = "scaleX(" + scale + ")";
+    }
+  });
+}
+
 function render() {
   const q = "";
 
@@ -312,13 +343,14 @@ function render() {
     el.innerHTML =
       '<div class="circle">' + icon + '</div>' +
       (isPaid ? '<img class="vip-paid-crown" src="https://i.postimg.cc/g05JdqSY/Blue-Star-symbol.png" alt="Paid channel" title="Paid channel">' : '') +
-      '<div class="label">' + esc(c.name) + '</div>';
+      '<div class="label"><span class="label-text">' + esc(c.name) + '</span></div>';
 
     el.addEventListener("click", function () {
       play(c, el);
     });
 
     grid.appendChild(el);
+    fitChannelLabels(el);
   });
 }
 
@@ -699,3 +731,12 @@ document.addEventListener("DOMContentLoaded", function(){
     touchMoved = false;
   }, {passive:true});
 })();
+
+
+window.addEventListener("resize", function () {
+  fitChannelLabels(document);
+});
+
+window.addEventListener("load", function () {
+  fitChannelLabels(document);
+});
