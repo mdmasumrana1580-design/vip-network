@@ -295,7 +295,7 @@ function render() {
     el.innerHTML =
       '<div class="circle">' + icon + '</div>' +
       (isPaid ? '<img class="vip-paid-crown" src="https://i.postimg.cc/g05JdqSY/Blue-Star-symbol.png" alt="Paid channel" title="Paid channel">' : '') +
-      '<div class="label">' + esc(c.name) + '</div>';
+      '<div class="label"><span class="label-text">' + esc(c.name) + '</span></div>';
 
     el.addEventListener("click", function () {
       play(c, el);
@@ -303,7 +303,39 @@ function render() {
 
     grid.appendChild(el);
   });
+
+  // Keep every channel name inside its fixed border: long names automatically
+  // shrink in font size instead of being clipped or wrapping outside the card.
+  requestAnimationFrame(fitChannelLabels);
 }
+
+
+function fitChannelLabels() {
+  const labels = document.querySelectorAll(".label");
+  labels.forEach(function (label) {
+    const text = label.querySelector(".label-text");
+    if (!text) return;
+
+    text.style.transform = "none";
+    text.style.fontSize = "11px";
+
+    const available = Math.max(1, label.clientWidth - 8);
+    let size = 11;
+    while (text.scrollWidth > available && size > 6) {
+      size -= 0.25;
+      text.style.fontSize = size + "px";
+    }
+
+    // Extremely long names get a tiny additional horizontal squeeze so they
+    // still remain on one line inside the same border.
+    if (text.scrollWidth > available) {
+      const scale = Math.max(0.62, available / text.scrollWidth);
+      text.style.transform = "scaleX(" + scale.toFixed(3) + ")";
+    }
+  });
+}
+
+window.addEventListener("resize", fitChannelLabels);
 
 function play(c, clickedCard, retryOriginal) {
   currentChannelIndex = visibleChannels.indexOf(c);
