@@ -13,8 +13,6 @@ let playerReturnScrollY = 0;
 let playerReturnGridScrollTop = 0;
 let playerFullscreenGridScrollTop = 0;
 let playerOpenedFromCard = false;
-let fullscreenHistoryActive = false;
-let fullscreenBackInProgress = false;
 
 // Free/Paid channel display rules. These 19 channels are FREE by default; all others are PAID.
 const FREE_DEFAULTS = ['A Sports HD','ATN Bangla','BTV','Makkah Live','Independent','RTV','Ananda TV','HUM TV','Sony Max 2','Sony Aath','Enter 10 Bangla','Zee Bangla HD','B4U Music','Sony YaY','9XM','T Sports HD','Star Sports SL 2','Sony Ten 1','Star Sports 1'];
@@ -474,41 +472,22 @@ function play(c, clickedCard, retryOriginal, fromUserClick) {
   }
 }
 
-function pushFullscreenHistory() {
-  if (fullscreenHistoryActive || fullscreenBackInProgress) return;
-  try {
-    history.pushState({ vipFullscreen: true }, document.title, location.href);
-    fullscreenHistoryActive = true;
-  } catch (e) {}
-}
-
-async function consumeFullscreenHistory() {
-  if (!fullscreenHistoryActive || fullscreenBackInProgress) return;
-  fullscreenHistoryActive = false;
-  fullscreenBackInProgress = true;
-  try { history.back(); } catch (e) {}
-  setTimeout(function () { fullscreenBackInProgress = false; }, 250);
-}
-
 async function requestNativeFullscreen() {
   if (!videoBox) return;
-  let entered = false;
   try {
     if (videoBox.requestFullscreen) {
       await videoBox.requestFullscreen({ navigationUI: "hide" });
-      entered = true;
-    } else if (videoBox.webkitRequestFullscreen) {
+      return;
+    }
+    if (videoBox.webkitRequestFullscreen) {
       videoBox.webkitRequestFullscreen();
-      entered = true;
+      return;
     }
   } catch (e) {
     // Fall through to CSS fullscreen if native fullscreen is unavailable/blocked.
   }
-  if (!entered) {
-    videoBox.classList.add("vip-css-fullscreen", "vip-fullscreen", "is-fullscreen");
-    document.body.classList.add("vip-player-fullscreen");
-  }
-  pushFullscreenHistory();
+  videoBox.classList.add("vip-css-fullscreen", "vip-fullscreen", "is-fullscreen");
+  document.body.classList.add("vip-player-fullscreen");
 }
 
 async function exitNativeFullscreen() {
@@ -525,8 +504,28 @@ async function exitNativeFullscreen() {
   document.body.classList.remove("vip-player-fullscreen");
 }
 
+function isBrowserNativeFullscreen() {
+  return !!(document.fullscreenElement || document.webkitFullscreenElement);
+}
+
+function isCssPlayerFullscreen() {
+  return !!(videoBox && videoBox.classList.contains("vip-css-fullscreen"));
+}
+
 function isNativeFullscreen() {
-  return !!(document.fullscreenElement || (videoBox && videoBox.classList.contains("vip-css-fullscreen")));
+  return isBrowserNativeFullscreen() || isCssPlayerFullscreen();
+}
+
+// Important: native fullscreen and our CSS fullscreen are two different states.
+// Android can exit native fullscreen with its Back button without removing our
+// CSS class. Never treat that stale class as proof that native fullscreen is active.
+function cleanupAfterNativeFullscreenExit() {
+  if (isBrowserNativeFullscreen()) return;
+  if (videoBox) {
+    videoBox.classList.remove("vip-css-fullscreen", "vip-fullscreen", "is-fullscreen", "vip-orientation-fallback");
+  }
+  document.body.classList.remove("vip-player-fullscreen");
+  try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
 }
 
 async function toggleNativeFullscreen() {
@@ -535,7 +534,6 @@ async function toggleNativeFullscreen() {
     await exitNativeFullscreen();
     try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
     restorePlayerGridScroll();
-    await consumeFullscreenHistory();
   } else {
     playerFullscreenGridScrollTop = grid ? grid.scrollTop : playerReturnGridScrollTop;
     await requestNativeFullscreen();
@@ -607,28 +605,18 @@ window.addEventListener("orientationchange", function () {
   setTimeout(function () { if (!isNativeFullscreen()) restorePlayerGridScroll(); }, 600);
 });
 document.addEventListener("fullscreenchange", function () {
+  cleanupAfterNativeFullscreenExit();
   syncFullscreenState();
-  if (!isNativeFullscreen()) {
+  if (!isBrowserNativeFullscreen()) {
     restorePlayerGridScroll();
     setTimeout(restorePlayerGridScroll, 150);
     setTimeout(restorePlayerGridScroll, 600);
   }
 });
-
-// Android browser Back while fullscreen: exit fullscreen first instead of leaving the site.
-window.addEventListener("popstate", async function () {
-  if (!fullscreenHistoryActive) return;
-  fullscreenHistoryActive = false;
-  if (isNativeFullscreen()) await exitNativeFullscreen();
-  try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
-  syncFullscreenState();
-  restorePlayerGridScroll();
-  setTimeout(restorePlayerGridScroll, 150);
-  setTimeout(restorePlayerGridScroll, 600);
-});
 document.addEventListener("webkitfullscreenchange", function () {
+  cleanupAfterNativeFullscreenExit();
   syncFullscreenState();
-  if (!isNativeFullscreen()) {
+  if (!isBrowserNativeFullscreen()) {
     restorePlayerGridScroll();
     setTimeout(restorePlayerGridScroll, 150);
     setTimeout(restorePlayerGridScroll, 600);
