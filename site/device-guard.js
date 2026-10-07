@@ -168,7 +168,8 @@
         return;
       }
 
-      if (access && access.ok && access.active === false) {
+      /* No valid access session must never fail open into paid playback. */
+      if (!access || access.ok !== true || access.active !== true) {
         location.href = "/payment.html";
         return;
       }
@@ -181,13 +182,8 @@
         setTimeout(() => { replayingPaidClick = false; }, 0);
       }, 0);
     } catch (e) {
-      /* Preserve the old fail-open playback behavior if the access endpoint is unavailable. */
-      replayingPaidClick = true;
-      setTimeout(() => {
-        oneShotPaymentBypass = true;
-        card.click();
-        setTimeout(() => { replayingPaidClick = false; }, 0);
-      }, 0);
+      /* Payment/access check unavailable: fail closed so paid channels cannot become free. */
+      location.href = "/payment.html";
     }
   }, true);
 
