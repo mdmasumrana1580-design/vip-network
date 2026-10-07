@@ -220,9 +220,19 @@ function normalizeCategoryKey(value) {
 }
 
 function catFor(name, group) {
-  const text = ((name || "") + " " + (group || "")).toLowerCase();
+  const rawGroup = String(group || "").trim();
+  const groupKey = normalizeCategoryKey(rawGroup);
 
-  // MOVIE & SERIES: respect an explicit playlist group first.
+  // Always trust an explicit playlist category/group first.
+  // This prevents a Live TV channel whose name contains words like
+  // "movie" or "series" from being moved into Movie & Series.
+  if (["SPORTS", "BD", "INDIA", "OTHER", "MOVIE & SERIES"].includes(groupKey)) {
+    return groupKey;
+  }
+
+  const text = ((name || "") + " " + rawGroup).toLowerCase();
+
+  // Only infer Movie & Series when there is no canonical explicit category.
   if (/movie\s*(?:&|and)\s*series|movies?\s*(?:&|and)\s*series|\bseries\b|\bmovie\b|\bmovies\b|cinema|film|netflix|prime\s*video|hoichoi|bioscope/.test(text)) {
     return "MOVIE & SERIES";
   }
@@ -738,7 +748,7 @@ async function loadVipPlaylist() {
           return list.map(function(c){
             return {
               name:c.name||"Live Channel",
-              cat:catFor(c.name,c.category),
+              cat:normalizeCategoryKey(c.category || catFor(c.name, "")),
               url:c.url||"",
               logo:c.logo||""
             };
