@@ -170,6 +170,69 @@ async function handle(r, e) {
   const u = new URL(r.url), p = u.pathname;
   if (r.method === 'OPTIONS') return withCors(new Response(null, { status: 204 }));
 
+  // HTTPS playback proxy for HTTP HLS streams. This avoids browser mixed-content
+  // blocking when the site is served over HTTPS. Only public HTTP/HTTPS targets
+  // are accepted; playlist URLs are rewritten so segments/keys are proxied too.
+  if (p === '/api/stream-proxy' && r.method === 'GET') {
+    const rawTarget = u.searchParams.get('url') || '';
+    let target;
+    try { target = new URL(rawTarget); } catch { return withCors(new Response('Invalid stream URL', { status: 400 })); }
+    if (!/^https?:$/.test(target.protocol)) return withCors(new Response('Unsupported stream URL', { status: 400 }));
+    const host = target.hostname.toLowerCase();
+    if (host === 'localhost' || host === '::1' || /^(127\.|10\.|192\.168\.|169\.254\.)/.test(host) || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host)) {
+      return withCors(new Response('Blocked stream host', { status: 403 }));
+    }
+    try {
+      const headers = new Headers();
+      const range = r.headers.get('Range');
+      if (range) headers.set('Range', range);
+      const upstream = await fetch(target.toString(), { method: 'GET', headers, redirect: 'follow' });
+      if (!upstream.ok && upstream.status !== 206) {
+        return withCors(new Response('Upstream stream error', { status: upstream.status }));
+      }
+      const type = (upstream.headers.get('content-type') || '').toLowerCase();
+      const looksLikePlaylist = /(?:\.m3u8(?:$|[?#])|mpegurl|vnd\.apple\.mpegurl)/i.test(target.pathname + target.search) || type.includes('mpegurl');
+      if (looksLikePlaylist) {
+        const textBody = await upstream.text();
+        const proxyBase = new URL('/api/stream-proxy', r.url);
+        const proxy = value => {
+          try {
+            const absolute = new URL(value, target).toString();
+            return absolute;
+          } catch { return value; }
+        };
+        const rewrite = textBody.split(/\r?\n/).map(line => {
+          if (!line.trim()) return line;
+          let out = line;
+          out = out.replace(/URI=(\"|')([^\"']+)(\"|')/gi, (m, q1, value, q2) => {
+            if (!/^https?:\/\//i.test(proxy(value))) return m;
+            const proxied = new URL(proxy(value), proxyBase);
+            return 'URI=' + q1 + proxied.pathname + proxied.search + q2;
+          });
+          if (!out.trim().startsWith('#')) {
+            const absolute = proxy(out.trim());
+            if (/^https?:\/\//i.test(absolute)) {
+              const proxied = new URL(absolute, proxyBase);
+              out = proxied.pathname + proxied.search;
+            }
+          }
+          return out;
+        }).join('\n');
+        const h = new Headers({
+          'content-type': 'application/vnd.apple.mpegurl; charset=utf-8',
+          'cache-control': 'no-store'
+        });
+        return withCors(new Response(rewrite, { status: 200, headers: h }));
+      }
+      const h = new Headers();
+      const passthrough = ['content-type','content-length','content-range','accept-ranges','cache-control','etag','last-modified'];
+      for (const name of passthrough) { const value = upstream.headers.get(name); if (value) h.set(name, value); }
+      return withCors(new Response(upstream.body, { status: upstream.status, headers: h }));
+    } catch (err) {
+      return withCors(new Response('Stream proxy error', { status: 502 }));
+    }
+  }
+
   if (p === '/api/online/ping' && r.method === 'POST') {
     const b = await r.json().catch(() => ({})), id = String(b.id || '').slice(0, 160);
     if (!id) return withCors(json({ ok: false, error: 'id required' }, 400));
