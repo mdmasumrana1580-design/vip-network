@@ -195,6 +195,14 @@ async function handle(r, e) {
       if (looksLikePlaylist) {
         const textBody = await upstream.text();
         const proxyBase = new URL('/api/stream-proxy', r.url);
+        const proxiedUrl = value => {
+          try {
+            const absolute = new URL(value, target).toString();
+            const u2 = new URL(proxyBase);
+            u2.searchParams.set('url', absolute);
+            return u2.pathname + u2.search;
+          } catch { return value; }
+        };
         const proxy = value => {
           try {
             const absolute = new URL(value, target).toString();
@@ -206,14 +214,14 @@ async function handle(r, e) {
           let out = line;
           out = out.replace(/URI=(\"|')([^\"']+)(\"|')/gi, (m, q1, value, q2) => {
             if (!/^https?:\/\//i.test(proxy(value))) return m;
-            const proxied = new URL(proxy(value), proxyBase);
-            return 'URI=' + q1 + proxied.pathname + proxied.search + q2;
+            return 'URI=' + q1 + proxiedUrl(value) + q2;
           });
           if (!out.trim().startsWith('#')) {
             const absolute = proxy(out.trim());
             if (/^https?:\/\//i.test(absolute)) {
-              const proxied = new URL(absolute, proxyBase);
-              out = proxied.pathname + proxied.search;
+              const u2 = new URL(proxyBase);
+              u2.searchParams.set('url', absolute);
+              out = u2.pathname + u2.search;
             }
           }
           return out;
