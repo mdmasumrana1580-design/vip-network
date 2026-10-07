@@ -395,7 +395,10 @@ function play(c, clickedCard, retryOriginal, fromUserClick) {
 
   const isMovieSeries = normalizeCategoryKey(c.cat) === "MOVIE & SERIES";
   if (videoBox) videoBox.classList.toggle("movie-native-player", isMovieSeries);
-  video.controls = isMovieSeries;
+  // Keep the existing custom player UI; Chrome handles media playback through the native <video> engine.
+  // Do not expose Chrome's native control bar because the site UI must remain unchanged.
+  video.controls = false;
+  video.setAttribute("playsinline", "");
   video.autoplay = true;
   video.playsInline = true;
   video.muted = false;
