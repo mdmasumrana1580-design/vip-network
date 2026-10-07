@@ -411,6 +411,11 @@ function play(c, clickedCard, retryOriginal, fromUserClick) {
   const originalUrl = String(c.url || "").trim();
   let fallbackUsed = !retryOriginal && c._usingFallback === true;
   const sourceUrl = fallbackUsed ? STREAM_FALLBACK_URL : originalUrl;
+  // HTTP HLS cannot be loaded directly from an HTTPS page. Route only HTTP
+  // M3U8 sources through the site worker; HTTPS sources remain unchanged.
+  const playbackUrl = (/^http:\/\//i.test(sourceUrl) && /\.m3u8(?:\?|$)/i.test(sourceUrl))
+    ? (location.origin + '/api/stream-proxy?url=' + encodeURIComponent(sourceUrl))
+    : sourceUrl;
 
   function showPlaybackError() {
     const note = document.getElementById("note");
@@ -449,7 +454,7 @@ function play(c, clickedCard, retryOriginal, fromUserClick) {
       hls = new Hls({ enableWorker:true, lowLatencyMode:true, backBufferLength:30 });
       hls.attachMedia(video);
       hls.on(Hls.Events.MEDIA_ATTACHED, function() {
-        if (hls) hls.loadSource(sourceUrl);
+        if (hls) hls.loadSource(playbackUrl);
       });
       hls.on(Hls.Events.MANIFEST_PARSED, function() {
         startPlayback();
@@ -464,14 +469,14 @@ function play(c, clickedCard, retryOriginal, fromUserClick) {
       });
     } else {
       // Safari/iOS can play HLS directly.
-      video.src = sourceUrl;
+      video.src = playbackUrl;
       video.addEventListener("loadedmetadata", startPlayback, {once:true});
       video.addEventListener("error", function(){ showPlaybackError(); }, {once:true});
       video.load();
     }
   } else {
     // MP4 and other browser-native formats.
-    video.src = sourceUrl;
+    video.src = playbackUrl;
     video.addEventListener("loadedmetadata", startPlayback, {once:true});
     video.addEventListener("canplay", startPlayback, {once:true});
     video.addEventListener("error", function() {
