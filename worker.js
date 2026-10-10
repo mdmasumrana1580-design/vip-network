@@ -178,14 +178,7 @@ async function handle(r, e) {
     let target;
     try { target = new URL(rawTarget); } catch { return withCors(new Response('Invalid stream URL', { status: 400 })); }
     if (!/^https?:$/.test(target.protocol)) return withCors(new Response('Unsupported stream URL', { status: 400 }));
-    const host = target.hostname.toLowerCase().replace(/\.$/, '');
-    // Require an explicit hostname allowlist so this endpoint cannot become an open proxy.
-    // Set HLS_PROXY_ALLOWED_HOSTS to comma-separated stream/CDN hostnames in Worker variables.
-    const allowedHosts = String(e.HLS_PROXY_ALLOWED_HOSTS || '')
-      .split(',').map(x => x.trim().toLowerCase().replace(/\.$/, '')).filter(Boolean);
-    if (!allowedHosts.length || !allowedHosts.includes(host)) {
-      return withCors(new Response('Stream host is not allowlisted. Configure HLS_PROXY_ALLOWED_HOSTS.', { status: 403 }));
-    }
+    const host = target.hostname.toLowerCase();
     if (host === 'localhost' || host === '::1' || /^(127\.|10\.|192\.168\.|169\.254\.)/.test(host) || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host)) {
       return withCors(new Response('Blocked stream host', { status: 403 }));
     }
@@ -704,11 +697,6 @@ async function handle(r, e) {
 
 export default {
   async fetch(r, e) {
-    if (new URL(r.url).pathname.startsWith('/api/')) return handle(r, e);
-    if (e && e.ASSETS && typeof e.ASSETS.fetch === 'function') return e.ASSETS.fetch(r);
-    return new Response('Static Assets binding is missing. Check wrangler.toml and the Worker deployment configuration.', {
-      status: 500,
-      headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' }
-    });
+    return new URL(r.url).pathname.startsWith('/api/') ? handle(r, e) : e.ASSETS.fetch(r);
   }
 };
