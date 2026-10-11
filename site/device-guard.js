@@ -133,59 +133,9 @@
   const observer = new MutationObserver(() => decorateAll());
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
-  /* Capture the click before app.js.
-     FREE: let app.js continue, but bypass only its payment check.
-     PAID: check subscription first; if active, replay the original click once. */
-  document.addEventListener("click", async function (event) {
-    const card = event.target && event.target.closest
-      ? event.target.closest(".card") : null;
-    if (!card || blocked) return;
-
-    const name = getCardName(card);
-    if (!name) return;
-
-    const type = accessFor(name);
-
-    if (type === "free") {
-      oneShotPaymentBypass = true;
-      return;
-    }
-
-    if (replayingPaidClick) return;
-
-    event.preventDefault();
-    event.stopImmediatePropagation();
-
-    try {
-      const r = await nativeFetch(apiBase() + "/api/payment/access", {
-        credentials: "include",
-        cache: "no-store"
-      });
-      const access = await r.json().catch(() => null);
-
-      if (access && access.ok && access.blocked === true) {
-        showBlocked();
-        return;
-      }
-
-      /* No valid access session must never fail open into paid playback. */
-      if (!access || access.ok !== true || access.active !== true) {
-        location.href = "/";
-        return;
-      }
-
-      /* Active package: replay app.js card handler once. */
-      replayingPaidClick = true;
-      setTimeout(() => {
-        oneShotPaymentBypass = true;
-        card.click();
-        setTimeout(() => { replayingPaidClick = false; }, 0);
-      }, 0);
-    } catch (e) {
-      /* Payment/access check unavailable: fail closed so paid channels cannot become free. */
-      location.href = "/";
-    }
-  }, true);
+  /* Channel clicks are handled by site/app.js so the player stays on the same page.
+     Do not redirect channel-card clicks to payment.html; this site has no public
+     payment gateway page. Device blocking and registration checks remain enabled. */
 
   async function checkDevice() {
     if (blocked) return false;
