@@ -170,7 +170,7 @@
 
       /* No valid access session must never fail open into paid playback. */
       if (!access || access.ok !== true || access.active !== true) {
-        location.href = "/payment.html";
+        location.href = "/";
         return;
       }
 
@@ -183,7 +183,7 @@
       }, 0);
     } catch (e) {
       /* Payment/access check unavailable: fail closed so paid channels cannot become free. */
-      location.href = "/payment.html";
+      location.href = "/";
     }
   }, true);
 

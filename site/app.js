@@ -356,7 +356,7 @@ function render() {
 
     el.innerHTML =
       '<div class="circle">' + icon + '</div>' +
-      (isPaid ? '<img class="vip-paid-crown" src="https://i.postimg.cc/g05JdqSY/Blue-Star-symbol.png" alt="Paid channel" title="Paid channel">' : '') +
+      '<img class="vip-paid-crown" src="https://i.postimg.cc/g05JdqSY/Blue-Star-symbol.png" alt="Channel star" title="Channel">' +
       '<div class="label"><span class="label-text">' + esc(c.name) + '</span></div>';
 
     el.addEventListener("click", function (e) {
